@@ -20,8 +20,7 @@
 
   // ── 1. Unlock emoji picker & remove server lock icons ──────────────────────
   // canUseEmojisEverywhere is Discord's check that displays lock badges on
-  // external server icons in the emoji picker sidebar. Patching it to true
-  // tells Discord you have external emoji permissions everywhere.
+  // external server icons in the emoji picker sidebar.
 
   safePatch("canUseEmojisEverywhere",       true);
   safePatch("canUseAnimatedEmojis",         true);
@@ -30,11 +29,9 @@
   safePatch("isEmojiDisabled",              false);
   safePatch("getEmojiUnavailableReason",    null);
 
-  // ── 2. Convert emoji syntax → raw CDN URL before sending ───────────────────
-  // Discord's image embedder requires a raw https:// URL to generate an embed.
-  // Masked links [text](url) are blocked for normal user accounts and disable embeds.
-  // When a message contains only the raw CDN URL, Discord mobile collapses the link
-  // text and displays ONLY the small emoji image in chat.
+  // ── 2. Convert emoji syntax → [Name](CDN_URL) masked hyperlink ─────────────
+  // Formats as [EmojiName](https://cdn.discordapp.com/emojis/ID.ext?size=48&quality=lossless)
+  // Shows the clean emoji name as a clickable hyperlink while embedding the image.
 
   var Messages = findByProps("sendMessage", "editMessage");
 
@@ -43,9 +40,10 @@
   // Split on code fences / inline code so we never touch code blocks
   var CODE_RE  = /(```[\s\S]*?```|`[^`\n]*`)/;
 
-  function emojiToUrl(_, animated, _name, id) {
+  function emojiToUrl(_, animated, name, id) {
     var ext = animated === "a" ? "gif" : "png";
-    return "https://cdn.discordapp.com/emojis/" + id + "." + ext + "?size=48&quality=lossless";
+    var url = "https://cdn.discordapp.com/emojis/" + id + "." + ext + "?size=48&quality=lossless";
+    return "[" + name + "](" + url + ")";
   }
 
   function replaceEmojis(text) {
