@@ -40,10 +40,10 @@
   // Split on code fences / inline code so we never touch code blocks
   var CODE_RE  = /(```[\s\S]*?```|`[^`\n]*`)/;
 
-  function emojiToUrl(_, animated, name, id) {
+  function emojiToUrl(_, animated, _name, id) {
     var ext = animated === "a" ? "gif" : "png";
     var url = "https://cdn.discordapp.com/emojis/" + id + "." + ext + "?size=48&quality=lossless";
-    return "[" + name + "](" + url + ")";
+    return "[\u200B](" + url + ")";
   }
 
   function replaceEmojis(text) {
