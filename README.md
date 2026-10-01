@@ -85,6 +85,18 @@ https://ilickft.github.io/revenge-plugins/stream-1080p/
 
 ---
 
+### 🔊 discordo
+
+> classic japanese "DISCORDO!" startup sound
+
+plays the famous official japanese "DISCORDO!" chime whenever discord launches. includes a test button in the plugin settings to replay the sound anytime.
+
+```
+https://ilickft.github.io/revenge-plugins/discordo/
+```
+
+---
+
 
 ## installation
 

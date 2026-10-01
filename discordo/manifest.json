@@ -1,0 +1,14 @@
+{
+  "name": "Discordo",
+  "description": "Plays the classic Japanese \"DISCORDO!\" chime whenever Discord launches.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "ic_volume_up_24px"
+  },
+  "hash": "2860094722ca8bf132ebb387133acd74b116a40aa9c5e491fc34f32090bfd100"
+}
