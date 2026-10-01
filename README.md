@@ -73,6 +73,18 @@ https://ilickft.github.io/revenge-plugins/pet-pet/
 
 ---
 
+### 📺 stream 1080p
+
+> unlock 1080p, 60 fps, and source quality screen sharing
+
+removes nitro restrictions and server boost locks from stream quality settings. unlocks 1080p, 60 fps, and source resolution options in the stream quality selector when screen sharing.
+
+```
+https://ilickft.github.io/revenge-plugins/stream-1080p/
+```
+
+---
+
 
 ## installation
 

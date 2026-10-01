@@ -114,55 +114,71 @@
 
   var unregisterCmd = null;
 
-  if (vendetta.commands && typeof vendetta.commands.registerCommand === "function") {
-    unregisterCmd = vendetta.commands.registerCommand({
-      name:                "petpet",
-      displayName:         "petpet",
-      displayDescription:  "Generate a pet-pet GIF of any user \uD83D\uDC3E",
-      description:         "Generate a pet-pet GIF of any user \uD83D\uDC3E",
-      applicationId:       "-1",
-      type:                1,
-      inputType:           1,
-      options: [
-        {
-          name:               "user",
-          displayName:        "user",
-          description:        "User to pet (defaults to replied user or yourself)",
-          displayDescription: "User to pet (defaults to replied user or yourself)",
-          type:               6,       // ApplicationCommandOptionType.USER
-          required:           false,
-        },
-      ],
-      execute: function (args, ctx) {
-        var channelId = ctx && ctx.channel && ctx.channel.id;
-        if (!channelId) return null;
-
-        var targetId =
-          // 1. Explicit user option
-          optionValue(args, "user") ||
-          // 2. Whoever the user is currently replying to
-          resolvePendingReplyAuthorId(channelId) ||
-          // 3. Pet yourself
-          (UserStore && UserStore.getCurrentUser() && UserStore.getCurrentUser().id);
-
-        if (targetId) {
-          petpet(channelId, targetId); // fire-and-forget (async)
-        } else {
-          toast("Couldn't figure out who to pet!", true);
+  function removePetpetCommand() {
+    try {
+      if (vendetta.commands && Array.isArray(vendetta.commands.commands)) {
+        for (var i = vendetta.commands.commands.length - 1; i >= 0; i--) {
+          var cmd = vendetta.commands.commands[i];
+          if (cmd && (cmd.name === "petpet" || cmd.displayName === "petpet")) {
+            vendetta.commands.commands.splice(i, 1);
+          }
         }
-
-        return null; // don't send an extra text message
-      },
-    });
+      }
+    } catch (e) {}
   }
 
   return {
-    onLoad:   function () {},
+    onLoad: function () {
+      removePetpetCommand();
+
+      if (vendetta.commands && typeof vendetta.commands.registerCommand === "function") {
+        unregisterCmd = vendetta.commands.registerCommand({
+          name:                "petpet",
+          displayName:         "petpet",
+          displayDescription:  "Generate a pet-pet GIF of any user \uD83D\uDC3E",
+          description:         "Generate a pet-pet GIF of any user \uD83D\uDC3E",
+          applicationId:       "-1",
+          type:                1,
+          inputType:           1,
+          options: [
+            {
+              name:               "user",
+              displayName:        "user",
+              description:        "User to pet (defaults to replied user or yourself)",
+              displayDescription: "User to pet (defaults to replied user or yourself)",
+              type:               6,       // ApplicationCommandOptionType.USER
+              required:           false,
+            },
+          ],
+          execute: function (args, ctx) {
+            var channelId = ctx && ctx.channel && ctx.channel.id;
+            if (!channelId) return null;
+
+            var targetId =
+              // 1. Explicit user option
+              optionValue(args, "user") ||
+              // 2. Whoever the user is currently replying to
+              resolvePendingReplyAuthorId(channelId) ||
+              // 3. Pet yourself
+              (UserStore && UserStore.getCurrentUser() && UserStore.getCurrentUser().id);
+
+            if (targetId) {
+              petpet(channelId, targetId); // fire-and-forget (async)
+            } else {
+              toast("Couldn't figure out who to pet!", true);
+            }
+
+            return null; // don't send an extra text message
+          },
+        });
+      }
+    },
     onUnload: function () {
       if (typeof unregisterCmd === "function") {
         try { unregisterCmd(); } catch (e) {}
       }
       unregisterCmd = null;
+      removePetpetCommand();
     },
   };
 })();

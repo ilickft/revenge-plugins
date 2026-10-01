@@ -1,0 +1,14 @@
+{
+  "name": "Stream 1080p",
+  "description": "Unlock 1080p, 60 FPS, and Source resolution streaming without Nitro.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "ic_video"
+  },
+  "hash": "03cb99cd103b95dc95ee0b8d3fe8af6f0efe6238eb0abb5518c20d150a52a4a2"
+}
