@@ -17,6 +17,8 @@
   var messageCache      = new Map();
   // Set of message IDs that have been deleted
   var deletedIds        = new Set();
+  // Set of message IDs that have been edited
+  var editedIds         = new Set();
   // Map of message ID -> clean original text content before any edits
   var firstOriginalText = new Map();
 
@@ -35,6 +37,7 @@
       flags:         msg.flags || 0,
       type:          msg.type || 0,
       state:         "SENT",
+      is_edited:     Boolean(msg.is_edited),
     };
   }
 
@@ -84,25 +87,58 @@
     return null;
   }
 
-  function formatFadedOriginal(text) {
-    if (typeof text !== "string" || !text) return "";
-    var clean = text.split("\n").map(function (l) {
+  function extractCleanOriginal(text) {
+    if (typeof text !== "string") return "";
+    var prefix = "*Original Message*\n";
+    var splitMarker = "\n*Edited Message*\n";
+    if (text.startsWith(prefix) && text.indexOf(splitMarker) !== -1) {
+      return text.substring(prefix.length, text.indexOf(splitMarker));
+    }
+    return text.split("\n").map(function (l) {
       return l.startsWith("-# ") ? l.substring(3) : l;
-    }).join("\n");
-
-    // Format with Discord's native subtext syntax (-# ), which decreases opacity and makes it muted/faded
-    return clean.split("\n").map(function (l) {
-      return "-# " + l;
     }).join("\n");
   }
 
+  function extractCleanEdited(text) {
+    if (typeof text !== "string") return text;
+    var splitMarker = "\n*Edited Message*\n";
+    var idx = text.lastIndexOf(splitMarker);
+    if (idx !== -1) {
+      return text.substring(idx + splitMarker.length);
+    }
+    return text;
+  }
+
   // ── Build ghost payload for deleted messages ─────────────────────────────
-  // As requested:
-  // "make the deleted message opacity decreased like attachment this way we don't hafta add anything"
-  // Keep original content and attachments as-is, with decreased opacity (0.45)
+  // Requirements:
+  // 1. "a user deletes any message on my side it stays as it is"
+  //    Normal unedited deleted messages stay as they are, with decreased opacity.
+  // 2. "if a edited message were deleted the tags like og msg and edited msg
+  //    will apply whope text will be on decreased opacity."
   function ghostPayload(msg, channelId) {
     var rawContent = msg.content || "";
+    var contentToSend = rawContent;
 
+    // Check if this message was edited
+    var isEdited = editedIds.has(msg.id) || firstOriginalText.has(msg.id) || msg.is_edited;
+    if (isEdited) {
+      var baseOriginal = firstOriginalText.get(msg.id);
+      if (baseOriginal) {
+        var cleanEdited = extractCleanEdited(rawContent);
+        if (cleanEdited && cleanEdited !== baseOriginal) {
+          contentToSend =
+            "*Original Message*\n" +
+            baseOriginal +
+            "\n*Edited Message*\n" +
+            cleanEdited;
+        }
+      }
+    } else {
+      // Stays as it is! Clean text, no tags added
+      contentToSend = rawContent;
+    }
+
+    // Keep attachments intact with reduced opacity (0.45)
     var attachments = [];
     if (msg.attachments && Array.isArray(msg.attachments)) {
       attachments = msg.attachments.map(function (att) {
@@ -120,7 +156,7 @@
       message: {
         id:              msg.id,
         channel_id:      chId,
-        content:         rawContent,
+        content:         contentToSend,
         author:          msg.author,
         timestamp:       msg.timestamp,
         editedTimestamp: null,
@@ -145,6 +181,7 @@
     };
   }
 
+  // ── Native chat row styling: fade deleted messages and attachments ────────
   function applyFadedStyle(row) {
     if (!row || row.type !== 1 || !row.message) return;
     var m = row.message;
@@ -162,7 +199,6 @@
     }
   }
 
-  // ── Native chat row styling: fade deleted messages and attachments ────────
   try {
     var DCDChatManager = RN && RN.NativeModules && RN.NativeModules.DCDChatManager;
     if (DCDChatManager && typeof DCDChatManager.updateRows === "function") {
@@ -222,7 +258,11 @@
       }
 
       // ── Handle message edits (MESSAGE_UPDATE) ──────────────────────────────
-      // Requirement: "original message losses opacity and new edited message stays brighth"
+      // Formats edited messages with:
+      // *Original Message*
+      // <original text>
+      // *Edited Message*
+      // <new edited text>
       if (type === "MESSAGE_UPDATE") {
         if (payload.otherPluginBypass) return orig.apply(this, args);
 
@@ -236,26 +276,30 @@
           if (original && original.content) {
             var baseOriginal = firstOriginalText.get(updateId);
             if (!baseOriginal) {
-              baseOriginal = original.content.split("\n").map(function (l) {
-                return l.startsWith("-# ") ? l.substring(3) : l;
-              }).join("\n");
+              baseOriginal = extractCleanOriginal(original.content);
               firstOriginalText.set(updateId, baseOriginal);
             }
 
-            var newEdited = updateMsg.content;
+            var newEdited = extractCleanEdited(updateMsg.content);
+
             if (baseOriginal && newEdited && baseOriginal !== newEdited) {
-              // Original message loses opacity via Discord's muted subtext (-# ),
-              // while the new edited message stays bright
-              var combined = formatFadedOriginal(baseOriginal) + "\n" + newEdited;
+              editedIds.add(updateId);
+
+              var combined =
+                "*Original Message*\n" +
+                baseOriginal +
+                "\n*Edited Message*\n" +
+                newEdited;
+
               updateMsg.content = combined;
 
               if (messageCache.has(updateId)) {
                 var c = messageCache.get(updateId);
                 c.content = combined;
+                c.is_edited = true;
               }
             }
           } else if (original && !original.content) {
-            // Original had no text (e.g. attachment only)
             if (messageCache.has(updateId)) {
               messageCache.get(updateId).content = updateMsg.content;
             }
@@ -314,6 +358,7 @@
     onLoad: function () {},
     onUnload: function () {
       deletedIds.clear();
+      editedIds.clear();
       messageCache.clear();
       firstOriginalText.clear();
       for (var i = 0; i < patches.length; i++) {

@@ -1,6 +1,6 @@
 {
   "name": "Message Logger",
-  "description": "Keeps deleted messages and attachments visible in chat with decreased opacity (no extra tags), and shows original text faded while new edited text stays bright.",
+  "description": "Unedited deleted messages stay as-is with decreased opacity; edited deleted messages display *Original Message* and *Edited Message* with decreased opacity.",
   "authors": [
     {
       "name": "Kario"
@@ -10,5 +10,5 @@
   "vendetta": {
     "icon": "EyeIcon"
   },
-  "hash": "91a4f4afbd7494694e047b7bc7592408ae98def1576aba9a82da9090a687bed2"
+  "hash": "50566032c7f0673fa86326526a7d38756a9e601e271dcd0904e56a0c3b935946"
 }
