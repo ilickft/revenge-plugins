@@ -61,6 +61,19 @@ https://ilickft.github.io/revenge-plugins/message-logger/
 
 ---
 
+### 🐾 pet pet
+
+> pet-pet gif of anyone, right in chat
+
+adds a `/petpet` slash command. reply to someone and run `/petpet`, or do `/petpet @user` to pet them directly. falls back to petting yourself if no target is given. generates an animated pet-pet gif via nekobot and sends it as a discord image embed.
+
+```
+https://ilickft.github.io/revenge-plugins/pet-pet/
+```
+
+---
+
+
 ## installation
 
 open Revenge → **Settings → Plugins → `+`** → paste the plugin url.

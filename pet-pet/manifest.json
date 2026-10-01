@@ -1,0 +1,14 @@
+{
+  "name": "Pet Pet",
+  "description": "Use /petpet to generate a pet-pet GIF of any user \u2014 reply to someone, mention them, or just pet yourself!",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "StickerIcon"
+  },
+  "hash": "a7b568a78a03f91e6e640c8fd0cf2bfa63b20a6a195fcd4952298284018484c1"
+}
