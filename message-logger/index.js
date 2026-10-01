@@ -87,63 +87,79 @@
     return null;
   }
 
+  // Discord's subtext syntax (-# ) natively renders text dimmed with lower opacity / muted color
+  function makeDimmed(text) {
+    if (typeof text !== "string" || !text) return "";
+    return text.split("\n").map(function (line) {
+      if (line.startsWith("-# ")) return line;
+      return "-# " + line;
+    }).join("\n");
+  }
+
+  function unDim(text) {
+    if (typeof text !== "string") return "";
+    return text.split("\n").map(function (line) {
+      return line.startsWith("-# ") ? line.substring(3) : line;
+    }).join("\n");
+  }
+
   function extractCleanOriginal(text) {
     if (typeof text !== "string") return "";
+    var clean = unDim(text);
     var prefix = "*Original Message*\n";
     var splitMarker = "\n*Edited Message*\n";
-    if (text.startsWith(prefix) && text.indexOf(splitMarker) !== -1) {
-      return text.substring(prefix.length, text.indexOf(splitMarker));
+    if (clean.startsWith(prefix) && clean.indexOf(splitMarker) !== -1) {
+      return clean.substring(prefix.length, clean.indexOf(splitMarker));
     }
-    return text.split("\n").map(function (l) {
-      return l.startsWith("-# ") ? l.substring(3) : l;
-    }).join("\n");
+    return clean;
   }
 
   function extractCleanEdited(text) {
     if (typeof text !== "string") return text;
+    var clean = unDim(text);
     var splitMarker = "\n*Edited Message*\n";
-    var idx = text.lastIndexOf(splitMarker);
+    var idx = clean.lastIndexOf(splitMarker);
     if (idx !== -1) {
-      return text.substring(idx + splitMarker.length);
+      return clean.substring(idx + splitMarker.length);
     }
-    return text;
+    return clean;
   }
 
   // ── Build ghost payload for deleted messages ─────────────────────────────
-  // Requirements:
-  // 1. "a user deletes any message on my side it stays as it is"
-  //    Normal unedited deleted messages stay as they are, with decreased opacity.
-  // 2. "if a edited message were deleted the tags like og msg and edited msg
-  //    will apply whope text will be on decreased opacity."
+  // Makes text lower opacity / less bright via Discord's muted subtext (-# )
+  // and keeps attachments with decreased opacity (0.4)
   function ghostPayload(msg, channelId) {
     var rawContent = msg.content || "";
-    var contentToSend = rawContent;
+    var contentToSend = "";
 
-    // Check if this message was edited
     var isEdited = editedIds.has(msg.id) || firstOriginalText.has(msg.id) || msg.is_edited;
     if (isEdited) {
       var baseOriginal = firstOriginalText.get(msg.id);
       if (baseOriginal) {
         var cleanEdited = extractCleanEdited(rawContent);
         if (cleanEdited && cleanEdited !== baseOriginal) {
+          // Both original and edited headers/content dimmed for deleted edited message
           contentToSend =
-            "*Original Message*\n" +
-            baseOriginal +
-            "\n*Edited Message*\n" +
-            cleanEdited;
+            "-# *Original Message*\n" +
+            makeDimmed(baseOriginal) +
+            "\n-# *Edited Message*\n" +
+            makeDimmed(cleanEdited);
+        } else {
+          contentToSend = makeDimmed(baseOriginal);
         }
+      } else {
+        contentToSend = makeDimmed(rawContent);
       }
     } else {
-      // Stays as it is! Clean text, no tags added
-      contentToSend = rawContent;
+      // Normal unedited deleted message: stays as it was, but dimmed to lower opacity
+      contentToSend = makeDimmed(rawContent);
     }
 
-    // Keep attachments intact with reduced opacity (0.45)
     var attachments = [];
     if (msg.attachments && Array.isArray(msg.attachments)) {
       attachments = msg.attachments.map(function (att) {
         var copy = Object.assign({}, att);
-        copy.opacity = 0.45;
+        copy.opacity = 0.4;
         return copy;
       });
     }
@@ -172,7 +188,7 @@
         state:           "SENT",
         optimistic:      false,
         was_deleted:     true,
-        opacity:         0.45,
+        opacity:         0.5,
       },
       optimistic:        false,
       sendMessageOptions: {},
@@ -186,14 +202,14 @@
     if (!row || row.type !== 1 || !row.message) return;
     var m = row.message;
     if (deletedIds.has(m.id) || m.was_deleted) {
-      row.opacity = 0.45;
-      m.opacity = 0.45;
+      row.opacity = 0.5;
+      m.opacity = 0.5;
       if (RN && RN.processColor) {
         m.textColor = RN.processColor("#80848e");
       }
       if (Array.isArray(m.attachments)) {
         for (var a = 0; a < m.attachments.length; a++) {
-          m.attachments[a].opacity = 0.45;
+          m.attachments[a].opacity = 0.4;
         }
       }
     }
@@ -258,11 +274,7 @@
       }
 
       // ── Handle message edits (MESSAGE_UPDATE) ──────────────────────────────
-      // Formats edited messages with:
-      // *Original Message*
-      // <original text>
-      // *Edited Message*
-      // <new edited text>
+      // Original message is dimmed / lower opacity (-# ), while the edited message stays bright
       if (type === "MESSAGE_UPDATE") {
         if (payload.otherPluginBypass) return orig.apply(this, args);
 
@@ -285,9 +297,10 @@
             if (baseOriginal && newEdited && baseOriginal !== newEdited) {
               editedIds.add(updateId);
 
+              // Original message dimmed with lower opacity, new edited message stays bright
               var combined =
-                "*Original Message*\n" +
-                baseOriginal +
+                "-# *Original Message*\n" +
+                makeDimmed(baseOriginal) +
                 "\n*Edited Message*\n" +
                 newEdited;
 

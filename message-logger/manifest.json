@@ -1,6 +1,6 @@
 {
   "name": "Message Logger",
-  "description": "Unedited deleted messages stay as-is with decreased opacity; edited deleted messages display *Original Message* and *Edited Message* with decreased opacity.",
+  "description": "Deleted messages and attachments stay visible with dimmed opacity/lower brightness, and edited messages show the original text dimmed while new text stays bright.",
   "authors": [
     {
       "name": "Kario"
@@ -10,5 +10,5 @@
   "vendetta": {
     "icon": "EyeIcon"
   },
-  "hash": "50566032c7f0673fa86326526a7d38756a9e601e271dcd0904e56a0c3b935946"
+  "hash": "5933f75a89975b1dbe12cfc7a716b16b6f119c206c7d7bf7d857355b1ca8f98a"
 }
