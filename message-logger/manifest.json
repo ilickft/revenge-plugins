@@ -1,1 +1,14 @@
-{"name": "Message Logger", "description": "Keeps deleted messages visible in chat with a \ud83d\uddd1\ufe0f prefix. No storage, no settings \u2014 just ghost messages.", "authors": [{"name": "Kario"}], "main": "index.js", "vendetta": {"icon": "EyeIcon"}, "hash": "db907394ccbdbee14d9e85edb78f6a31eb8120a32f918a2bbe76bfef8ae1c10d"}
+{
+  "name": "Message Logger",
+  "description": "Keeps deleted messages visible in chat using code blocks with faded attachments (no bin icon), and displays the original message on edits.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "EyeIcon"
+  },
+  "hash": "8f7e1d5d1900cf1869c249c01965ab39895aabe1cc2a52a58bfbac80d71b4ff9"
+}

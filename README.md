@@ -51,13 +51,14 @@ https://ilickft.github.io/revenge-plugins/soundboard-anywhere/
 
 ### 🕵️ message logger
 
-> see deleted and edited messages
+> ghost deleted messages and see original text on edits
 
-caches every message you see as it comes in. when one is deleted or edited, it's saved to persistent storage and you get a toast notification. open the plugin settings to browse the full history — deleted in red, edited in blue — with author, channel, and timestamp. clear logs any time.
+keeps deleted messages visible directly in chat wrapped in code blocks with faded attachments (no bin icons). when someone edits a message, shows the original message followed by the new edited message on a new line. works for your own messages too so they never disappear when deleted.
 
 ```
 https://ilickft.github.io/revenge-plugins/message-logger/
 ```
+
 
 ---
 
