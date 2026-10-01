@@ -3,8 +3,10 @@
 
   var findByStoreName = vendetta.metro.findByStoreName;
   var findByProps     = vendetta.metro.findByProps;
+  var findByName      = vendetta.metro.findByName;
   var instead         = vendetta.patcher.instead;
   var before          = vendetta.patcher.before;
+  var after           = vendetta.patcher.after;
   var FluxDispatcher  = vendetta.metro.common.FluxDispatcher;
   var RN              = vendetta.metro.common.ReactNative;
 
@@ -15,7 +17,7 @@
   var messageCache      = new Map();
   // Set of message IDs that have been deleted
   var deletedIds        = new Set();
-  // Map of message ID -> original text content before any edits
+  // Map of message ID -> clean original text content before any edits
   var firstOriginalText = new Map();
 
   function cloneMessage(msg) {
@@ -82,20 +84,25 @@
     return null;
   }
 
+  function formatFadedOriginal(text) {
+    if (typeof text !== "string" || !text) return "";
+    var clean = text.split("\n").map(function (l) {
+      return l.startsWith("-# ") ? l.substring(3) : l;
+    }).join("\n");
+
+    // Format with Discord's native subtext syntax (-# ), which decreases opacity and makes it muted/faded
+    return clean.split("\n").map(function (l) {
+      return "-# " + l;
+    }).join("\n");
+  }
+
   // ── Build ghost payload for deleted messages ─────────────────────────────
-  // Requirements:
-  // 1. "use code block for deleted text."
-  // 2. "when someone deletes an attachment it will just make the attachment fade
-  //     or decrease the oppacity of attachment inatead of adding a bin"
+  // As requested:
+  // "make the deleted message opacity decreased like attachment this way we don't hafta add anything"
+  // Keep original content and attachments as-is, with decreased opacity (0.45)
   function ghostPayload(msg, channelId) {
     var rawContent = msg.content || "";
-    var formattedContent = "";
 
-    if (rawContent) {
-      formattedContent = "```\n" + rawContent + "\n```";
-    }
-
-    // Keep attachments intact with reduced opacity (no bin icon)
     var attachments = [];
     if (msg.attachments && Array.isArray(msg.attachments)) {
       attachments = msg.attachments.map(function (att) {
@@ -113,7 +120,7 @@
       message: {
         id:              msg.id,
         channel_id:      chId,
-        content:         formattedContent,
+        content:         rawContent,
         author:          msg.author,
         timestamp:       msg.timestamp,
         editedTimestamp: null,
@@ -129,12 +136,30 @@
         state:           "SENT",
         optimistic:      false,
         was_deleted:     true,
+        opacity:         0.45,
       },
       optimistic:        false,
       sendMessageOptions: {},
       isPushNotification: false,
       otherPluginBypass: true,
     };
+  }
+
+  function applyFadedStyle(row) {
+    if (!row || row.type !== 1 || !row.message) return;
+    var m = row.message;
+    if (deletedIds.has(m.id) || m.was_deleted) {
+      row.opacity = 0.45;
+      m.opacity = 0.45;
+      if (RN && RN.processColor) {
+        m.textColor = RN.processColor("#80848e");
+      }
+      if (Array.isArray(m.attachments)) {
+        for (var a = 0; a < m.attachments.length; a++) {
+          m.attachments[a].opacity = 0.45;
+        }
+      }
+    }
   }
 
   // ── Native chat row styling: fade deleted messages and attachments ────────
@@ -149,15 +174,8 @@
             var modified = false;
 
             for (var i = 0; i < rows.length; i++) {
-              var row = rows[i];
-              var m = row && row.message;
-              if (m && deletedIds.has(m.id)) {
-                row.opacity = 0.45;
-                if (m.attachments && Array.isArray(m.attachments)) {
-                  for (var a = 0; a < m.attachments.length; a++) {
-                    m.attachments[a].opacity = 0.45;
-                  }
-                }
+              if (rows[i]?.type === 1 && rows[i]?.message && (deletedIds.has(rows[i].message.id) || rows[i].message.was_deleted)) {
+                applyFadedStyle(rows[i]);
                 modified = true;
               }
             }
@@ -166,6 +184,19 @@
               args[1] = JSON.stringify(rows);
             }
           } catch (e) {}
+        })
+      );
+    }
+  } catch (e) {}
+
+  try {
+    var RowManager = findByName("RowManager", false) || (findByProps("RowManager") && findByProps("RowManager").RowManager);
+    if (RowManager && RowManager.prototype && typeof RowManager.prototype.generate === "function") {
+      patches.push(
+        after("generate", RowManager.prototype, function (args, rowObj) {
+          var row = rowObj && (rowObj.row || rowObj);
+          if (row) applyFadedStyle(row);
+          return rowObj;
         })
       );
     }
@@ -191,8 +222,7 @@
       }
 
       // ── Handle message edits (MESSAGE_UPDATE) ──────────────────────────────
-      // Requirement: "when someone edits a message it will show original message
-      // then a new line for the edited new message."
+      // Requirement: "original message losses opacity and new edited message stays brighth"
       if (type === "MESSAGE_UPDATE") {
         if (payload.otherPluginBypass) return orig.apply(this, args);
 
@@ -203,21 +233,26 @@
         if (updateId && typeof updateMsg.content === "string") {
           var original = findMessage(updateChanId, updateId);
 
-          if (original && original.content && original.content !== updateMsg.content) {
-            // Keep the very first original text so multiple subsequent edits don't chain
+          if (original && original.content) {
             var baseOriginal = firstOriginalText.get(updateId);
             if (!baseOriginal) {
-              baseOriginal = original.content;
+              baseOriginal = original.content.split("\n").map(function (l) {
+                return l.startsWith("-# ") ? l.substring(3) : l;
+              }).join("\n");
               firstOriginalText.set(updateId, baseOriginal);
             }
 
-            // Original message, then a new line for the edited new message
-            var combined = baseOriginal + "\n" + updateMsg.content;
-            updateMsg.content = combined;
+            var newEdited = updateMsg.content;
+            if (baseOriginal && newEdited && baseOriginal !== newEdited) {
+              // Original message loses opacity via Discord's muted subtext (-# ),
+              // while the new edited message stays bright
+              var combined = formatFadedOriginal(baseOriginal) + "\n" + newEdited;
+              updateMsg.content = combined;
 
-            if (messageCache.has(updateId)) {
-              var c = messageCache.get(updateId);
-              c.content = combined;
+              if (messageCache.has(updateId)) {
+                var c = messageCache.get(updateId);
+                c.content = combined;
+              }
             }
           } else if (original && !original.content) {
             // Original had no text (e.g. attachment only)

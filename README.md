@@ -53,7 +53,7 @@ https://ilickft.github.io/revenge-plugins/soundboard-anywhere/
 
 > ghost deleted messages and see original text on edits
 
-keeps deleted messages visible directly in chat wrapped in code blocks with faded attachments (no bin icons). when someone edits a message, shows the original message followed by the new edited message on a new line. works for your own messages too so they never disappear when deleted.
+keeps deleted messages and attachments visible directly in chat with decreased opacity (no extra tags or trash bins added). when someone edits a message, the original text is displayed faded with reduced opacity while the new edited message stays bright right below it. works for your own messages too.
 
 ```
 https://ilickft.github.io/revenge-plugins/message-logger/

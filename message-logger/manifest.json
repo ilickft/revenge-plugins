@@ -1,6 +1,6 @@
 {
   "name": "Message Logger",
-  "description": "Keeps deleted messages visible in chat using code blocks with faded attachments (no bin icon), and displays the original message on edits.",
+  "description": "Keeps deleted messages and attachments visible in chat with decreased opacity (no extra tags), and shows original text faded while new edited text stays bright.",
   "authors": [
     {
       "name": "Kario"
@@ -10,5 +10,5 @@
   "vendetta": {
     "icon": "EyeIcon"
   },
-  "hash": "8f7e1d5d1900cf1869c249c01965ab39895aabe1cc2a52a58bfbac80d71b4ff9"
+  "hash": "91a4f4afbd7494694e047b7bc7592408ae98def1576aba9a82da9090a687bed2"
 }
