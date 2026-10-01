@@ -63,7 +63,7 @@
       if (MessageStore) {
         var m = (channelId && MessageStore.getMessage(channelId, id)) || MessageStore.getMessage(id);
         if (m) {
-          var cloned = cloneMessage(m);
+          var cloned = cloneMessage(m.toJS ? m.toJS() : m);
           cacheMessage(cloned);
           return cloned;
         }
@@ -77,7 +77,7 @@
         var chan = cm.get ? cm.get(channelId) : (cm._channelMessages && cm._channelMessages[channelId]);
         var m2 = chan && (chan.get ? chan.get(id) : (chan._array && chan._array.find(function (x) { return x.id === id; })));
         if (m2) {
-          var cloned2 = cloneMessage(m2);
+          var cloned2 = cloneMessage(m2.toJS ? m2.toJS() : m2);
           cacheMessage(cloned2);
           return cloned2;
         }
@@ -215,6 +215,64 @@
     }
   }
 
+  // ── Snapshot own messages when deleteMessage is called ───────────────────
+  try {
+    var MessageActions = findByProps("deleteMessage", "startEditMessage") || findByProps("deleteMessage");
+    if (MessageActions && typeof MessageActions.deleteMessage === "function") {
+      patches.push(
+        before("deleteMessage", MessageActions, function (args) {
+          var chId = args[0];
+          var mId = args[1];
+          if (mId) {
+            var m = findMessage(chId, mId);
+            if (m) cacheMessage(m);
+          }
+        })
+      );
+    }
+  } catch (e) {}
+
+  // ── Preserve was_deleted flag on MessageRecord records ────────────────────
+  try {
+    var MessageRecordModule = findByProps("updateMessageRecord", "createMessageRecord");
+    var MessageRecordClass  = findByName("MessageRecord", false);
+
+    if (MessageRecordModule && typeof MessageRecordModule.updateMessageRecord === "function") {
+      patches.push(
+        instead("updateMessageRecord", MessageRecordModule, function (args, origFn) {
+          var oldRecord = args[0];
+          var update = args[1];
+          if (update && (update.was_deleted || deletedIds.has(update.id))) {
+            return MessageRecordModule.createMessageRecord(update, oldRecord && oldRecord.reactions);
+          }
+          return origFn.apply(this, args);
+        })
+      );
+    }
+
+    if (MessageRecordModule && typeof MessageRecordModule.createMessageRecord === "function") {
+      patches.push(
+        after("createMessageRecord", MessageRecordModule, function (args, ret) {
+          if (args[0] && (args[0].was_deleted || deletedIds.has(args[0].id))) {
+            if (ret) ret.was_deleted = true;
+          }
+          return ret;
+        })
+      );
+    }
+
+    if (MessageRecordClass) {
+      patches.push(
+        after("default", MessageRecordClass, function (args, ret) {
+          if (args[0] && (args[0].was_deleted || deletedIds.has(args[0].id))) {
+            if (ret) ret.was_deleted = true;
+          }
+          return ret;
+        })
+      );
+    }
+  } catch (e) {}
+
   try {
     var DCDChatManager = RN && RN.NativeModules && RN.NativeModules.DCDChatManager;
     if (DCDChatManager && typeof DCDChatManager.updateRows === "function") {
@@ -246,8 +304,12 @@
     if (RowManager && RowManager.prototype && typeof RowManager.prototype.generate === "function") {
       patches.push(
         after("generate", RowManager.prototype, function (args, rowObj) {
+          var inputRow = args && args[0];
           var row = rowObj && (rowObj.row || rowObj);
-          if (row) applyFadedStyle(row);
+          var m = (inputRow && inputRow.message) || (row && row.message);
+          if (m && (deletedIds.has(m.id) || m.was_deleted)) {
+            if (row) applyFadedStyle(row);
+          }
           return rowObj;
         })
       );
@@ -327,13 +389,20 @@
         var id        = payload.id || payload.messageId || (payload.message && payload.message.id);
         var channelId = payload.channelId || payload.channel_id || (payload.message && payload.message.channel_id);
 
-        if (id && !deletedIds.has(id)) {
-          var msg = findMessage(channelId, id);
-          if (msg) {
-            deletedIds.add(id);
-            return orig.call(this, ghostPayload(msg, channelId));
-          }
+        if (!id) return orig.apply(this, args);
+
+        if (deletedIds.has(id)) {
+          // Already ghosted! Suppress duplicate/gateway confirmation so the message stays in chat.
+          return;
         }
+
+        var msg = findMessage(channelId, id);
+        if (msg) {
+          deletedIds.add(id);
+          return orig.call(this, ghostPayload(msg, channelId));
+        }
+
+        return orig.apply(this, args);
       }
 
       // ── Handle bulk delete (MESSAGE_DELETE_BULK) ───────────────────────────
