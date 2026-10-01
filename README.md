@@ -29,7 +29,7 @@ https://ilickft.github.io/revenge-plugins/no-embeds/
 
 > use emojis from any server, even without nitro
 
-patches discord's emoji picker to remove the nitro lock, letting you click any custom emoji. when you send, each `<:name:id>` gets swapped for its cdn image url so it shows as a small inline gif or png.
+patches discord's emoji picker to remove the nitro lock, letting you click any custom emoji. when you send, each `<:name:id>` gets formatted as `[text](cdn_url)` to embed the emoji. open the plugin settings to customize the link text to anything you want (e.g. `:)`, `{{name}}`, invisible characters, or any string).
 
 ```
 https://ilickft.github.io/revenge-plugins/emoji-anywhere/
