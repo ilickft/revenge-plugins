@@ -2,7 +2,7 @@
 
 # revenge plugins
 
-a small collection of plugins for [Revenge](https://github.com/revenge-mod/revenge-bundle) — the mobile Discord client mod
+a collection of plugins for [Revenge](https://github.com/revenge-mod/revenge-bundle) — the mobile Discord client mod
 
 [![platform](https://img.shields.io/badge/platform-Revenge-5865F2?style=flat-square&logo=discord&logoColor=white)](https://github.com/revenge-mod/revenge-bundle)
 [![last commit](https://img.shields.io/github/last-commit/ilickft/revenge-plugins?style=flat-square&color=5865F2)](https://github.com/ilickft/revenge-plugins/commits/main)
@@ -17,7 +17,7 @@ a small collection of plugins for [Revenge](https://github.com/revenge-mod/reven
 
 > suppress link previews on every message you send
 
-wraps every `http(s)` url in `<angle brackets>` before it leaves your client — discord's own syntax for hiding embed previews. recipients still see a normal clickable link, just without the big preview card below it. skips links inside code blocks and links already wrapped.
+wraps every `http(s)` url in `<angle brackets>` before it leaves your client — discord's own syntax for hiding embed previews. recipients still see a normal clickable link, just no preview card. skips links inside code blocks and ones already wrapped.
 
 ```
 https://ilickft.github.io/revenge-plugins/no-embeds/
@@ -29,7 +29,7 @@ https://ilickft.github.io/revenge-plugins/no-embeds/
 
 > use emojis from any server, even without nitro
 
-patches discord's emoji picker to remove the nitro lock, letting you click any custom emoji. when you send, each `<:name:id>` gets swapped for its cdn image url so it displays as a small inline gif or png — close enough to the real thing. skips emojis inside code blocks.
+patches discord's emoji picker to remove the nitro lock, letting you click any custom emoji. when you send, each `<:name:id>` gets swapped for its cdn image url so it shows as a small inline gif or png.
 
 ```
 https://ilickft.github.io/revenge-plugins/emoji-anywhere/
@@ -37,9 +37,33 @@ https://ilickft.github.io/revenge-plugins/emoji-anywhere/
 
 ---
 
+### 🔊 soundboard anywhere
+
+> use soundboard sounds from any server, even without nitro
+
+patches every discord function that gates soundboard sounds behind nitro or server membership — same approach as emoji anywhere. open the soundboard, pick any sound, it plays.
+
+```
+https://ilickft.github.io/revenge-plugins/soundboard-anywhere/
+```
+
+---
+
+### 🕵️ message logger
+
+> see deleted and edited messages
+
+caches every message you see as it comes in. when one is deleted or edited, it's saved to persistent storage and you get a toast notification. open the plugin settings to browse the full history — deleted in red, edited in blue — with author, channel, and timestamp. clear logs any time.
+
+```
+https://ilickft.github.io/revenge-plugins/message-logger/
+```
+
+---
+
 ## installation
 
-open Revenge → **Settings → Plugins → `+`** → paste the url of the plugin you want.
+open Revenge → **Settings → Plugins → `+`** → paste the plugin url.
 
 ---
 
