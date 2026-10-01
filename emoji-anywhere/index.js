@@ -43,7 +43,7 @@
   function emojiToUrl(_, animated, _name, id) {
     var ext = animated === "a" ? "gif" : "png";
     var url = "https://cdn.discordapp.com/emojis/" + id + "." + ext + "?size=48&quality=lossless";
-    return "[\u3164](" + url + ")";
+    return "[:)](" + url + ")";
   }
 
   function replaceEmojis(text) {
