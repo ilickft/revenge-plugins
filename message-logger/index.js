@@ -3,56 +3,24 @@
 
   var findByStoreName = vendetta.metro.findByStoreName;
   var findByProps     = vendetta.metro.findByProps;
-  var instead         = vendetta.patcher.instead;
   var before          = vendetta.patcher.before;
   var FluxDispatcher  = vendetta.metro.common.FluxDispatcher;
 
-  var MessageStore = findByStoreName("MessageStore") || findByProps("getMessage", "getMessages");
-  var patches      = [];
+  var MessageStore    = findByStoreName("MessageStore") || findByProps("getMessage", "getMessages");
+  var ChannelStore    = findByStoreName("ChannelStore") || findByProps("getChannel", "getDMFromUserId");
+  var ChannelMessages = findByProps("_channelMessages");
+  var MessageActions  = findByProps("startEditMessage");
 
-  // Memory cache of recent messages so we never lose self-deleted or fast-deleted messages
-  var messageCache      = new Map();
-  // Set of message IDs that have been deleted
-  var deletedIds        = new Set();
-  // Set of message IDs that have been edited
-  var editedIds         = new Set();
+  var patches = [];
+
   // Map of message ID -> clean original text content before any edits
   var firstOriginalText = new Map();
-
-  function cloneMessage(msg) {
-    if (!msg || !msg.id) return null;
-    var author = msg.author;
-    if (author && typeof author.toJS === "function") {
-      try { author = author.toJS(); } catch (e) {}
-    }
-    var attachments = [];
-    var rawAtts = msg.attachments;
-    if (rawAtts && typeof rawAtts.toJS === "function") {
-      try { rawAtts = rawAtts.toJS(); } catch (e) {}
-    }
-    if (Array.isArray(rawAtts)) {
-      attachments = rawAtts.slice();
-    } else if (rawAtts && typeof rawAtts.forEach === "function") {
-      try {
-        rawAtts.forEach(function (a) { attachments.push(a); });
-      } catch (e) {}
-    }
-    return {
-      id:            msg.id,
-      channel_id:    msg.channel_id || msg.channelId,
-      content:       typeof msg.content === "string" ? msg.content : "",
-      author:        author,
-      timestamp:     msg.timestamp,
-      attachments:   attachments,
-      embeds:        Array.isArray(msg.embeds) ? msg.embeds.slice() : [],
-      mentions:      msg.mentions || [],
-      mention_roles: msg.mention_roles || msg.mentionRoles || [],
-      flags:         msg.flags || 0,
-      type:          msg.type || 0,
-      state:         "SENT",
-      is_edited:     Boolean(msg.is_edited),
-    };
-  }
+  // Set of message IDs that have been edited
+  var editedIds = new Set();
+  // Map of message ID -> { payload: args, stage: 1 | 2 }
+  var deletedMessages = new Map();
+  // Local cache of recently seen messages
+  var messageCache = new Map();
 
   function cacheMessage(msg) {
     if (!msg || !msg.id) return;
@@ -60,47 +28,38 @@
       var oldest = messageCache.keys().next().value;
       if (oldest) messageCache.delete(oldest);
     }
-    messageCache.set(msg.id, cloneMessage(msg));
+    messageCache.set(msg.id, msg);
   }
 
-  function findMessage(channelId, id) {
-    if (!id) return null;
+  function getOriginalMessage(channelId, messageId) {
+    if (!messageId) return null;
 
-    // 1. Check local cache first (works even when user deletes their own message)
-    if (messageCache.has(id)) {
-      return messageCache.get(id);
+    // 1. Check MessageStore
+    try {
+      if (MessageStore && typeof MessageStore.getMessage === "function") {
+        var m = (channelId && MessageStore.getMessage(channelId, messageId)) || MessageStore.getMessage(messageId);
+        if (m && m.id) return m;
+      }
+    } catch (e) {}
+
+    // 2. Check ChannelMessages
+    try {
+      if (ChannelMessages && channelId) {
+        var chan = ChannelMessages.get ? ChannelMessages.get(channelId) : (ChannelMessages._channelMessages && ChannelMessages._channelMessages[channelId]);
+        var m2 = chan && (chan.get ? chan.get(messageId) : (chan._array && chan._array.find(function (x) { return x.id === messageId; })));
+        if (m2 && m2.id) return m2;
+      }
+    } catch (e) {}
+
+    // 3. Check local messageCache
+    if (messageCache.has(messageId)) {
+      return messageCache.get(messageId);
     }
-
-    // 2. Check MessageStore
-    try {
-      if (MessageStore) {
-        var m = (channelId && MessageStore.getMessage(channelId, id)) || MessageStore.getMessage(id);
-        if (m) {
-          var cloned = cloneMessage(m.toJS ? m.toJS() : m);
-          cacheMessage(cloned);
-          return cloned;
-        }
-      }
-    } catch (e) {}
-
-    // 3. Check ChannelMessages
-    try {
-      var cm = findByProps("_channelMessages");
-      if (cm && channelId) {
-        var chan = cm.get ? cm.get(channelId) : (cm._channelMessages && cm._channelMessages[channelId]);
-        var m2 = chan && (chan.get ? chan.get(id) : (chan._array && chan._array.find(function (x) { return x.id === id; })));
-        if (m2) {
-          var cloned2 = cloneMessage(m2.toJS ? m2.toJS() : m2);
-          cacheMessage(cloned2);
-          return cloned2;
-        }
-      }
-    } catch (e) {}
 
     return null;
   }
 
-  // Discord's subtext syntax (-# ) natively renders text dimmed with lower opacity / muted color
+  // Discord subtext markdown syntax (-# ) natively renders text dimmed with lower opacity / muted color
   function makeDimmed(text) {
     if (typeof text !== "string" || !text) return "";
     return text.split("\n").map(function (line) {
@@ -138,226 +97,248 @@
     return clean;
   }
 
-  // ── Build ghost payload for deleted messages ─────────────────────────────
-  // Makes text lower opacity / less bright via Discord's muted subtext (-# )
-  // and keeps attachments with decreased opacity (0.4)
-  function ghostPayload(msg, channelId) {
-    var rawContent = msg.content || "";
-    var contentToSend = "";
-
-    var isEdited = editedIds.has(msg.id) || firstOriginalText.has(msg.id) || msg.is_edited;
-    if (isEdited) {
-      var baseOriginal = firstOriginalText.get(msg.id);
-      if (baseOriginal) {
-        var cleanEdited = extractCleanEdited(rawContent);
-        if (cleanEdited && cleanEdited !== baseOriginal) {
-          // Both original and edited headers/content dimmed for deleted edited message
-          contentToSend =
-            "-# *Original Message*\n" +
-            makeDimmed(baseOriginal) +
-            "\n-# *Edited Message*\n" +
-            makeDimmed(cleanEdited);
-        } else {
-          contentToSend = makeDimmed(baseOriginal);
-        }
-      } else {
-        contentToSend = makeDimmed(rawContent);
-      }
-    } else {
-      // Normal unedited deleted message: stays as it was, but dimmed to lower opacity
-      contentToSend = makeDimmed(rawContent);
-    }
-
-    var attachments = [];
-    if (msg.attachments && Array.isArray(msg.attachments)) {
-      attachments = msg.attachments.map(function (att) {
-        var copy = Object.assign({}, att);
-        copy.opacity = 0.4;
-        return copy;
-      });
-    }
-
-    var chId = msg.channel_id || channelId;
-
-    return {
-      type: "MESSAGE_UPDATE",
-      channelId: chId,
-      message: {
-        id:              msg.id,
-        channel_id:      chId,
-        content:         contentToSend,
-        author:          msg.author,
-        timestamp:       msg.timestamp,
-        editedTimestamp: null,
-        embeds:          msg.embeds || [],
-        attachments:     attachments,
-        mentions:        msg.mentions || [],
-        mention_roles:   msg.mention_roles || msg.mentionRoles || [],
-        mention_everyone: false,
-        pinned:          false,
-        tts:             false,
-        type:            msg.type || 0,
-        flags:           msg.flags || 0,
-        state:           "SENT",
-        optimistic:      false,
-        was_deleted:     true,
-      },
-      optimistic:        false,
-      sendMessageOptions: {},
-      isPushNotification: false,
-      otherPluginBypass: true,
-    };
-  }
-
-  // ── Snapshot own messages before deleteMessage runs ───────────────────────
+  // When editing an edited message, strip the [Original Message] headers so the user only edits their latest text
   try {
-    var MessageActions = findByProps("deleteMessage", "startEditMessage") || findByProps("deleteMessage");
-    if (MessageActions && typeof MessageActions.deleteMessage === "function") {
+    if (MessageActions && typeof MessageActions.startEditMessage === "function") {
       patches.push(
-        before("deleteMessage", MessageActions, function (args) {
+        before("startEditMessage", MessageActions, function (args) {
           try {
-            var chId = args && args[0];
-            var mId = args && args[1];
-            if (mId) {
-              var m = findMessage(chId, mId);
-              if (m) cacheMessage(m);
+            var msgText = args && args[2];
+            if (typeof msgText === "string") {
+              args[2] = extractCleanEdited(msgText);
             }
           } catch (e) {}
+          return args;
         })
       );
     }
   } catch (e) {}
 
-  // ── Dispatch interceptor ──────────────────────────────────────────────────
+  // ── Core Flux Dispatch patch ──────────────────────────────────────────────
+  // Uses a pure before hook on FluxDispatcher to safely transform actions in-place
+  // without dropping dispatches, throwing unhandled exceptions, or crashing React Native/WebRTC.
   patches.push(
-    instead("dispatch", FluxDispatcher, function (args, orig) {
+    before("dispatch", FluxDispatcher, function (args) {
       try {
-        var payload = args && args[0];
-        if (!payload) return orig.apply(this, args);
+        var event = args && args[0];
+        if (!event || !event.type) return args;
 
-        var type = payload.type;
+        var type = event.type;
 
-        // ── Cache messages on arrival ──────────────────────────────────────────
+        // ── Cache messages on arrival ────────────────────────────────────────
         if (type === "MESSAGE_CREATE" || type === "LOCAL_MESSAGE_CREATE") {
-          if (payload.message) cacheMessage(payload.message);
+          if (event.message) cacheMessage(event.message);
         }
 
-        if (type === "LOAD_MESSAGES_SUCCESS" && Array.isArray(payload.messages)) {
-          for (var k = 0; k < payload.messages.length; k++) {
-            cacheMessage(payload.messages[k]);
+        if (type === "LOAD_MESSAGES_SUCCESS" && Array.isArray(event.messages)) {
+          for (var k = 0; k < event.messages.length; k++) {
+            cacheMessage(event.messages[k]);
           }
         }
 
-        // ── Handle message edits (MESSAGE_UPDATE) ──────────────────────────────
-        // Original message is dimmed / lower opacity (-# ), while the edited message stays bright
+        // ── Handle message edits (MESSAGE_UPDATE) ────────────────────────────
         if (type === "MESSAGE_UPDATE") {
-          if (payload.otherPluginBypass) return orig.apply(this, args);
+          if (event.otherPluginBypass) return args;
 
-          var updateMsg = payload.message || payload;
-          var updateId = updateMsg.id || payload.id;
-          var updateChanId = updateMsg.channel_id || payload.channelId || payload.channel_id;
+          var updateMsg = event.message || event;
+          var updateId = updateMsg.id || event.id;
+          var updateChanId = updateMsg.channel_id || event.channelId || event.channel_id;
 
-          if (updateId && typeof updateMsg.content === "string") {
-            var original = findMessage(updateChanId, updateId);
+          if (!updateId || typeof updateMsg.content !== "string") return args;
 
-            if (original && original.content) {
-              var baseOriginal = firstOriginalText.get(updateId);
-              if (!baseOriginal) {
-                baseOriginal = extractCleanOriginal(original.content);
-                firstOriginalText.set(updateId, baseOriginal);
-              }
+          var original = getOriginalMessage(updateChanId, updateId);
+          if (!original) return args;
 
-              var newEdited = extractCleanEdited(updateMsg.content);
+          var origContent = typeof original.content === "string" ? original.content : "";
+          if (!origContent || updateMsg.content === origContent) return args;
 
-              if (baseOriginal && newEdited && baseOriginal !== newEdited) {
-                editedIds.add(updateId);
+          // Check if this update is just an embed expanding (not a real text edit)
+          var embeds = updateMsg.embeds || event.embeds;
+          if (Array.isArray(embeds)) {
+            var isEmbedOnly = embeds.some(function (emb) {
+              return emb && (emb.url === origContent || (origContent && origContent.indexOf(emb.url) !== -1));
+            });
+            if (isEmbedOnly) return args;
+          }
 
-                // Original message dimmed with lower opacity, new edited message stays bright
-                var combined =
-                  "-# *Original Message*\n" +
-                  makeDimmed(baseOriginal) +
-                  "\n*Edited Message*\n" +
-                  newEdited;
+          var baseOriginal = firstOriginalText.get(updateId);
+          if (!baseOriginal) {
+            baseOriginal = extractCleanOriginal(origContent);
+            firstOriginalText.set(updateId, baseOriginal);
+          }
 
-                updateMsg.content = combined;
+          var newEdited = extractCleanEdited(updateMsg.content);
 
-                if (messageCache.has(updateId)) {
-                  var c = messageCache.get(updateId);
-                  c.content = combined;
-                  c.is_edited = true;
-                }
-              }
-            } else if (original && !original.content) {
-              if (messageCache.has(updateId)) {
-                messageCache.get(updateId).content = updateMsg.content;
-              }
+          if (baseOriginal && newEdited && baseOriginal !== newEdited) {
+            editedIds.add(updateId);
+
+            var combined =
+              "-# *Original Message*\n" +
+              makeDimmed(baseOriginal) +
+              "\n*Edited Message*\n" +
+              newEdited;
+
+            var guildId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(updateChanId) && ChannelStore.getChannel(updateChanId).guild_id) || original.guild_id || updateMsg.guild_id;
+
+            args[0] = {
+              type: "MESSAGE_UPDATE",
+              channelId: updateChanId,
+              message: Object.assign({}, original, updateMsg, {
+                content: combined,
+                guild_id: guildId,
+                edited_timestamp: "invalid_timestamp",
+              }),
+              otherPluginBypass: true,
+            };
+
+            if (messageCache.has(updateId)) {
+              var c = messageCache.get(updateId);
+              if (c) c.content = combined;
             }
           }
 
-          return orig.apply(this, args);
+          return args;
         }
 
-        // ── Handle single delete (MESSAGE_DELETE) ──────────────────────────────
+        // ── Handle single delete (MESSAGE_DELETE) ────────────────────────────
         if (type === "MESSAGE_DELETE") {
-          var id        = payload.id || payload.messageId || (payload.message && payload.message.id);
-          var channelId = payload.channelId || payload.channel_id || (payload.message && payload.message.channel_id);
+          if (event.otherPluginBypass) return args;
 
-          if (!id) return orig.apply(this, args);
+          var id = event.id || event.messageId || (event.message && event.message.id);
+          var channelId = event.channelId || event.channel_id || (event.message && event.message.channel_id);
 
-          if (deletedIds.has(id)) {
-            // Already ghosted! Suppress duplicate/gateway confirmation so the message stays in chat.
-            return;
+          if (!id) return args;
+
+          // Stage 2: Gateway confirmation of a delete we already ghosted locally
+          if (deletedMessages.has(id)) {
+            var entry = deletedMessages.get(id);
+            if (entry && entry.stage === 1) {
+              entry.stage = 2;
+              args[0] = entry.payload;
+              return args;
+            }
+            if (entry && entry.stage === 2) {
+              // Both local and gateway phases complete; return safe update payload
+              args[0] = entry.payload;
+              return args;
+            }
+            return args;
           }
 
-          var msg = findMessage(channelId, id);
-          if (msg) {
-            deletedIds.add(id);
-            if (deletedIds.size > 2000) {
-              var oldestId = deletedIds.values().next().value;
-              if (oldestId) deletedIds.delete(oldestId);
+          var originalMessage = getOriginalMessage(channelId, id);
+          if (!originalMessage) return args;
+
+          var rawContent = typeof originalMessage.content === "string" ? originalMessage.content : "";
+          var contentToSend = "";
+
+          var isEdited = editedIds.has(id) || firstOriginalText.has(id) || originalMessage.is_edited;
+          if (isEdited) {
+            var baseOrig = firstOriginalText.get(id);
+            if (baseOrig) {
+              var cleanEd = extractCleanEdited(rawContent);
+              if (cleanEd && cleanEd !== baseOrig) {
+                contentToSend =
+                  "-# *Original Message*\n" +
+                  makeDimmed(baseOrig) +
+                  "\n-# *Edited Message*\n" +
+                  makeDimmed(cleanEd);
+              } else {
+                contentToSend = makeDimmed(baseOrig);
+              }
+            } else {
+              contentToSend = makeDimmed(rawContent);
             }
-            try {
-              return orig.call(this, ghostPayload(msg, channelId));
-            } catch (err) {
-              return orig.apply(this, args);
-            }
+          } else {
+            contentToSend = makeDimmed(rawContent);
           }
 
-          return orig.apply(this, args);
+          var attachments = [];
+          if (Array.isArray(originalMessage.attachments)) {
+            attachments = originalMessage.attachments.map(function (att) {
+              var copy = Object.assign({}, att);
+              copy.opacity = 0.4;
+              return copy;
+            });
+          }
+
+          var chId = originalMessage.channel_id || channelId;
+          var gId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(chId) && ChannelStore.getChannel(chId).guild_id) || originalMessage.guild_id;
+
+          var ghostMsg = Object.assign({}, originalMessage, {
+            content: contentToSend,
+            channel_id: chId,
+            guild_id: gId,
+            type: originalMessage.type || 0,
+            flags: originalMessage.flags || 0,
+            state: "SENT",
+            was_deleted: true,
+          });
+
+          if (attachments.length > 0) {
+            ghostMsg.attachments = attachments;
+          }
+
+          var ghostAction = {
+            type: "MESSAGE_UPDATE",
+            channelId: chId,
+            message: ghostMsg,
+            optimistic: false,
+            sendMessageOptions: {},
+            isPushNotification: false,
+            otherPluginBypass: true,
+          };
+
+          deletedMessages.set(id, {
+            payload: ghostAction,
+            stage: 1,
+          });
+
+          if (deletedMessages.size > 2000) {
+            var oldestKey = deletedMessages.keys().next().value;
+            if (oldestKey) deletedMessages.delete(oldestKey);
+          }
+
+          args[0] = ghostAction;
+          return args;
         }
 
-        // ── Handle bulk delete (MESSAGE_DELETE_BULK) ───────────────────────────
+        // ── Handle bulk delete (MESSAGE_DELETE_BULK) ─────────────────────────
         if (type === "MESSAGE_DELETE_BULK") {
-          var ids       = payload.ids || [];
-          var chId      = payload.channelId || payload.channel_id;
-          var toRestore = [];
+          var ids = event.ids || [];
+          var bChannelId = event.channelId || event.channel_id;
 
-          for (var b = 0; b < ids.length; b++) {
-            var bId = ids[b];
-            if (!deletedIds.has(bId)) {
-              var bMsg = findMessage(chId, bId);
-              if (bMsg) {
-                deletedIds.add(bId);
-                toRestore.push(bMsg);
+          if (Array.isArray(ids) && ids.length > 0) {
+            // Transform bulk delete by pre-ghosting each message in deletedMessages
+            for (var b = 0; b < ids.length; b++) {
+              var bId = ids[b];
+              var bMsg = getOriginalMessage(bChannelId, bId);
+              if (bMsg && !deletedMessages.has(bId)) {
+                var bRawContent = typeof bMsg.content === "string" ? bMsg.content : "";
+                var bGhost = Object.assign({}, bMsg, {
+                  content: makeDimmed(bRawContent),
+                  channel_id: bMsg.channel_id || bChannelId,
+                  state: "SENT",
+                  was_deleted: true,
+                });
+                deletedMessages.set(bId, {
+                  payload: {
+                    type: "MESSAGE_UPDATE",
+                    channelId: bChannelId,
+                    message: bGhost,
+                    optimistic: false,
+                    otherPluginBypass: true,
+                  },
+                  stage: 2,
+                });
               }
             }
           }
-
-          // Run bulk delete first
-          orig.apply(this, args);
-
-          // Re-inject each message as ghost
-          for (var j = 0; j < toRestore.length; j++) {
-            try {
-              orig.call(this, ghostPayload(toRestore[j], chId));
-            } catch (err2) {}
-          }
-          return;
+          return args;
         }
 
-        return orig.apply(this, args);
-      } catch (globalErr) {
-        return orig.apply(this, args);
+        return args;
+      } catch (err) {
+        return args;
       }
     })
   );
@@ -365,10 +346,10 @@
   return {
     onLoad: function () {},
     onUnload: function () {
-      deletedIds.clear();
-      editedIds.clear();
-      messageCache.clear();
       firstOriginalText.clear();
+      editedIds.clear();
+      deletedMessages.clear();
+      messageCache.clear();
       for (var i = 0; i < patches.length; i++) {
         try { patches[i](); } catch (e) {}
       }
