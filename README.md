@@ -121,6 +121,18 @@ https://ilickft.github.io/revenge-plugins/discordo/
 
 ---
 
+### 🛡️ shadow-ban
+
+> disappear any user from DMs, chats, voice channels, and everywhere
+
+shadow ban users so they completely vanish from your client. blocks messages and edits, wipes them from voice channel lists, mutes their incoming voice audio to 0%, hides 1-on-1 direct messages, and strips them from server member sidebars and typing indicators. manage shadow-banned users via `/sban`, `/unsban`, message long-press menu, or the built-in plugin settings dashboard.
+
+```
+https://ilickft.github.io/revenge-plugins/shadow-ban/
+```
+
+---
+
 
 ## installation
 

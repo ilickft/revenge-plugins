@@ -1,0 +1,14 @@
+{
+  "name": "Shadow Ban",
+  "description": "Shadow ban users so they completely disappear from DMs, all chats, voice channels, and everywhere. Unban via /unsban or from plugin settings.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "ic_person_off_24px"
+  },
+  "hash": "ec6261bed33c8fd71807f159082967c3deea04a93111653d3c6ae0bb28e39515"
+}
