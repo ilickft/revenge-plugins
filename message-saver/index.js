@@ -36,6 +36,30 @@
     } catch (e) {}
   }
 
+  function getAuthToken() {
+    try {
+      if (TokenModule && typeof TokenModule.getToken === "function") {
+        var t = TokenModule.getToken();
+        if (t) return t;
+      }
+    } catch (e) {}
+    try {
+      var auth = findByProps("getToken", "getFingerprint");
+      if (auth && typeof auth.getToken === "function") {
+        var t2 = auth.getToken();
+        if (t2) return t2;
+      }
+    } catch (e) {}
+    try {
+      var rawStore = findByStoreName("AuthenticationStore");
+      if (rawStore && typeof rawStore.getToken === "function") {
+        var t3 = rawStore.getToken();
+        if (t3) return t3;
+      }
+    } catch (e) {}
+    return null;
+  }
+
   function findInReactTree(tree, filter) {
     if (vendetta.utils && typeof vendetta.utils.findInReactTree === "function") {
       try {
@@ -67,39 +91,160 @@
     })(tree);
   }
 
-  function saveMessageObject(msg, customName) {
-    if (!msg) return null;
-
-    var id = msg.id || String(Date.now());
-    var content = typeof msg.content === "string" ? msg.content : "";
-
+  function extractAttachments(rawMsg) {
     var attachments = [];
-    if (Array.isArray(msg.attachments)) {
-      for (var i = 0; i < msg.attachments.length; i++) {
-        var att = msg.attachments[i];
-        if (att) {
-          var url = att.url || att.proxy_url;
-          if (url) {
-            attachments.push({
-              url: url,
-              filename: att.filename || "attachment",
-              content_type: att.content_type || "",
-              size: att.size || 0
-            });
-          }
+    if (!rawMsg) return attachments;
+
+    var rawAtts = rawMsg.attachments;
+    if (rawAtts && typeof rawAtts.toJS === "function") {
+      try { rawAtts = rawAtts.toJS(); } catch (e) {}
+    }
+
+    var list = [];
+    if (Array.isArray(rawAtts)) {
+      list = rawAtts;
+    } else if (rawAtts && typeof rawAtts.forEach === "function") {
+      rawAtts.forEach(function (item) { list.push(item); });
+    } else if (rawAtts && typeof rawAtts.toArray === "function") {
+      try { list = rawAtts.toArray(); } catch (e) {}
+    } else if (rawAtts && typeof rawAtts === "object") {
+      var keys = Object.keys(rawAtts);
+      for (var k = 0; k < keys.length; k++) {
+        var val = rawAtts[keys[k]];
+        if (val && (typeof val === "object" || typeof val === "string")) {
+          list.push(val);
         }
       }
     }
 
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      if (a && typeof a.toJS === "function") {
+        try { a = a.toJS(); } catch (e) {}
+      }
+      if (typeof a === "string" && (a.startsWith("http://") || a.startsWith("https://"))) {
+        attachments.push({
+          url: a,
+          filename: a.split("/").pop().split("?")[0] || "attachment",
+          content_type: "",
+          size: 0,
+          duration_secs: null,
+          waveform: null,
+          flags: 0,
+        });
+      } else if (a && typeof a === "object") {
+        var url = a.url || a.proxy_url || a.proxyUrl || a.uri || a.src || (a.source && a.source.uri);
+        if (url) {
+          attachments.push({
+            url: url,
+            filename: a.filename || a.name || (url.split("/").pop().split("?")[0]) || "attachment",
+            content_type: a.content_type || a.contentType || a.mime_type || "",
+            size: a.size || 0,
+            duration_secs: a.duration_secs || a.durationSecs || null,
+            waveform: a.waveform || null,
+            flags: a.flags || 0,
+          });
+        }
+      }
+    }
+
+    // Capture stickers if present
+    var rawStickers = rawMsg.sticker_items || rawMsg.stickers;
+    if (rawStickers && typeof rawStickers.toJS === "function") {
+      try { rawStickers = rawStickers.toJS(); } catch (e) {}
+    }
+    if (Array.isArray(rawStickers) && rawStickers.length > 0) {
+      for (var s = 0; s < rawStickers.length; s++) {
+        var st = rawStickers[s];
+        if (st && st.id) {
+          var ext = (st.format_type === 4) ? "gif" : "png";
+          attachments.push({
+            url: "https://media.discordapp.net/stickers/" + st.id + "." + ext + "?size=160",
+            filename: (st.name || "sticker") + "." + ext,
+            content_type: "image/" + ext,
+            size: 0,
+            duration_secs: null,
+            waveform: null,
+            flags: 0,
+          });
+        }
+      }
+    }
+
+    return attachments;
+  }
+
+  function saveMessageObject(rawMsg, customName, fallbackChannelId) {
+    if (!rawMsg) return null;
+
+    var msg = (rawMsg && typeof rawMsg.toJS === "function") ? rawMsg.toJS() : rawMsg;
+    var id = msg.id || String(Date.now());
+    var chanId = msg.channel_id || msg.channelId || fallbackChannelId || getActiveChannelId();
+
+    var attachments = extractAttachments(msg);
+
+    // If attachments is empty, try looking up in MessageStore or _channelMessages
+    if (attachments.length === 0 && id) {
+      try {
+        var stored = null;
+        if (MessageStore && chanId && typeof MessageStore.getMessage === "function") {
+          stored = MessageStore.getMessage(chanId, id);
+        }
+        if (!stored && MessageStore && typeof MessageStore.getMessage === "function") {
+          stored = MessageStore.getMessage(id);
+        }
+        if (!stored && chanId) {
+          var cm = findByProps("_channelMessages");
+          if (cm) {
+            var chan = cm.get ? cm.get(chanId) : (cm._channelMessages && cm._channelMessages[chanId]);
+            stored = chan && (chan.get ? chan.get(id) : (chan._array && chan._array.find(function (x) { return x.id === id; })));
+          }
+        }
+        if (stored) {
+          var storedMsg = (typeof stored.toJS === "function") ? stored.toJS() : stored;
+          var storedAtts = extractAttachments(storedMsg);
+          if (storedAtts.length > 0) {
+            attachments = storedAtts;
+          }
+          if (!msg.content && storedMsg.content) msg.content = storedMsg.content;
+          if (!msg.author && storedMsg.author) msg.author = storedMsg.author;
+          if (!msg.flags && storedMsg.flags) msg.flags = storedMsg.flags;
+        }
+      } catch (e) {}
+    }
+
+    var content = typeof msg.content === "string" ? msg.content : "";
+    var isVoice = Boolean(
+      (msg.flags && (msg.flags & 8192)) ||
+      (attachments[0] && (
+        attachments[0].duration_secs ||
+        attachments[0].waveform ||
+        (attachments[0].content_type && attachments[0].content_type.indexOf("audio") === 0) ||
+        (attachments[0].filename && (
+          attachments[0].filename.indexOf("voice-message") !== -1 ||
+          attachments[0].filename.endsWith(".ogg") ||
+          attachments[0].filename.endsWith(".opus")
+        ))
+      ))
+    );
+
     var author = msg.author || {};
-    var authorName = author.username || "Unknown";
+    var authorName = author.global_name || author.username || "Unknown";
     if (author.discriminator && author.discriminator !== "0") {
       authorName += "#" + author.discriminator;
     }
 
-    var defaultName = content
-      ? content.slice(0, 30).replace(/[\n\r]+/g, " ")
-      : (attachments[0] ? attachments[0].filename : "Message " + id.slice(-4));
+    var defaultName;
+    if (isVoice) {
+      var dur = attachments[0] && attachments[0].duration_secs;
+      defaultName = dur ? "Voice Message (" + Math.round(dur) + "s)" : "Voice Message";
+    } else if (content) {
+      defaultName = content.slice(0, 30).replace(/[\n\r]+/g, " ");
+    } else if (attachments[0] && attachments[0].filename) {
+      defaultName = attachments[0].filename;
+    } else {
+      defaultName = "Message " + id.slice(-4);
+    }
 
     var name = (customName && customName.trim()) ? customName.trim() : defaultName;
 
@@ -110,13 +255,20 @@
       attachments: attachments,
       authorName: authorName,
       authorId: author.id || "",
+      isVoice: isVoice,
       savedAt: Date.now(),
     };
 
     if (!Array.isArray(storage.saved)) storage.saved = [];
 
+    // If customName was provided, match and update by that exact name.
+    // If no customName was provided, match by message id only for default-named saves.
+    var trimmedName = (customName && customName.trim().toLowerCase()) || null;
     var existingIndex = storage.saved.findIndex(function (x) {
-      return x.id === id || (customName && x.name.toLowerCase() === customName.toLowerCase());
+      if (trimmedName) {
+        return x.name && x.name.toLowerCase() === trimmedName;
+      }
+      return x.id === id && (!x.name || x.name === defaultName);
     });
 
     if (existingIndex !== -1) {
@@ -138,7 +290,9 @@
       for (var i = 0; i < item.attachments.length; i++) {
         var att = item.attachments[i];
         var url = typeof att === "string" ? att : (att && att.url);
-        if (url) parts.push(url);
+        if (url && parts.indexOf(url) === -1) {
+          parts.push(url);
+        }
       }
     }
     return parts.join("\n");
@@ -147,33 +301,39 @@
   function sendMessageToChannel(channelId, content) {
     if (!channelId || !content) return Promise.reject(new Error("Missing channel or content"));
 
-    // Method 1: Discord internal Messages.sendMessage
+    var token = getAuthToken();
+    if (token) {
+      return fetch("https://discord.com/api/v9/channels/" + channelId + "/messages", {
+        method: "POST",
+        headers: {
+          "Authorization": token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ content: content })
+      }).then(function (res) {
+        if (!res.ok) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            var errMsg = (data && (data.message || (data.content && data.content[0]))) || ("Discord HTTP " + res.status);
+            throw new Error(errMsg);
+          });
+        }
+        return res.json().catch(function () { return {}; });
+      });
+    }
+
+    // Fallback: Discord internal Messages.sendMessage
     try {
       var Messages = findByProps("sendMessage", "editMessage");
       if (Messages && typeof Messages.sendMessage === "function") {
-        Messages.sendMessage(channelId, { content: content });
+        var res2 = Messages.sendMessage(channelId, { content: content });
+        if (res2 && typeof res2.then === "function") return res2;
         return Promise.resolve();
       }
-    } catch (e) {}
+    } catch (e) {
+      return Promise.reject(e);
+    }
 
-    // Method 2: Discord REST API
-    try {
-      var token = TokenModule && TokenModule.getToken && TokenModule.getToken();
-      if (token) {
-        return fetch("https://discord.com/api/v9/channels/" + channelId + "/messages", {
-          method: "POST",
-          headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ content: content })
-        }).then(function (res) {
-          if (!res.ok) throw new Error("HTTP " + res.status);
-        });
-      }
-    } catch (e) {}
-
-    return Promise.reject(new Error("Unable to send message"));
+    return Promise.reject(new Error("No auth token or message sender available"));
   }
 
   function getActiveChannelId() {
@@ -181,6 +341,12 @@
       if (SelectedChannelStore && typeof SelectedChannelStore.getChannelId === "function") {
         var id = SelectedChannelStore.getChannelId();
         if (id) return id;
+      }
+    } catch (e) {}
+    try {
+      if (SelectedChannelStore && typeof SelectedChannelStore.getCurrentlySelectedChannelId === "function") {
+        var id2 = SelectedChannelStore.getCurrentlySelectedChannelId();
+        if (id2) return id2;
       }
     } catch (e) {}
     return null;
@@ -193,16 +359,51 @@
       if (!pending) return null;
 
       var msg = pending.message || pending.reply || pending;
-      if (msg && (msg.content || (msg.attachments && msg.attachments.length))) return msg;
-
       var msgId = pending.messageId || pending.message_id || (msg && msg.id);
       var chanId = pending.channelId || pending.channel_id || channelId;
+
       if (msgId && chanId && MessageStore) {
-        var m = MessageStore.getMessage(chanId, msgId);
+        var m = (MessageStore.getMessage.length >= 2 ? MessageStore.getMessage(chanId, msgId) : MessageStore.getMessage(msgId)) || MessageStore.getMessage(chanId, msgId) || MessageStore.getMessage(msgId);
         if (m) return m.toJS ? m.toJS() : m;
       }
+
+      if (msg) return msg.toJS ? msg.toJS() : msg;
     } catch (e) {}
     return null;
+  }
+
+  function getCommandOption(args, name) {
+    if (!args) return undefined;
+    if (Array.isArray(args)) {
+      if (name) {
+        for (var i = 0; i < args.length; i++) {
+          var a = args[i];
+          if (a && typeof a === "object" && a.name === name) {
+            return (a.value !== undefined && a.value !== null) ? String(a.value).trim() : undefined;
+          }
+        }
+      }
+      if (args[0] !== undefined && args[0] !== null) {
+        if (typeof args[0] === "object") {
+          if (args[0].value !== undefined && args[0].value !== null) {
+            return String(args[0].value).trim();
+          }
+        } else {
+          return String(args[0]).trim();
+        }
+      }
+    } else if (typeof args === "object") {
+      if (name && args[name] !== undefined && args[name] !== null) {
+        var v = args[name];
+        return (typeof v === "object" && v && v.value !== undefined) ? String(v.value).trim() : String(v).trim();
+      }
+      if (args.value !== undefined && args.value !== null) {
+        return String(args.value).trim();
+      }
+    } else if (typeof args === "string" && args.trim()) {
+      return args.trim();
+    }
+    return undefined;
   }
 
   // ── Long-press ActionSheet patch: "Save Message" button ───────────────────
@@ -251,8 +452,13 @@
                 label: "Save Message",
                 onPress: function () {
                   if (ActionSheet.hideActionSheet) ActionSheet.hideActionSheet();
-                  var saved = saveMessageObject(targetMsg);
-                  toast("Saved: " + (saved ? saved.name : "message"));
+                  var chanId = (sheetProps && sheetProps.channel && sheetProps.channel.id) || (targetMsg && (targetMsg.channel_id || targetMsg.channelId)) || getActiveChannelId();
+                  var saved = saveMessageObject(targetMsg, null, chanId);
+                  if (saved) {
+                    toast("Saved: " + saved.name);
+                  } else {
+                    toast("Failed to save message", true);
+                  }
                 },
               };
 
@@ -309,8 +515,8 @@
           }
         ],
         execute: function (args, ctx) {
-          var chanId = (ctx && (ctx.channel && ctx.channel.id)) || getActiveChannelId();
-          var customName = args && args[0] && args[0].value;
+          var chanId = (ctx && ctx.channel && ctx.channel.id) || getActiveChannelId();
+          var customName = getCommandOption(args, "name");
 
           var target = resolvePendingReplyMessage(chanId);
           if (!target && MessageStore && chanId) {
@@ -326,8 +532,12 @@
             return;
           }
 
-          var saved = saveMessageObject(target, customName);
-          toast("Saved: " + (saved ? saved.name : "message"));
+          var saved = saveMessageObject(target, customName, chanId);
+          if (saved) {
+            toast("Saved: " + saved.name);
+          } else {
+            toast("Failed to save message", true);
+          }
         }
       })
     );
@@ -353,26 +563,46 @@
           }
         ],
         execute: function (args, ctx) {
-          var chanId = (ctx && (ctx.channel && ctx.channel.id)) || getActiveChannelId();
+          var chanId = (ctx && ctx.channel && ctx.channel.id) || getActiveChannelId();
           if (!chanId) {
             toast("Could not detect active channel", true);
             return;
           }
 
-          var query = args && args[0] && args[0].value && String(args[0].value).toLowerCase().trim();
           var list = storage.saved || [];
           if (!list.length) {
             toast("No saved messages found! Long press any message to save one.", true);
             return;
           }
 
+          var query = getCommandOption(args, "name");
           var targetItem = null;
-          if (query) {
+
+          if (query && query.trim()) {
+            var q = query.trim().toLowerCase();
+            // 1. Exact match
             targetItem = list.find(function (x) {
-              return x.name.toLowerCase() === query || x.name.toLowerCase().indexOf(query) !== -1;
+              return x && x.name && x.name.toLowerCase() === q;
             });
-          }
-          if (!targetItem) {
+            // 2. Starts-with match
+            if (!targetItem) {
+              targetItem = list.find(function (x) {
+                return x && x.name && x.name.toLowerCase().startsWith(q);
+              });
+            }
+            // 3. Substring match
+            if (!targetItem) {
+              targetItem = list.find(function (x) {
+                return x && x.name && x.name.toLowerCase().indexOf(q) !== -1;
+              });
+            }
+
+            if (!targetItem) {
+              toast('No saved message found matching "' + query.trim() + '"', true);
+              return;
+            }
+          } else {
+            // Default to newest message
             targetItem = list[0];
           }
 
@@ -413,7 +643,7 @@
           for (var i = 0; i < Math.min(list.length, 10); i++) {
             var item = list[i];
             var attCount = (item.attachments && item.attachments.length) || 0;
-            var attBadge = attCount ? " [" + attCount + " attachment" + (attCount > 1 ? "s" : "") + "]" : "";
+            var attBadge = item.isVoice ? " [🎤 Voice]" : (attCount ? " [" + attCount + " attachment" + (attCount > 1 ? "s" : "") + "]" : "");
             lines.push((i + 1) + ". **" + item.name + "**" + attBadge + " *(by " + item.authorName + ")*");
           }
           if (list.length > 10) {
@@ -534,7 +764,16 @@
                 { style: { color: "#dbdee1", fontSize: 14, marginBottom: 8, lineHeight: 19 } },
                 item.content
               ) : null,
-              attCount > 0 && React.createElement(
+              item.isVoice && React.createElement(
+                RN.View,
+                { style: { backgroundColor: "#1e1f22", borderRadius: 8, padding: 8, marginBottom: 10 } },
+                React.createElement(
+                  RN.Text,
+                  { style: { color: "#23a55a", fontSize: 12, fontWeight: "600" } },
+                  "\uD83C\uDFA4 Voice Message (" + (item.attachments[0] && item.attachments[0].duration_secs ? Math.round(item.attachments[0].duration_secs) + "s" : "audio") + ")"
+                )
+              ),
+              !item.isVoice && attCount > 0 && React.createElement(
                 RN.View,
                 { style: { backgroundColor: "#1e1f22", borderRadius: 8, padding: 8, marginBottom: 10 } },
                 React.createElement(
