@@ -73,6 +73,18 @@ https://ilickft.github.io/revenge-plugins/message-saver/
 
 ---
 
+### 💬 message quote
+
+> make a PNG quote card of any message or text, styled like Discord
+
+reply to any message and type `/quote` to turn it into an authentic Discord message PNG card — complete with the author's avatar, display name, role color, local timestamp, and text — and send it directly to the same chat. You can also quote custom text using `/quote text:...`, or long-press any message and tap "Quote as PNG".
+
+```
+https://ilickft.github.io/revenge-plugins/message-quote/
+```
+
+---
+
 ### 🐾 pet pet
 
 > pet-pet gif of anyone, right in chat

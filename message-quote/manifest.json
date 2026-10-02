@@ -1,0 +1,14 @@
+{
+  "name": "Message Quote",
+  "description": "Turn any message or text into an authentic Discord-style PNG quote card with author avatar, username, timestamp, and styling via /quote or message menu.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "ImageIcon"
+  },
+  "hash": "ed6bda8990295e9336706a03e46711cfdc35423b71dab90ba23132858f43c68a"
+}
