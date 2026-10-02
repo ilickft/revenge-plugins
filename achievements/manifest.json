@@ -1,6 +1,6 @@
 {
   "name": "Achievements",
-  "description": "Unlock 308+ achievements with top toast banners, sounds, and streak tracking ported from AyuGram.",
+  "description": "Unlock 270+ achievements with top toast banners, sounds, profile Orb shortcut, bio progress sync, and streak tracking.",
   "authors": [
     {
       "name": "Kario"
@@ -10,5 +10,5 @@
   "vendetta": {
     "icon": "TrophyIcon"
   },
-  "hash": "98a29a5da0694f53f07c55f71d2d47f0852b1b74a91b64ed88974e0e41ec6c3f"
+  "hash": "b6fbe00a79ddad7ae10d88003155331bb2912a175c8b9de2407bfba85356be3c"
 }
