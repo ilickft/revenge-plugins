@@ -178,22 +178,54 @@
               "\n*Edited Message*\n" +
               newEdited;
 
-            var guildId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(updateChanId) && ChannelStore.getChannel(updateChanId).guild_id) || original.guild_id || updateMsg.guild_id;
+            var guildId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(updateChanId) && ChannelStore.getChannel(updateChanId).guild_id) || original.guild_id || updateMsg.guild_id || null;
+
+            var mProto = Object.getPrototypeOf(original);
+            var mMerged = null;
+
+            if (typeof original.merge === "function") {
+              try {
+                mMerged = original.merge({
+                  content: combined,
+                  guild_id: guildId,
+                  edited_timestamp: updateMsg.edited_timestamp || new Date().toISOString(),
+                });
+              } catch (e) {
+                try {
+                  mMerged = original.merge({
+                    content: combined,
+                  });
+                } catch (e2) {}
+              }
+            }
+
+            if (!mMerged) {
+              var mBase = (mProto && mProto !== Object.prototype) ? Object.create(mProto) : {};
+              mMerged = Object.assign(mBase, original, updateMsg, {
+                content: combined,
+                guild_id: guildId,
+                edited_timestamp: updateMsg.edited_timestamp || new Date().toISOString(),
+              });
+              if (original.attachments) {
+                try { mMerged.attachments = original.attachments; } catch (e3) {}
+              }
+              if (original.embeds) {
+                try { mMerged.embeds = original.embeds; } catch (e4) {}
+              }
+            }
 
             args[0] = {
               type: "MESSAGE_UPDATE",
               channelId: updateChanId,
-              message: Object.assign({}, original, updateMsg, {
-                content: combined,
-                guild_id: guildId,
-                edited_timestamp: "invalid_timestamp",
-              }),
+              message: mMerged,
               otherPluginBypass: true,
             };
 
             if (messageCache.has(updateId)) {
               var c = messageCache.get(updateId);
-              if (c) c.content = combined;
+              if (c) {
+                try { c.content = combined; } catch (e5) {}
+              }
             }
           }
 
@@ -252,30 +284,69 @@
             contentToSend = makeDimmed(rawContent);
           }
 
-          var attachments = [];
-          if (Array.isArray(originalMessage.attachments)) {
-            attachments = originalMessage.attachments.map(function (att) {
-              var copy = Object.assign({}, att);
-              copy.opacity = 0.4;
-              return copy;
-            });
+          var chId = originalMessage.channel_id || channelId;
+          var gId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(chId) && ChannelStore.getChannel(chId).guild_id) || originalMessage.guild_id || null;
+
+          var hasAttachments = Boolean(
+            originalMessage.attachments &&
+            ((Array.isArray(originalMessage.attachments) && originalMessage.attachments.length > 0) ||
+             (typeof originalMessage.attachments.size === "number" && originalMessage.attachments.size > 0))
+          );
+          var hasEmbeds = Boolean(
+            originalMessage.embeds &&
+            ((Array.isArray(originalMessage.embeds) && originalMessage.embeds.length > 0) ||
+             (typeof originalMessage.embeds.size === "number" && originalMessage.embeds.size > 0))
+          );
+          var hasStickers = Boolean(
+            (originalMessage.sticker_items && originalMessage.sticker_items.length > 0) ||
+            (originalMessage.stickers && originalMessage.stickers.length > 0)
+          );
+
+          // If the message has no text caption but has media/embeds/stickers,
+          // show dimmed '(deleted)' indicator so chat clearly shows it was deleted while keeping attachments fully intact
+          if (!contentToSend && (hasAttachments || hasEmbeds || hasStickers)) {
+            contentToSend = "-# *(deleted)*";
           }
 
-          var chId = originalMessage.channel_id || channelId;
-          var gId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(chId) && ChannelStore.getChannel(chId).guild_id) || originalMessage.guild_id;
+          var proto = Object.getPrototypeOf(originalMessage);
+          var ghostMsg = null;
 
-          var ghostMsg = Object.assign({}, originalMessage, {
-            content: contentToSend,
-            channel_id: chId,
-            guild_id: gId,
-            type: originalMessage.type || 0,
-            flags: originalMessage.flags || 0,
-            state: "SENT",
-            was_deleted: true,
-          });
+          if (typeof originalMessage.merge === "function") {
+            try {
+              ghostMsg = originalMessage.merge({
+                content: contentToSend,
+                channel_id: chId,
+                guild_id: gId,
+                state: "SENT",
+              });
+            } catch (e) {
+              try {
+                ghostMsg = originalMessage.merge({
+                  content: contentToSend,
+                });
+              } catch (e2) {}
+            }
+          }
 
-          if (attachments.length > 0) {
-            ghostMsg.attachments = attachments;
+          if (ghostMsg) {
+            try { ghostMsg.was_deleted = true; } catch (e) {}
+          } else {
+            var base = (proto && proto !== Object.prototype) ? Object.create(proto) : {};
+            ghostMsg = Object.assign(base, originalMessage, {
+              content: contentToSend,
+              channel_id: chId,
+              guild_id: gId,
+              type: originalMessage.type || 0,
+              flags: originalMessage.flags || 0,
+              state: "SENT",
+            });
+            try { ghostMsg.was_deleted = true; } catch (e) {}
+            if (originalMessage.attachments) {
+              try { ghostMsg.attachments = originalMessage.attachments; } catch (e3) {}
+            }
+            if (originalMessage.embeds) {
+              try { ghostMsg.embeds = originalMessage.embeds; } catch (e4) {}
+            }
           }
 
           var ghostAction = {
@@ -298,6 +369,14 @@
             if (oldestKey) deletedMessages.delete(oldestKey);
           }
 
+          if (messageCache.has(id)) {
+            var cached = messageCache.get(id);
+            if (cached) {
+              try { cached.content = contentToSend; } catch (e5) {}
+              try { cached.was_deleted = true; } catch (e6) {}
+            }
+          }
+
           args[0] = ghostAction;
           return args;
         }
@@ -308,18 +387,59 @@
           var bChannelId = event.channelId || event.channel_id;
 
           if (Array.isArray(ids) && ids.length > 0) {
-            // Transform bulk delete by pre-ghosting each message in deletedMessages
             for (var b = 0; b < ids.length; b++) {
               var bId = ids[b];
               var bMsg = getOriginalMessage(bChannelId, bId);
               if (bMsg && !deletedMessages.has(bId)) {
                 var bRawContent = typeof bMsg.content === "string" ? bMsg.content : "";
-                var bGhost = Object.assign({}, bMsg, {
-                  content: makeDimmed(bRawContent),
-                  channel_id: bMsg.channel_id || bChannelId,
-                  state: "SENT",
-                  was_deleted: true,
-                });
+                var bContent = makeDimmed(bRawContent);
+                var bHasAttachments = Boolean(
+                  bMsg.attachments &&
+                  ((Array.isArray(bMsg.attachments) && bMsg.attachments.length > 0) ||
+                   (typeof bMsg.attachments.size === "number" && bMsg.attachments.size > 0))
+                );
+
+                if (!bContent && bHasAttachments) {
+                  bContent = "-# *(deleted)*";
+                }
+
+                var bProto = Object.getPrototypeOf(bMsg);
+                var bGhost = null;
+
+                if (typeof bMsg.merge === "function") {
+                  try {
+                    bGhost = bMsg.merge({
+                      content: bContent,
+                      channel_id: bMsg.channel_id || bChannelId,
+                      state: "SENT",
+                    });
+                  } catch (e) {
+                    try {
+                      bGhost = bMsg.merge({
+                        content: bContent,
+                      });
+                    } catch (e2) {}
+                  }
+                }
+
+                if (bGhost) {
+                  try { bGhost.was_deleted = true; } catch (e) {}
+                } else {
+                  var bBase = (bProto && bProto !== Object.prototype) ? Object.create(bProto) : {};
+                  bGhost = Object.assign(bBase, bMsg, {
+                    content: bContent,
+                    channel_id: bMsg.channel_id || bChannelId,
+                    state: "SENT",
+                  });
+                  try { bGhost.was_deleted = true; } catch (e) {}
+                  if (bMsg.attachments) {
+                    try { bGhost.attachments = bMsg.attachments; } catch (e3) {}
+                  }
+                  if (bMsg.embeds) {
+                    try { bGhost.embeds = bMsg.embeds; } catch (e4) {}
+                  }
+                }
+
                 deletedMessages.set(bId, {
                   payload: {
                     type: "MESSAGE_UPDATE",
