@@ -133,6 +133,17 @@ https://ilickft.github.io/revenge-plugins/shadow-ban/
 
 ---
 
+### 🏆 achievements
+
+> unlock 308+ achievements with top toast banners, authentic sounds, and streaks
+
+ports all 308 achievements from AyuGram into Discord with live progress tracking, streak counting, top toast notifications, and authentic chimes (default.ogg & rare.ogg). includes a comprehensive dashboard in plugin settings with category filters, sound tests, and secret hints.
+
+```
+https://ilickft.github.io/revenge-plugins/achievements/
+```
+
+---
 
 ## installation
 
