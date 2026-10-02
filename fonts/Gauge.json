@@ -1,0 +1,11 @@
+{
+  "name": "Gauge",
+  "spec": 1,
+  "main": {
+    "ggsans-Normal": "https://raw.githubusercontent.com/ilickft/revenge-plugins/main/fonts/Gauge-Heavy.ttf",
+    "ggsans-Medium": "https://raw.githubusercontent.com/ilickft/revenge-plugins/main/fonts/Gauge-Heavy.ttf",
+    "ggsans-Semibold": "https://raw.githubusercontent.com/ilickft/revenge-plugins/main/fonts/Gauge-Heavy.ttf",
+    "ggsans-Bold": "https://raw.githubusercontent.com/ilickft/revenge-plugins/main/fonts/Gauge-Heavy.ttf",
+    "ggsans-ExtraBold": "https://raw.githubusercontent.com/ilickft/revenge-plugins/main/fonts/Gauge-Heavy.ttf"
+  }
+}
