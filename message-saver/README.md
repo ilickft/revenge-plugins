@@ -4,7 +4,8 @@ Save any message with its text and attachments as it is, and resend it back to a
 
 ## Features
 
-- **Save Any Message:** Save messages sent by anyone (other users, bots, or yourself) containing text, images, videos, audio, or file attachments.
+- **Save Any Message:** Save messages sent by anyone (other users, bots, or yourself) containing text, images, videos, audio files/songs, voice messages, or attachments.
+- **Native Playable Resend:** Resending a voice message uploads it as a genuine Discord voice message (with waveform & player), and audio files/songs are resent as playable audio attachments rather than plain links.
 - **Long-Press Menu Action:** Long-press any message in Discord to open the action menu and tap **"Save Message"** to instantly save it.
 - **Slash Commands:**
   - `/save [name]`: Reply to any message and run `/save` with an optional custom name.
