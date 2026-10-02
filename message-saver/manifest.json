@@ -1,0 +1,14 @@
+{
+  "name": "Message Saver",
+  "description": "Save any message with its text and attachments, and easily resend it anytime to any channel.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "BookmarkIcon"
+  },
+  "hash": "d498c94c35c47ecd6b5cfdce35fb90a120e7678812faece713875e4358bb3f5e"
+}

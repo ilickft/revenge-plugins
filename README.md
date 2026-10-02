@@ -59,6 +59,17 @@ keeps deleted messages and attachments visible directly in chat with decreased o
 https://ilickft.github.io/revenge-plugins/message-logger/
 ```
 
+---
+
+### 💾 message saver
+
+> save any message with text & attachments, resend it back anytime
+
+save any message sent by anyone (text, images, videos, audio, or files) directly from the long-press menu or via `/save`. resend it back to any channel exactly as it was using `/resend` or from the plugin's settings manager.
+
+```
+https://ilickft.github.io/revenge-plugins/message-saver/
+```
 
 ---
 
