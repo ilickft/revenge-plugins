@@ -3,12 +3,9 @@
 
   var findByStoreName = vendetta.metro.findByStoreName;
   var findByProps     = vendetta.metro.findByProps;
-  var findByName      = vendetta.metro.findByName;
   var instead         = vendetta.patcher.instead;
   var before          = vendetta.patcher.before;
-  var after           = vendetta.patcher.after;
   var FluxDispatcher  = vendetta.metro.common.FluxDispatcher;
-  var RN              = vendetta.metro.common.ReactNative;
 
   var MessageStore = findByStoreName("MessageStore") || findByProps("getMessage", "getMessages");
   var patches      = [];
@@ -24,13 +21,29 @@
 
   function cloneMessage(msg) {
     if (!msg || !msg.id) return null;
+    var author = msg.author;
+    if (author && typeof author.toJS === "function") {
+      try { author = author.toJS(); } catch (e) {}
+    }
+    var attachments = [];
+    var rawAtts = msg.attachments;
+    if (rawAtts && typeof rawAtts.toJS === "function") {
+      try { rawAtts = rawAtts.toJS(); } catch (e) {}
+    }
+    if (Array.isArray(rawAtts)) {
+      attachments = rawAtts.slice();
+    } else if (rawAtts && typeof rawAtts.forEach === "function") {
+      try {
+        rawAtts.forEach(function (a) { attachments.push(a); });
+      } catch (e) {}
+    }
     return {
       id:            msg.id,
       channel_id:    msg.channel_id || msg.channelId,
       content:       typeof msg.content === "string" ? msg.content : "",
-      author:        msg.author,
+      author:        author,
       timestamp:     msg.timestamp,
-      attachments:   Array.isArray(msg.attachments) ? msg.attachments.slice() : [],
+      attachments:   attachments,
       embeds:        Array.isArray(msg.embeds) ? msg.embeds.slice() : [],
       mentions:      msg.mentions || [],
       mention_roles: msg.mention_roles || msg.mentionRoles || [],
@@ -183,12 +196,11 @@
         mention_everyone: false,
         pinned:          false,
         tts:             false,
-        type:            0,
+        type:            msg.type || 0,
         flags:           msg.flags || 0,
         state:           "SENT",
         optimistic:      false,
         was_deleted:     true,
-        opacity:         0.5,
       },
       optimistic:        false,
       sendMessageOptions: {},
@@ -197,120 +209,20 @@
     };
   }
 
-  // ── Native chat row styling: fade deleted messages and attachments ────────
-  function applyFadedStyle(row) {
-    if (!row || row.type !== 1 || !row.message) return;
-    var m = row.message;
-    if (deletedIds.has(m.id) || m.was_deleted) {
-      row.opacity = 0.5;
-      m.opacity = 0.5;
-      if (RN && RN.processColor) {
-        m.textColor = RN.processColor("#80848e");
-      }
-      if (Array.isArray(m.attachments)) {
-        for (var a = 0; a < m.attachments.length; a++) {
-          m.attachments[a].opacity = 0.4;
-        }
-      }
-    }
-  }
-
-  // ── Snapshot own messages when deleteMessage is called ───────────────────
+  // ── Snapshot own messages before deleteMessage runs ───────────────────────
   try {
     var MessageActions = findByProps("deleteMessage", "startEditMessage") || findByProps("deleteMessage");
     if (MessageActions && typeof MessageActions.deleteMessage === "function") {
       patches.push(
         before("deleteMessage", MessageActions, function (args) {
-          var chId = args[0];
-          var mId = args[1];
-          if (mId) {
-            var m = findMessage(chId, mId);
-            if (m) cacheMessage(m);
-          }
-        })
-      );
-    }
-  } catch (e) {}
-
-  // ── Preserve was_deleted flag on MessageRecord records ────────────────────
-  try {
-    var MessageRecordModule = findByProps("updateMessageRecord", "createMessageRecord");
-    var MessageRecordClass  = findByName("MessageRecord", false);
-
-    if (MessageRecordModule && typeof MessageRecordModule.updateMessageRecord === "function") {
-      patches.push(
-        instead("updateMessageRecord", MessageRecordModule, function (args, origFn) {
-          var oldRecord = args[0];
-          var update = args[1];
-          if (update && (update.was_deleted || deletedIds.has(update.id))) {
-            return MessageRecordModule.createMessageRecord(update, oldRecord && oldRecord.reactions);
-          }
-          return origFn.apply(this, args);
-        })
-      );
-    }
-
-    if (MessageRecordModule && typeof MessageRecordModule.createMessageRecord === "function") {
-      patches.push(
-        after("createMessageRecord", MessageRecordModule, function (args, ret) {
-          if (args[0] && (args[0].was_deleted || deletedIds.has(args[0].id))) {
-            if (ret) ret.was_deleted = true;
-          }
-          return ret;
-        })
-      );
-    }
-
-    if (MessageRecordClass) {
-      patches.push(
-        after("default", MessageRecordClass, function (args, ret) {
-          if (args[0] && (args[0].was_deleted || deletedIds.has(args[0].id))) {
-            if (ret) ret.was_deleted = true;
-          }
-          return ret;
-        })
-      );
-    }
-  } catch (e) {}
-
-  try {
-    var DCDChatManager = RN && RN.NativeModules && RN.NativeModules.DCDChatManager;
-    if (DCDChatManager && typeof DCDChatManager.updateRows === "function") {
-      patches.push(
-        before("updateRows", DCDChatManager, function (args) {
-          if (!args || typeof args[1] !== "string" || deletedIds.size === 0) return;
           try {
-            var rows = JSON.parse(args[1]);
-            var modified = false;
-
-            for (var i = 0; i < rows.length; i++) {
-              if (rows[i]?.type === 1 && rows[i]?.message && (deletedIds.has(rows[i].message.id) || rows[i].message.was_deleted)) {
-                applyFadedStyle(rows[i]);
-                modified = true;
-              }
-            }
-
-            if (modified) {
-              args[1] = JSON.stringify(rows);
+            var chId = args && args[0];
+            var mId = args && args[1];
+            if (mId) {
+              var m = findMessage(chId, mId);
+              if (m) cacheMessage(m);
             }
           } catch (e) {}
-        })
-      );
-    }
-  } catch (e) {}
-
-  try {
-    var RowManager = findByName("RowManager", false) || (findByProps("RowManager") && findByProps("RowManager").RowManager);
-    if (RowManager && RowManager.prototype && typeof RowManager.prototype.generate === "function") {
-      patches.push(
-        after("generate", RowManager.prototype, function (args, rowObj) {
-          var inputRow = args && args[0];
-          var row = rowObj && (rowObj.row || rowObj);
-          var m = (inputRow && inputRow.message) || (row && row.message);
-          if (m && (deletedIds.has(m.id) || m.was_deleted)) {
-            if (row) applyFadedStyle(row);
-          }
-          return rowObj;
         })
       );
     }
@@ -319,120 +231,134 @@
   // ── Dispatch interceptor ──────────────────────────────────────────────────
   patches.push(
     instead("dispatch", FluxDispatcher, function (args, orig) {
-      var payload = args[0];
-      if (!payload) return orig.apply(this, args);
+      try {
+        var payload = args && args[0];
+        if (!payload) return orig.apply(this, args);
 
-      var type = payload.type;
+        var type = payload.type;
 
-      // ── Cache messages on arrival ──────────────────────────────────────────
-      if (type === "MESSAGE_CREATE" || type === "LOCAL_MESSAGE_CREATE") {
-        if (payload.message) cacheMessage(payload.message);
-      }
-
-      if (type === "LOAD_MESSAGES_SUCCESS" && Array.isArray(payload.messages)) {
-        for (var k = 0; k < payload.messages.length; k++) {
-          cacheMessage(payload.messages[k]);
+        // ── Cache messages on arrival ──────────────────────────────────────────
+        if (type === "MESSAGE_CREATE" || type === "LOCAL_MESSAGE_CREATE") {
+          if (payload.message) cacheMessage(payload.message);
         }
-      }
 
-      // ── Handle message edits (MESSAGE_UPDATE) ──────────────────────────────
-      // Original message is dimmed / lower opacity (-# ), while the edited message stays bright
-      if (type === "MESSAGE_UPDATE") {
-        if (payload.otherPluginBypass) return orig.apply(this, args);
-
-        var updateMsg = payload.message || payload;
-        var updateId = updateMsg.id || payload.id;
-        var updateChanId = updateMsg.channel_id || payload.channelId || payload.channel_id;
-
-        if (updateId && typeof updateMsg.content === "string") {
-          var original = findMessage(updateChanId, updateId);
-
-          if (original && original.content) {
-            var baseOriginal = firstOriginalText.get(updateId);
-            if (!baseOriginal) {
-              baseOriginal = extractCleanOriginal(original.content);
-              firstOriginalText.set(updateId, baseOriginal);
-            }
-
-            var newEdited = extractCleanEdited(updateMsg.content);
-
-            if (baseOriginal && newEdited && baseOriginal !== newEdited) {
-              editedIds.add(updateId);
-
-              // Original message dimmed with lower opacity, new edited message stays bright
-              var combined =
-                "-# *Original Message*\n" +
-                makeDimmed(baseOriginal) +
-                "\n*Edited Message*\n" +
-                newEdited;
-
-              updateMsg.content = combined;
-
-              if (messageCache.has(updateId)) {
-                var c = messageCache.get(updateId);
-                c.content = combined;
-                c.is_edited = true;
-              }
-            }
-          } else if (original && !original.content) {
-            if (messageCache.has(updateId)) {
-              messageCache.get(updateId).content = updateMsg.content;
-            }
+        if (type === "LOAD_MESSAGES_SUCCESS" && Array.isArray(payload.messages)) {
+          for (var k = 0; k < payload.messages.length; k++) {
+            cacheMessage(payload.messages[k]);
           }
         }
 
-        return orig.apply(this, args);
-      }
+        // ── Handle message edits (MESSAGE_UPDATE) ──────────────────────────────
+        // Original message is dimmed / lower opacity (-# ), while the edited message stays bright
+        if (type === "MESSAGE_UPDATE") {
+          if (payload.otherPluginBypass) return orig.apply(this, args);
 
-      // ── Handle single delete (MESSAGE_DELETE) ──────────────────────────────
-      if (type === "MESSAGE_DELETE") {
-        var id        = payload.id || payload.messageId || (payload.message && payload.message.id);
-        var channelId = payload.channelId || payload.channel_id || (payload.message && payload.message.channel_id);
+          var updateMsg = payload.message || payload;
+          var updateId = updateMsg.id || payload.id;
+          var updateChanId = updateMsg.channel_id || payload.channelId || payload.channel_id;
 
-        if (!id) return orig.apply(this, args);
+          if (updateId && typeof updateMsg.content === "string") {
+            var original = findMessage(updateChanId, updateId);
 
-        if (deletedIds.has(id)) {
-          // Already ghosted! Suppress duplicate/gateway confirmation so the message stays in chat.
+            if (original && original.content) {
+              var baseOriginal = firstOriginalText.get(updateId);
+              if (!baseOriginal) {
+                baseOriginal = extractCleanOriginal(original.content);
+                firstOriginalText.set(updateId, baseOriginal);
+              }
+
+              var newEdited = extractCleanEdited(updateMsg.content);
+
+              if (baseOriginal && newEdited && baseOriginal !== newEdited) {
+                editedIds.add(updateId);
+
+                // Original message dimmed with lower opacity, new edited message stays bright
+                var combined =
+                  "-# *Original Message*\n" +
+                  makeDimmed(baseOriginal) +
+                  "\n*Edited Message*\n" +
+                  newEdited;
+
+                updateMsg.content = combined;
+
+                if (messageCache.has(updateId)) {
+                  var c = messageCache.get(updateId);
+                  c.content = combined;
+                  c.is_edited = true;
+                }
+              }
+            } else if (original && !original.content) {
+              if (messageCache.has(updateId)) {
+                messageCache.get(updateId).content = updateMsg.content;
+              }
+            }
+          }
+
+          return orig.apply(this, args);
+        }
+
+        // ── Handle single delete (MESSAGE_DELETE) ──────────────────────────────
+        if (type === "MESSAGE_DELETE") {
+          var id        = payload.id || payload.messageId || (payload.message && payload.message.id);
+          var channelId = payload.channelId || payload.channel_id || (payload.message && payload.message.channel_id);
+
+          if (!id) return orig.apply(this, args);
+
+          if (deletedIds.has(id)) {
+            // Already ghosted! Suppress duplicate/gateway confirmation so the message stays in chat.
+            return;
+          }
+
+          var msg = findMessage(channelId, id);
+          if (msg) {
+            deletedIds.add(id);
+            if (deletedIds.size > 2000) {
+              var oldestId = deletedIds.values().next().value;
+              if (oldestId) deletedIds.delete(oldestId);
+            }
+            try {
+              return orig.call(this, ghostPayload(msg, channelId));
+            } catch (err) {
+              return orig.apply(this, args);
+            }
+          }
+
+          return orig.apply(this, args);
+        }
+
+        // ── Handle bulk delete (MESSAGE_DELETE_BULK) ───────────────────────────
+        if (type === "MESSAGE_DELETE_BULK") {
+          var ids       = payload.ids || [];
+          var chId      = payload.channelId || payload.channel_id;
+          var toRestore = [];
+
+          for (var b = 0; b < ids.length; b++) {
+            var bId = ids[b];
+            if (!deletedIds.has(bId)) {
+              var bMsg = findMessage(chId, bId);
+              if (bMsg) {
+                deletedIds.add(bId);
+                toRestore.push(bMsg);
+              }
+            }
+          }
+
+          // Run bulk delete first
+          orig.apply(this, args);
+
+          // Re-inject each message as ghost
+          for (var j = 0; j < toRestore.length; j++) {
+            try {
+              orig.call(this, ghostPayload(toRestore[j], chId));
+            } catch (err2) {}
+          }
           return;
         }
 
-        var msg = findMessage(channelId, id);
-        if (msg) {
-          deletedIds.add(id);
-          return orig.call(this, ghostPayload(msg, channelId));
-        }
-
+        return orig.apply(this, args);
+      } catch (globalErr) {
         return orig.apply(this, args);
       }
-
-      // ── Handle bulk delete (MESSAGE_DELETE_BULK) ───────────────────────────
-      if (type === "MESSAGE_DELETE_BULK") {
-        var ids       = payload.ids || [];
-        var chId      = payload.channelId || payload.channel_id;
-        var toRestore = [];
-
-        for (var b = 0; b < ids.length; b++) {
-          var bId = ids[b];
-          if (!deletedIds.has(bId)) {
-            var bMsg = findMessage(chId, bId);
-            if (bMsg) {
-              deletedIds.add(bId);
-              toRestore.push(bMsg);
-            }
-          }
-        }
-
-        // Run bulk delete first
-        orig.apply(this, args);
-
-        // Re-inject each message as ghost
-        for (var j = 0; j < toRestore.length; j++) {
-          orig.call(this, ghostPayload(toRestore[j], chId));
-        }
-        return;
-      }
-
-      return orig.apply(this, args);
     })
   );
 
