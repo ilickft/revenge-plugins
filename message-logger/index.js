@@ -8,6 +8,8 @@
 
   var MessageStore    = findByStoreName("MessageStore") || findByProps("getMessage", "getMessages");
   var ChannelStore    = findByStoreName("ChannelStore") || findByProps("getChannel", "getDMFromUserId");
+  var UserStore       = findByStoreName("UserStore") || findByProps("getCurrentUser");
+  var AvatarUtils     = findByProps("getDefaultAvatarURL") || findByProps("getUserAvatarURL");
   var ChannelMessages = findByProps("_channelMessages");
   var MessageActions  = findByProps("startEditMessage");
 
@@ -58,6 +60,104 @@
 
     return null;
   }
+
+  // Ensure author object is always populated and sanitized so avatar rendering never crashes on "???"
+  function getSanitizedAuthor(authorA, authorB) {
+    var raw = authorA || authorB;
+    var currentUser = null;
+    try {
+      if (UserStore && typeof UserStore.getCurrentUser === "function") {
+        currentUser = UserStore.getCurrentUser();
+      }
+    } catch (e) {}
+
+    var id = (raw && raw.id) || (currentUser && currentUser.id) || "0";
+    var username = (raw && raw.username) || (currentUser && currentUser.username) || "Discord User";
+    var discriminator = (raw && raw.discriminator) || (currentUser && currentUser.discriminator) || "0";
+    var avatar = (raw && raw.avatar !== undefined) ? raw.avatar : (currentUser ? currentUser.avatar : null);
+
+    // If discriminator is missing, "???", or not a numeric string, default to "0" (modern pomelo/default avatar)
+    if (!discriminator || discriminator === "???" || isNaN(Number(discriminator))) {
+      discriminator = "0";
+    }
+    if (!id || id === "???") {
+      id = (currentUser && currentUser.id) || "0";
+    }
+
+    var authorObj = {
+      id: String(id),
+      username: String(username),
+      discriminator: String(discriminator),
+      avatar: avatar,
+    };
+
+    if (raw) {
+      if (raw.globalName !== undefined) authorObj.globalName = raw.globalName;
+      if (raw.global_name !== undefined) authorObj.global_name = raw.global_name;
+      if (raw.avatarDecoration !== undefined) authorObj.avatarDecoration = raw.avatarDecoration;
+      if (raw.avatar_decoration_data !== undefined) authorObj.avatar_decoration_data = raw.avatar_decoration_data;
+      if (typeof raw.bot === "boolean") authorObj.bot = raw.bot;
+    } else if (currentUser) {
+      if (currentUser.globalName !== undefined) authorObj.globalName = currentUser.globalName;
+      if (currentUser.global_name !== undefined) authorObj.global_name = currentUser.global_name;
+      if (currentUser.avatarDecoration !== undefined) authorObj.avatarDecoration = currentUser.avatarDecoration;
+    }
+
+    return authorObj;
+  }
+
+  // Defensive patch: guard against "???" or invalid discriminator in avatar URL generators
+  try {
+    if (AvatarUtils) {
+      if (typeof AvatarUtils.getDefaultAvatarURL === "function") {
+        patches.push(
+          before("getDefaultAvatarURL", AvatarUtils, function (args) {
+            try {
+              var arg = args && args[0];
+              if (!arg || arg === "???" || (typeof arg === "string" && isNaN(Number(arg)))) {
+                args[0] = "0";
+              } else if (typeof arg === "object") {
+                if (!arg.discriminator || arg.discriminator === "???" || isNaN(Number(arg.discriminator))) {
+                  arg.discriminator = "0";
+                }
+              }
+            } catch (e) {}
+            return args;
+          })
+        );
+      }
+      if (typeof AvatarUtils.getUserAvatarURL === "function") {
+        patches.push(
+          before("getUserAvatarURL", AvatarUtils, function (args) {
+            try {
+              var user = args && args[0];
+              if (user && typeof user === "object") {
+                if (!user.discriminator || user.discriminator === "???" || isNaN(Number(user.discriminator))) {
+                  user.discriminator = "0";
+                }
+              }
+            } catch (e) {}
+            return args;
+          })
+        );
+      }
+      if (typeof AvatarUtils.getUserAvatarSource === "function") {
+        patches.push(
+          before("getUserAvatarSource", AvatarUtils, function (args) {
+            try {
+              var user = args && args[0];
+              if (user && typeof user === "object") {
+                if (!user.discriminator || user.discriminator === "???" || isNaN(Number(user.discriminator))) {
+                  user.discriminator = "0";
+                }
+              }
+            } catch (e) {}
+            return args;
+          })
+        );
+      }
+    }
+  } catch (e) {}
 
   // Discord subtext markdown syntax (-# ) natively renders text dimmed with lower opacity / muted color
   function makeDimmed(text) {
@@ -179,8 +279,9 @@
               newEdited;
 
             var guildId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(updateChanId) && ChannelStore.getChannel(updateChanId).guild_id) || original.guild_id || updateMsg.guild_id || null;
+            var authorObj = getSanitizedAuthor(updateMsg.author, original.author);
 
-            // Pure partial update: ONLY update content and timestamp!
+            // Pure partial update: ONLY update content, timestamp, author, and essential metadata!
             // Never pass an attachments array or clone records, ensuring Discord keeps existing attachments untouched.
             args[0] = {
               type: "MESSAGE_UPDATE",
@@ -189,8 +290,13 @@
                 id: updateId,
                 channel_id: updateChanId,
                 guild_id: guildId,
+                author: authorObj,
+                type: (typeof updateMsg.type === "number" ? updateMsg.type : original.type) || 0,
+                flags: (typeof updateMsg.flags === "number" ? updateMsg.flags : original.flags) || 0,
                 content: combined,
+                timestamp: updateMsg.timestamp || original.timestamp || new Date().toISOString(),
                 edited_timestamp: updateMsg.edited_timestamp || new Date().toISOString(),
+                state: "SENT",
               },
               otherPluginBypass: true,
             };
@@ -199,6 +305,8 @@
               var c = messageCache.get(updateId);
               if (c) {
                 try { c.content = combined; } catch (e5) {}
+                try { c.author = authorObj; } catch (e6) {}
+                try { c.edited_timestamp = updateMsg.edited_timestamp || new Date().toISOString(); } catch (e7) {}
               }
             }
           }
@@ -282,6 +390,8 @@
             contentToSend = "-# *(deleted)*";
           }
 
+          var authorObj = getSanitizedAuthor(originalMessage.author);
+
           // CRITICAL ARCHITECTURAL FIX:
           // Never include an `attachments` or `embeds` array in the MESSAGE_UPDATE payload!
           // Standard Discord Gateway MESSAGE_UPDATE events are partial updates containing only { id, channel_id, content }.
@@ -297,7 +407,12 @@
               id: id,
               channel_id: chId,
               guild_id: gId,
+              author: authorObj,
+              type: originalMessage.type || 0,
+              flags: originalMessage.flags || 0,
               content: contentToSend,
+              timestamp: originalMessage.timestamp || new Date().toISOString(),
+              state: "SENT",
             },
             optimistic: false,
             sendMessageOptions: {},
@@ -319,7 +434,8 @@
             var cached = messageCache.get(id);
             if (cached) {
               try { cached.content = contentToSend; } catch (e5) {}
-              try { cached.was_deleted = true; } catch (e6) {}
+              try { cached.author = authorObj; } catch (e6) {}
+              try { cached.was_deleted = true; } catch (e7) {}
             }
           }
 
@@ -349,6 +465,9 @@
                   bContent = "-# *(deleted)*";
                 }
 
+                var bAuthorObj = getSanitizedAuthor(bMsg.author);
+                var bGuildId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(bChannelId) && ChannelStore.getChannel(bChannelId).guild_id) || bMsg.guild_id || null;
+
                 deletedMessages.set(bId, {
                   payload: {
                     type: "MESSAGE_UPDATE",
@@ -356,7 +475,13 @@
                     message: {
                       id: bId,
                       channel_id: bMsg.channel_id || bChannelId,
+                      guild_id: bGuildId,
+                      author: bAuthorObj,
+                      type: bMsg.type || 0,
+                      flags: bMsg.flags || 0,
                       content: bContent,
+                      timestamp: bMsg.timestamp || new Date().toISOString(),
+                      state: "SENT",
                     },
                     optimistic: false,
                     otherPluginBypass: true,
