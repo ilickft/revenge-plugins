@@ -180,44 +180,18 @@
 
             var guildId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(updateChanId) && ChannelStore.getChannel(updateChanId).guild_id) || original.guild_id || updateMsg.guild_id || null;
 
-            var mProto = Object.getPrototypeOf(original);
-            var mMerged = null;
-
-            if (typeof original.merge === "function") {
-              try {
-                mMerged = original.merge({
-                  content: combined,
-                  guild_id: guildId,
-                  edited_timestamp: updateMsg.edited_timestamp || new Date().toISOString(),
-                });
-              } catch (e) {
-                try {
-                  mMerged = original.merge({
-                    content: combined,
-                  });
-                } catch (e2) {}
-              }
-            }
-
-            if (!mMerged) {
-              var mBase = (mProto && mProto !== Object.prototype) ? Object.create(mProto) : {};
-              mMerged = Object.assign(mBase, original, updateMsg, {
-                content: combined,
-                guild_id: guildId,
-                edited_timestamp: updateMsg.edited_timestamp || new Date().toISOString(),
-              });
-              if (original.attachments) {
-                try { mMerged.attachments = original.attachments; } catch (e3) {}
-              }
-              if (original.embeds) {
-                try { mMerged.embeds = original.embeds; } catch (e4) {}
-              }
-            }
-
+            // Pure partial update: ONLY update content and timestamp!
+            // Never pass an attachments array or clone records, ensuring Discord keeps existing attachments untouched.
             args[0] = {
               type: "MESSAGE_UPDATE",
               channelId: updateChanId,
-              message: mMerged,
+              message: {
+                id: updateId,
+                channel_id: updateChanId,
+                guild_id: guildId,
+                content: combined,
+                edited_timestamp: updateMsg.edited_timestamp || new Date().toISOString(),
+              },
               otherPluginBypass: true,
             };
 
@@ -308,51 +282,23 @@
             contentToSend = "-# *(deleted)*";
           }
 
-          var proto = Object.getPrototypeOf(originalMessage);
-          var ghostMsg = null;
-
-          if (typeof originalMessage.merge === "function") {
-            try {
-              ghostMsg = originalMessage.merge({
-                content: contentToSend,
-                channel_id: chId,
-                guild_id: gId,
-                state: "SENT",
-              });
-            } catch (e) {
-              try {
-                ghostMsg = originalMessage.merge({
-                  content: contentToSend,
-                });
-              } catch (e2) {}
-            }
-          }
-
-          if (ghostMsg) {
-            try { ghostMsg.was_deleted = true; } catch (e) {}
-          } else {
-            var base = (proto && proto !== Object.prototype) ? Object.create(proto) : {};
-            ghostMsg = Object.assign(base, originalMessage, {
-              content: contentToSend,
-              channel_id: chId,
-              guild_id: gId,
-              type: originalMessage.type || 0,
-              flags: originalMessage.flags || 0,
-              state: "SENT",
-            });
-            try { ghostMsg.was_deleted = true; } catch (e) {}
-            if (originalMessage.attachments) {
-              try { ghostMsg.attachments = originalMessage.attachments; } catch (e3) {}
-            }
-            if (originalMessage.embeds) {
-              try { ghostMsg.embeds = originalMessage.embeds; } catch (e4) {}
-            }
-          }
-
+          // CRITICAL ARCHITECTURAL FIX:
+          // Never include an `attachments` or `embeds` array in the MESSAGE_UPDATE payload!
+          // Standard Discord Gateway MESSAGE_UPDATE events are partial updates containing only { id, channel_id, content }.
+          // When `attachments` is omitted from MESSAGE_UPDATE, Discord's MessageStore automatically merges the new content
+          // while leaving existing AttachmentRecord instances in MessageStore 100% untouched and intact.
+          // Passing an attachments array (even an array of AttachmentRecords) causes MessageStore to attempt re-instantiation
+          // where getters (like proxyUrl) are stripped or undefined, resulting in a fatal FastImage / React Native render crash
+          // that tears down the native WebRTC voice connection on whichever device receives the update.
           var ghostAction = {
             type: "MESSAGE_UPDATE",
             channelId: chId,
-            message: ghostMsg,
+            message: {
+              id: id,
+              channel_id: chId,
+              guild_id: gId,
+              content: contentToSend,
+            },
             optimistic: false,
             sendMessageOptions: {},
             isPushNotification: false,
@@ -403,48 +349,15 @@
                   bContent = "-# *(deleted)*";
                 }
 
-                var bProto = Object.getPrototypeOf(bMsg);
-                var bGhost = null;
-
-                if (typeof bMsg.merge === "function") {
-                  try {
-                    bGhost = bMsg.merge({
-                      content: bContent,
-                      channel_id: bMsg.channel_id || bChannelId,
-                      state: "SENT",
-                    });
-                  } catch (e) {
-                    try {
-                      bGhost = bMsg.merge({
-                        content: bContent,
-                      });
-                    } catch (e2) {}
-                  }
-                }
-
-                if (bGhost) {
-                  try { bGhost.was_deleted = true; } catch (e) {}
-                } else {
-                  var bBase = (bProto && bProto !== Object.prototype) ? Object.create(bProto) : {};
-                  bGhost = Object.assign(bBase, bMsg, {
-                    content: bContent,
-                    channel_id: bMsg.channel_id || bChannelId,
-                    state: "SENT",
-                  });
-                  try { bGhost.was_deleted = true; } catch (e) {}
-                  if (bMsg.attachments) {
-                    try { bGhost.attachments = bMsg.attachments; } catch (e3) {}
-                  }
-                  if (bMsg.embeds) {
-                    try { bGhost.embeds = bMsg.embeds; } catch (e4) {}
-                  }
-                }
-
                 deletedMessages.set(bId, {
                   payload: {
                     type: "MESSAGE_UPDATE",
                     channelId: bChannelId,
-                    message: bGhost,
+                    message: {
+                      id: bId,
+                      channel_id: bMsg.channel_id || bChannelId,
+                      content: bContent,
+                    },
                     optimistic: false,
                     otherPluginBypass: true,
                   },
