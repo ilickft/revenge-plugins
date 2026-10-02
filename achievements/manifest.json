@@ -1,0 +1,14 @@
+{
+  "name": "Achievements",
+  "description": "Unlock 308+ achievements with top toast banners, sounds, and streak tracking ported from AyuGram.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "TrophyIcon"
+  },
+  "hash": "98a29a5da0694f53f07c55f71d2d47f0852b1b74a91b64ed88974e0e41ec6c3f"
+}
