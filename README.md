@@ -145,6 +145,18 @@ https://ilickft.github.io/revenge-plugins/achievements/
 
 ---
 
+### 🛡️ clean-context-menu
+
+> hide unwanted items on message long-press context menu
+
+clean up and declutter your message long-press action menu by hiding unwanted default actions (Quick Reactions bar, Reply, Edit, Pin, Copy Link, Apps, TTS, etc.) or custom actions added by other plugins. features presets, custom keywords, and dynamic item discovery with individual toggle switches.
+
+```
+https://ilickft.github.io/revenge-plugins/clean-context-menu/
+```
+
+---
+
 ## installation
 
 open Revenge → **Settings → Plugins → `+`** → paste the plugin url.
