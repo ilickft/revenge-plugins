@@ -151,37 +151,46 @@
     }
   }
 
-  // ── Default Storage Initialization ────────────────────────────────────────
+  // ── Protected Storage Initialization (Preserves all existing user achievements & stats)
   if (storage.unlocked === undefined) storage.unlocked = {};
   if (storage.soundEnabled === undefined) storage.soundEnabled = true;
   if (storage.toastsEnabled === undefined) storage.toastsEnabled = true;
   if (storage.showProgressOnBio === undefined) storage.showProgressOnBio = false;
   if (storage.language === undefined) storage.language = "auto";
-  if (storage.stats === undefined) {
-    storage.stats = {
-      messages_sent: 0,
-      photos_sent: 0,
-      videos_sent: 0,
-      voice_sent: 0,
-      stickers_sent: 0,
-      gifs_sent: 0,
-      files_sent: 0,
-      audios_sent: 0,
-      spoilers_sent: 0,
-      edits_made: 0,
-      replies_made: 0,
-      reactions_made: 0,
-      polls_created: 0,
-      dice_rolled: 0,
-      unique_chats: [],
-      private_chats: [],
-      group_chats: [],
-      channel_chats: [],
-      bot_chats: [],
-      days_active: [],
-      fire_streak: 0,
-      fire_streaks: {}
-    };
+  if (storage.stats === undefined) storage.stats = {};
+  var sInit = storage.stats;
+  if (sInit.messages_sent === undefined) sInit.messages_sent = 0;
+  if (sInit.photos_sent === undefined) sInit.photos_sent = 0;
+  if (sInit.videos_sent === undefined) sInit.videos_sent = 0;
+  if (sInit.voice_sent === undefined) sInit.voice_sent = 0;
+  if (sInit.stickers_sent === undefined) sInit.stickers_sent = 0;
+  if (sInit.gifs_sent === undefined) sInit.gifs_sent = 0;
+  if (sInit.files_sent === undefined) sInit.files_sent = 0;
+  if (sInit.audios_sent === undefined) sInit.audios_sent = 0;
+  if (sInit.spoilers_sent === undefined) sInit.spoilers_sent = 0;
+  if (sInit.edits_made === undefined) sInit.edits_made = 0;
+  if (sInit.replies_made === undefined) sInit.replies_made = 0;
+  if (sInit.reactions_made === undefined) sInit.reactions_made = 0;
+  if (sInit.polls_created === undefined) sInit.polls_created = 0;
+  if (sInit.dice_rolled === undefined) sInit.dice_rolled = 0;
+  if (!Array.isArray(sInit.unique_chats)) sInit.unique_chats = [];
+  if (!Array.isArray(sInit.private_chats)) sInit.private_chats = [];
+  if (!Array.isArray(sInit.group_chats)) sInit.group_chats = [];
+  if (!Array.isArray(sInit.channel_chats)) sInit.channel_chats = [];
+  if (!Array.isArray(sInit.bot_chats)) sInit.bot_chats = [];
+  if (!Array.isArray(sInit.days_active)) sInit.days_active = [];
+  if (sInit.fire_streak === undefined) sInit.fire_streak = 0;
+  if (!sInit.fire_streaks) sInit.fire_streaks = {};
+
+  function getUnlockedCount() {
+    var unlockedMap = storage.unlocked || {};
+    var count = 0;
+    for (var id in unlockedMap) {
+      if (unlockedMap[id] && ACH_BY_ID[id]) {
+        count++;
+      }
+    }
+    return count;
   }
 
   function isRussian() {
@@ -230,8 +239,7 @@
       if (!currentUser) return;
 
       var currentBio = currentUser.bio || "";
-      var unlockedMap = storage.unlocked || {};
-      var unlockedCount = Object.keys(unlockedMap).length;
+      var unlockedCount = getUnlockedCount();
       var totalCount = ACHIEVEMENTS.length;
       var pct = Math.round((unlockedCount / totalCount) * 100);
 
@@ -1067,8 +1075,7 @@
       return origElement;
     }
 
-    var unlockedMap = storage.unlocked || {};
-    var unlockedCount = Object.keys(unlockedMap).length;
+    var unlockedCount = getUnlockedCount();
     var totalCount = ACHIEVEMENTS.length;
     var pct = Math.round((unlockedCount / totalCount) * 100);
 
@@ -1337,7 +1344,7 @@
     var Btn = RN.TouchableOpacity || RN.Pressable || RN.View;
 
     var unlockedMap = storage.unlocked || {};
-    var unlockedCount = Object.keys(unlockedMap).length;
+    var unlockedCount = getUnlockedCount();
     var totalCount = ACHIEVEMENTS.length;
     var pct = Math.round((unlockedCount / totalCount) * 100);
 
