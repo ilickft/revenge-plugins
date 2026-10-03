@@ -157,6 +157,30 @@ https://ilickft.github.io/revenge-plugins/clean-context-menu/
 
 ---
 
+### 🎨 app-icons
+
+> unlock all premium discord app icons without nitro
+
+patches discord's nitro-gate checks for the app icon selector, letting you freely choose any premium icon from **Settings → Appearance → App Icon** without a subscription.
+
+```
+https://ilickft.github.io/revenge-plugins/app-icons/
+```
+
+---
+
+### 🚫 no-orb-ads
+
+> block or mute discord quest/orb video ads to save bandwidth
+
+stops quest video ads from eating your bandwidth while you farm Orbs. uses 5 layered strategies: flag patching, component hiding, video collapse, REST API interception, and experiment store gating. optional "Mute Only" mode keeps the video but silences it.
+
+```
+https://ilickft.github.io/revenge-plugins/no-orb-ads/
+```
+
+---
+
 ## installation
 
 open Revenge → **Settings → Plugins → `+`** → paste the plugin url.

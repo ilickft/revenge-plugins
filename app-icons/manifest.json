@@ -1,0 +1,14 @@
+{
+  "name": "App Icons",
+  "description": "Unlocks all Discord premium app icons without Nitro. Go to Settings > Appearance > App Icon to choose any icon.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "ImageIcon"
+  },
+  "hash": "b6339aae9f31844bc03b32a9a7b32b98d840641573d1fba5ade799c88074fa93"
+}

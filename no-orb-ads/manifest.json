@@ -1,0 +1,14 @@
+{
+  "name": "No Orb Ads",
+  "description": "Blocks or mutes Discord Quest/Orb video ads to save bandwidth while farming Orbs. Uses 5 strategies: flag patching, component hiding, video collapse, API interception, and experiment gating.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "BlockedIcon"
+  },
+  "hash": "b537461f24d7c5ef677f50d2ba377211654b60cea090c87d9be7e4cd3ef2ceb9"
+}
