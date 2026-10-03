@@ -22,9 +22,12 @@
   const MemberSearch         = findByProps("queryMembers") || findByProps("searchMembers");
 
   // ── UI Components & Helpers ────────────────────────────────────────────────
-  const Forms            = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormIcon");
+  const Forms            = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
   const FormRow          = Forms && (Forms.FormRow || Forms.TableRow);
+  const FormSection      = Forms && (Forms.FormSection || Forms.TableSection);
   const FormIcon         = Forms && (Forms.FormIcon || Forms.TableIcon);
+  const FormSwitch       = Forms && (Forms.FormSwitch || Forms.FormSwitchRow);
+  const FormDivider      = Forms && Forms.FormDivider;
   const getAssetIDByName = (vendetta.ui && vendetta.ui.assets && vendetta.ui.assets.getAssetIDByName) || (findByProps("getAssetIDByName") && findByProps("getAssetIDByName").getAssetIDByName);
   const showToast        = (vendetta.ui && vendetta.ui.toasts && vendetta.ui.toasts.showToast) || (findByProps("showToast") && findByProps("showToast").showToast);
 
@@ -999,84 +1002,29 @@
     return React.createElement(
       RN.ScrollView,
       {
-        style: { flex: 1, backgroundColor: "#1e1f22" },
-        contentContainerStyle: { padding: 16, paddingBottom: 60 },
+        style: { flex: 1 },
+        contentContainerStyle: { paddingBottom: 40 },
       },
 
-      // Header Banner
       React.createElement(
-        RN.View,
-        {
-          style: {
-            backgroundColor: "#2b2d31",
-            borderRadius: 14,
-            padding: 16,
-            marginBottom: 16,
-            borderLeftWidth: 4,
-            borderLeftColor: "#da373c",
-          },
-        },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#f2f3f5", fontSize: 20, fontWeight: "700", marginBottom: 6 } },
-          "🛡️ Shadow Ban"
-        ),
-        React.createElement(
-          RN.Text,
-          { style: { color: "#dbdee1", fontSize: 13, lineHeight: 18 } },
-          "Shadow-banned users completely disappear from your chats, direct messages, voice channels, and server member lists. They cannot be seen or heard."
-        ),
+        FormSection,
+        { title: `SHADOW BANNED USERS (${bannedList.length})` },
         React.createElement(
           RN.View,
-          {
-            style: {
-              marginTop: 12,
-              backgroundColor: "#1e1f22",
-              paddingVertical: 6,
-              paddingHorizontal: 10,
-              borderRadius: 8,
-              alignSelf: "flex-start",
-            },
-          },
-          React.createElement(
-            RN.Text,
-            { style: { color: "#f2f3f5", fontSize: 12, fontWeight: "600" } },
-            `🚫 ${bannedList.length} User${bannedList.length === 1 ? "" : "s"} Shadow Banned`
-          )
-        )
-      ),
-
-      // Quick Ban Input Card
-      React.createElement(
-        RN.View,
-        { style: { backgroundColor: "#2b2d31", borderRadius: 14, padding: 14, marginBottom: 16 } },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600", marginBottom: 4 } },
-          "Shadow Ban by User ID"
-        ),
-        React.createElement(
-          RN.Text,
-          { style: { color: "#949ba4", fontSize: 12, marginBottom: 10 } },
-          "Enter any Discord Snowflake ID to immediately shadow ban them."
-        ),
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", alignItems: "center" } },
+          { style: { paddingHorizontal: 16, paddingVertical: 10, flexDirection: "row", alignItems: "center" } },
           React.createElement(RN.TextInput, {
             style: {
               flex: 1,
-              backgroundColor: "#1e1f22",
-              color: "#f2f3f5",
+              backgroundColor: "rgba(128, 128, 128, 0.15)",
+              color: "inherit",
               borderRadius: 8,
-              padding: 10,
-              fontSize: 13,
-              borderWidth: 1,
-              borderColor: "#3f4147",
-              marginRight: 8,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              fontSize: 14,
+              marginRight: 8
             },
-            placeholder: "User ID (e.g. 123456789012345678)",
-            placeholderTextColor: "#6d6f78",
+            placeholder: "User Snowflake ID...",
+            placeholderTextColor: "#80848e",
             value: newUserId,
             onChangeText: setNewUserId,
             keyboardType: "numeric",
@@ -1088,284 +1036,162 @@
               style: {
                 backgroundColor: "#da373c",
                 paddingVertical: 10,
-                paddingHorizontal: 14,
+                paddingHorizontal: 16,
                 borderRadius: 8,
-                alignItems: "center",
                 justifyContent: "center",
-              },
+                alignItems: "center"
+              }
             },
             React.createElement(
               RN.Text,
-              { style: { color: "#ffffff", fontSize: 13, fontWeight: "600" } },
+              { style: { color: "#ffffff", fontSize: 14, fontWeight: "700" } },
               "Ban"
             )
           )
-        )
-      ),
-
-      // Shadow Banned Users List Card
-      React.createElement(
-        RN.View,
-        { style: { backgroundColor: "#2b2d31", borderRadius: 14, padding: 14, marginBottom: 16 } },
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
-          React.createElement(
-            RN.Text,
-            { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600" } },
-            `Banned Users (${bannedList.length})`
-          ),
-          bannedList.length > 0 &&
-            React.createElement(
-              Btn,
-              {
-                onPress: handleUnbanAll,
-                style: { backgroundColor: "#3f4147", paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6 },
-              },
-              React.createElement(
-                RN.Text,
-                { style: { color: "#f2f3f5", fontSize: 11, fontWeight: "600" } },
-                "Unban All"
-              )
-            )
         ),
-
-        // Search Filter (shown if > 2 users)
-        bannedList.length > 2 &&
+        bannedList.length > 2 && React.createElement(
+          RN.View,
+          { style: { paddingHorizontal: 16, paddingBottom: 8 } },
           React.createElement(RN.TextInput, {
             style: {
-              backgroundColor: "#1e1f22",
-              color: "#f2f3f5",
+              backgroundColor: "rgba(128, 128, 128, 0.15)",
+              color: "inherit",
               borderRadius: 8,
-              padding: 8,
-              fontSize: 12,
-              borderWidth: 1,
-              borderColor: "#3f4147",
-              marginBottom: 12,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              fontSize: 13
             },
             placeholder: "Search banned users by name or ID...",
-            placeholderTextColor: "#6d6f78",
+            placeholderTextColor: "#80848e",
             value: searchQuery,
             onChangeText: setSearchQuery,
-          }),
+          })
+        ),
+        bannedList.length > 0 && React.createElement(FormRow, {
+          label: "Unban All Users",
+          subLabel: "Remove all " + bannedList.length + " banned user(s)",
+          onPress: handleUnbanAll
+        }),
+        bannedList.length === 0
+          ? React.createElement(FormRow, {
+              label: "No users are shadow banned",
+              subLabel: "Use /sban user:@someone, reply /sban, or enter an ID above"
+            })
+          : filteredList.map((item) => {
+              const id = item.id;
+              const displayName = item.globalName || item.username || `User (${id.slice(-4)})`;
+              const subText = item.username ? `@${item.username} • ${id}` : id;
 
-        // Empty State
-        bannedList.length === 0 &&
-          React.createElement(
-            RN.View,
-            { style: { paddingVertical: 20, alignItems: "center" } },
-            React.createElement(
-              RN.Text,
-              { style: { color: "#949ba4", fontSize: 14, marginBottom: 4 } },
-              "No users are shadow banned."
-            ),
-            React.createElement(
-              RN.Text,
-              { style: { color: "#6d6f78", fontSize: 12, textAlign: "center" } },
-              "Use /sban user:@someone, reply to a message and type /sban, or enter an ID above."
-            )
-          ),
-
-        // User Rows
-        filteredList.map((item) => {
-          const id = item.id;
-          const displayName = item.globalName || item.username || `User (${id.slice(-4)})`;
-          const subText = item.username ? `@${item.username} • ${id}` : id;
-          const dateStr = item.bannedAt ? new Date(item.bannedAt).toLocaleDateString() : "";
-
-          return React.createElement(
-            RN.View,
-            {
-              key: `banned-row-${id}`,
-              style: {
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: "#1e1f22",
-                borderRadius: 10,
-                padding: 10,
-                marginBottom: 8,
-              },
-            },
-            React.createElement(RN.Image, {
-              source: { uri: item.avatar || getAvatarUrl({ id }) },
-              style: { width: 38, height: 38, borderRadius: 19, marginRight: 10, backgroundColor: "#313338" },
-            }),
-            React.createElement(
-              RN.View,
-              { style: { flex: 1, marginRight: 8 } },
-              React.createElement(
-                RN.Text,
-                { style: { color: "#f2f3f5", fontSize: 14, fontWeight: "600" }, numberOfLines: 1 },
-                displayName
-              ),
-              React.createElement(
-                RN.Text,
-                { style: { color: "#949ba4", fontSize: 11, marginTop: 1 }, numberOfLines: 1 },
-                subText
-              ),
-              dateStr ?
-                React.createElement(
-                  RN.Text,
-                  { style: { color: "#6d6f78", fontSize: 10, marginTop: 1 } },
-                  `Banned ${dateStr}`
-                ) : null
-            ),
-            React.createElement(
-              Btn,
-              {
-                onPress: () => handleUnban(id),
-                style: {
-                  backgroundColor: "#da373c",
-                  paddingVertical: 6,
-                  paddingHorizontal: 12,
-                  borderRadius: 6,
-                },
-              },
-              React.createElement(
-                RN.Text,
-                { style: { color: "#ffffff", fontSize: 12, fontWeight: "600" } },
-                "Unban"
-              )
-            )
-          );
-        })
+              return React.createElement(FormRow, {
+                key: `banned-row-${id}`,
+                label: displayName,
+                subLabel: subText,
+                trailing: React.createElement(
+                  Btn,
+                  {
+                    onPress: () => handleUnban(id),
+                    style: {
+                      backgroundColor: "rgba(218, 55, 60, 0.15)",
+                      paddingVertical: 6,
+                      paddingHorizontal: 12,
+                      borderRadius: 6,
+                    },
+                  },
+                  React.createElement(
+                    RN.Text,
+                    { style: { color: "#da373c", fontSize: 12, fontWeight: "600" } },
+                    "Unban"
+                  )
+                )
+              });
+            })
       ),
 
-      // Granular Module Toggles Card
       React.createElement(
-        RN.View,
-        { style: { backgroundColor: "#2b2d31", borderRadius: 14, padding: 14, marginBottom: 16 } },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600", marginBottom: 12 } },
-          "Protection Modules"
-        ),
-
-        // 1. Text Messages
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 } },
-          React.createElement(
-            RN.View,
-            { style: { flex: 1, marginRight: 12 } },
-            React.createElement(RN.Text, { style: { color: "#f2f3f5", fontSize: 14, fontWeight: "500" } }, "Block Text Messages"),
-            React.createElement(RN.Text, { style: { color: "#949ba4", fontSize: 11, marginTop: 2 } }, "Drops new messages, edits, and filters chat history")
-          ),
-          React.createElement(RN.Switch, {
+        FormSection,
+        { title: "PROTECTION MODULES" },
+        React.createElement(FormRow, {
+          label: "Block Text Messages",
+          subLabel: "Drops new messages, edits, and filters chat history",
+          trailing: React.createElement(FormSwitch, {
             value: storage.blockMessages !== false,
             onValueChange: (val) => {
               storage.blockMessages = val;
               forceUpdate();
             },
-            trackColor: { false: "#4e5058", true: "#5865f2" },
+            trackColor: { false: "#4e5058", true: "#5865f2" }
           })
-        ),
-
-        // 2. Voice Channels
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 } },
-          React.createElement(
-            RN.View,
-            { style: { flex: 1, marginRight: 12 } },
-            React.createElement(RN.Text, { style: { color: "#f2f3f5", fontSize: 14, fontWeight: "500" } }, "Hide from Voice Channels (VC)"),
-            React.createElement(RN.Text, { style: { color: "#949ba4", fontSize: 11, marginTop: 2 } }, "Kicks their avatar from VC list and mutes incoming audio")
-          ),
-          React.createElement(RN.Switch, {
+        }),
+        React.createElement(FormRow, {
+          label: "Hide from Voice Channels (VC)",
+          subLabel: "Hides avatar from VC list and mutes incoming audio",
+          trailing: React.createElement(FormSwitch, {
             value: storage.hideVoice !== false,
             onValueChange: (val) => {
               storage.hideVoice = val;
               forceUpdate();
             },
-            trackColor: { false: "#4e5058", true: "#5865f2" },
+            trackColor: { false: "#4e5058", true: "#5865f2" }
           })
-        ),
-
-        // 3. Direct Messages
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 } },
-          React.createElement(
-            RN.View,
-            { style: { flex: 1, marginRight: 12 } },
-            React.createElement(RN.Text, { style: { color: "#f2f3f5", fontSize: 14, fontWeight: "500" } }, "Hide Direct Messages (DMs)"),
-            React.createElement(RN.Text, { style: { color: "#949ba4", fontSize: 11, marginTop: 2 } }, "Hides 1-on-1 conversations and blocks incoming calls/ringing")
-          ),
-          React.createElement(RN.Switch, {
+        }),
+        React.createElement(FormRow, {
+          label: "Hide Direct Messages (DMs)",
+          subLabel: "Hides 1-on-1 conversations and blocks incoming calls",
+          trailing: React.createElement(FormSwitch, {
             value: storage.hideDMs !== false,
             onValueChange: (val) => {
               storage.hideDMs = val;
               forceUpdate();
             },
-            trackColor: { false: "#4e5058", true: "#5865f2" },
+            trackColor: { false: "#4e5058", true: "#5865f2" }
           })
-        ),
-
-        // 4. Member List & Typing
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 } },
-          React.createElement(
-            RN.View,
-            { style: { flex: 1, marginRight: 12 } },
-            React.createElement(RN.Text, { style: { color: "#f2f3f5", fontSize: 14, fontWeight: "500" } }, "Hide Member List & Typing"),
-            React.createElement(RN.Text, { style: { color: "#949ba4", fontSize: 11, marginTop: 2 } }, "Removes user from server sidebars, typing status & mentions")
-          ),
-          React.createElement(RN.Switch, {
+        }),
+        React.createElement(FormRow, {
+          label: "Hide Member List & Typing",
+          subLabel: "Removes user from server sidebars, typing indicators & mentions",
+          trailing: React.createElement(FormSwitch, {
             value: storage.hideMemberList !== false,
             onValueChange: (val) => {
               storage.hideMemberList = val;
               storage.hideTyping = val;
               forceUpdate();
             },
-            trackColor: { false: "#4e5058", true: "#5865f2" },
+            trackColor: { false: "#4e5058", true: "#5865f2" }
           })
-        ),
-
-        // 5. Context Menu
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" } },
-          React.createElement(
-            RN.View,
-            { style: { flex: 1, marginRight: 12 } },
-            React.createElement(RN.Text, { style: { color: "#f2f3f5", fontSize: 14, fontWeight: "500" } }, "Message Context Menu"),
-            React.createElement(RN.Text, { style: { color: "#949ba4", fontSize: 11, marginTop: 2 } }, "Add 'Shadow Ban User' option when long-pressing any message")
-          ),
-          React.createElement(RN.Switch, {
+        }),
+        React.createElement(FormRow, {
+          label: "Message Context Menu",
+          subLabel: "Add 'Shadow Ban User' option when long-pressing any message",
+          trailing: React.createElement(FormSwitch, {
             value: storage.enableContextMenu !== false,
             onValueChange: (val) => {
               storage.enableContextMenu = val;
               forceUpdate();
             },
-            trackColor: { false: "#4e5058", true: "#5865f2" },
+            trackColor: { false: "#4e5058", true: "#5865f2" }
           })
-        )
+        })
       ),
 
-      // How to Use Guide Card
       React.createElement(
-        RN.View,
-        { style: { backgroundColor: "#2b2d31", borderRadius: 14, padding: 14 } },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600", marginBottom: 8 } },
-          "📖 Commands & Usage"
-        ),
-        React.createElement(
-          RN.Text,
-          { style: { color: "#dbdee1", fontSize: 13, lineHeight: 20 } },
-          "• \uD83D\uDCAC Reply to any message and type ",
-          React.createElement(RN.Text, { style: { color: "#da373c", fontWeight: "700" } }, "/sban"),
-          "\n• \uD83D\uDC64 Type ",
-          React.createElement(RN.Text, { style: { color: "#da373c", fontWeight: "700" } }, "/sban user:@someone"),
-          " to pick a user\n• \uD83C\uDD94 Type ",
-          React.createElement(RN.Text, { style: { color: "#da373c", fontWeight: "700" } }, "/sban id:123456..."),
-          " to ban by ID\n• \u2705 Type ",
-          React.createElement(RN.Text, { style: { color: "#5865f2", fontWeight: "700" } }, "/unsban <user>/<id>"),
-          " or unban directly from this settings page\n• \uD83D\uDCF1 Or long-press any message and tap ",
-          React.createElement(RN.Text, { style: { color: "#f2f3f5", fontWeight: "700" } }, "'Shadow Ban User'")
-        )
+        FormSection,
+        { title: "COMMANDS & USAGE" },
+        React.createElement(FormRow, {
+          label: "/sban user:@someone",
+          subLabel: "Shadow ban a user in your server"
+        }),
+        React.createElement(FormRow, {
+          label: "/sban id:<snowflake>",
+          subLabel: "Shadow ban by snowflake ID directly"
+        }),
+        React.createElement(FormRow, {
+          label: "/unsban",
+          subLabel: "Remove a shadow ban"
+        }),
+        React.createElement(FormRow, {
+          label: "Context Menu",
+          subLabel: "Long-press any message and tap 'Shadow Ban User'"
+        })
       )
     );
   }

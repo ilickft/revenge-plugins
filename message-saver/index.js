@@ -14,9 +14,12 @@
   var PendingReplyStore    = findByProps("getPendingReply");
   var TokenModule          = findByProps("getToken");
   var ActionSheet          = findByProps("openLazy", "hideActionSheet");
-  var Forms                = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormIcon");
+  var Forms                = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
   var FormRow              = Forms && (Forms.FormRow || Forms.TableRow);
+  var FormSection          = Forms && (Forms.FormSection || Forms.TableSection);
   var FormIcon             = Forms && (Forms.FormIcon || Forms.TableIcon);
+  var FormSwitch           = Forms && (Forms.FormSwitch || Forms.FormSwitchRow);
+  var FormDivider          = Forms && Forms.FormDivider;
   var getAssetIDByName     = (vendetta.ui && vendetta.ui.assets && vendetta.ui.assets.getAssetIDByName) || (findByProps("getAssetIDByName") && findByProps("getAssetIDByName").getAssetIDByName);
   var showToast            = (vendetta.ui && vendetta.ui.toasts && vendetta.ui.toasts.showToast) || (findByProps("showToast") && findByProps("showToast").showToast);
 
@@ -1140,129 +1143,82 @@
     return React.createElement(
       RN.ScrollView,
       {
-        style: { flex: 1, backgroundColor: "#313338" },
-        contentContainerStyle: { padding: 16, paddingBottom: 50 },
+        style: { flex: 1 },
+        contentContainerStyle: { paddingBottom: 40 },
       },
       React.createElement(
-        RN.View,
-        { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#f2f3f5", fontSize: 20, fontWeight: "700" } },
-          "Saved Messages (" + list.length + ")"
-        ),
-        list.length > 0 && React.createElement(
-          Btn,
-          {
-            onPress: handleClearAll,
-            style: { backgroundColor: "#da373c22", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 }
-          },
-          React.createElement(RN.Text, { style: { color: "#da373c", fontSize: 13, fontWeight: "600" } }, "Clear All")
-        )
-      ),
-      React.createElement(
-        RN.Text,
-        { style: { color: "#949ba4", fontSize: 13, marginBottom: 16, lineHeight: 18 } },
-        "Messages you save (by long-pressing any message and selecting 'Save Message' or using /save) are stored here. You can resend them back to any channel as they were."
-      ),
-      list.length === 0
-        ? React.createElement(
-            RN.View,
-            { style: { backgroundColor: "#2b2d31", borderRadius: 12, padding: 24, alignItems: "center" } },
-            React.createElement(RN.Text, { style: { color: "#949ba4", fontSize: 15, textAlign: "center" } }, "No saved messages yet.\n\nLong-press any message in chat and tap 'Save Message' or use /save!"),
-          )
-        : list.map(function (item, idx) {
-            var attCount = (item.attachments && item.attachments.length) || 0;
-            var voice = isVoiceItem(item);
-            var audio = isAudioItem(item);
+        FormSection,
+        { title: "SAVED MESSAGES (" + list.length + ")" },
+        list.length > 0 && React.createElement(FormRow, {
+          label: "Clear All Saved Messages",
+          subLabel: "Permanently delete all " + list.length + " saved message(s)",
+          onPress: handleClearAll
+        }),
+        list.length === 0
+          ? React.createElement(FormRow, {
+              label: "No saved messages yet",
+              subLabel: "Long-press any message in chat and tap 'Save Message' or use /save"
+            })
+          : list.map(function (item, idx) {
+              var attCount = (item.attachments && item.attachments.length) || 0;
+              var voice = isVoiceItem(item);
+              var audio = isAudioItem(item);
+              var details = "By " + item.authorName + " • " + new Date(item.savedAt).toLocaleDateString();
+              if (voice) details += " • 🎤 Voice Msg";
+              else if (audio) details += " • 🎵 Audio Track";
+              else if (attCount > 0) details += " • 📎 " + attCount + " file(s)";
 
-            return React.createElement(
-              RN.View,
-              {
-                key: item.id + "_" + idx,
-                style: { backgroundColor: "#2b2d31", borderRadius: 12, padding: 14, marginBottom: 12 }
-              },
-              React.createElement(
-                RN.View,
-                { style: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 } },
-                React.createElement(
-                  RN.Text,
-                  { style: { color: "#f2f3f5", fontSize: 16, fontWeight: "600", flex: 1 } },
-                  item.name
-                ),
-                React.createElement(
-                  RN.Text,
-                  { style: { color: "#949ba4", fontSize: 12 } },
-                  new Date(item.savedAt).toLocaleDateString()
-                )
-              ),
-              React.createElement(
-                RN.Text,
-                { style: { color: "#5865f2", fontSize: 12, marginBottom: 8 } },
-                "By " + item.authorName
-              ),
-              item.content ? React.createElement(
-                RN.Text,
-                { style: { color: "#dbdee1", fontSize: 14, marginBottom: 8, lineHeight: 19 } },
-                item.content
-              ) : null,
-              voice && React.createElement(
-                RN.View,
-                { style: { backgroundColor: "#1e1f22", borderRadius: 8, padding: 8, marginBottom: 10 } },
-                React.createElement(
-                  RN.Text,
-                  { style: { color: "#23a55a", fontSize: 12, fontWeight: "600" } },
-                  "\uD83C\uDFA4 Voice Message (" + (item.attachments[0] && item.attachments[0].duration_secs ? Math.round(item.attachments[0].duration_secs) + "s" : "audio") + ")"
-                )
-              ),
-              audio && React.createElement(
-                RN.View,
-                { style: { backgroundColor: "#1e1f22", borderRadius: 8, padding: 8, marginBottom: 10 } },
-                React.createElement(
-                  RN.Text,
-                  { style: { color: "#5865f2", fontSize: 12, fontWeight: "600" } },
-                  "\uD83C\uDFB5 Audio / Song: " + ((item.attachments[0] && item.attachments[0].filename) || "audio track")
-                )
-              ),
-              !voice && !audio && attCount > 0 && React.createElement(
-                RN.View,
-                { style: { backgroundColor: "#1e1f22", borderRadius: 8, padding: 8, marginBottom: 10 } },
-                React.createElement(
-                  RN.Text,
-                  { style: { color: "#b5bac1", fontSize: 12 } },
-                  "\uD83D\uDCCE " + attCount + " attachment" + (attCount > 1 ? "s" : "") + " saved"
-                )
-              ),
-              React.createElement(
-                RN.View,
-                { style: { flexDirection: "row", gap: 8 } },
-                React.createElement(
-                  Btn,
-                  {
-                    onPress: function () { handleSend(item); },
-                    style: { backgroundColor: "#5865f2", paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8 }
-                  },
-                  React.createElement(RN.Text, { style: { color: "#ffffff", fontSize: 13, fontWeight: "600" } }, "Send")
-                ),
-                React.createElement(
-                  Btn,
-                  {
-                    onPress: function () { handleCopy(item); },
-                    style: { backgroundColor: "#383a40", paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8 }
-                  },
-                  React.createElement(RN.Text, { style: { color: "#dbdee1", fontSize: 13, fontWeight: "600" } }, "Copy")
-                ),
-                React.createElement(
-                  Btn,
-                  {
-                    onPress: function () { handleDelete(idx); },
-                    style: { backgroundColor: "#da373c22", paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, marginLeft: "auto" }
-                  },
-                  React.createElement(RN.Text, { style: { color: "#da373c", fontSize: 13, fontWeight: "600" } }, "Delete")
-                )
-              )
-            );
-          })
+              return React.createElement(
+                FormRow,
+                {
+                  key: item.id + "_" + idx,
+                  label: item.name || "Saved Message",
+                  subLabel: (item.content ? (item.content.slice(0, 90) + (item.content.length > 90 ? "..." : "") + "\n") : "") + details,
+                  trailing: React.createElement(
+                    RN.View,
+                    { style: { flexDirection: "row", alignItems: "center" } },
+                    React.createElement(
+                      Btn,
+                      {
+                        onPress: function () { handleSend(item); },
+                        style: { backgroundColor: "#5865f2", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6, marginRight: 6 }
+                      },
+                      React.createElement(RN.Text, { style: { color: "#ffffff", fontSize: 12, fontWeight: "600" } }, "Send")
+                    ),
+                    React.createElement(
+                      Btn,
+                      {
+                        onPress: function () { handleCopy(item); },
+                        style: { backgroundColor: "rgba(128, 128, 128, 0.2)", paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, marginRight: 6 }
+                      },
+                      React.createElement(RN.Text, { style: { color: "inherit", fontSize: 12, fontWeight: "600" } }, "Copy")
+                    ),
+                    React.createElement(
+                      Btn,
+                      {
+                        onPress: function () { handleDelete(idx); },
+                        style: { backgroundColor: "rgba(218, 55, 60, 0.15)", paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6 }
+                      },
+                      React.createElement(RN.Text, { style: { color: "#da373c", fontSize: 12, fontWeight: "600" } }, "Delete")
+                    )
+                  )
+                }
+              );
+            })
+      ),
+
+      React.createElement(
+        FormSection,
+        { title: "HOW TO USE" },
+        React.createElement(FormRow, {
+          label: "Save Any Message",
+          subLabel: "Long-press any message in chat and tap 'Save Message', or run /save"
+        }),
+        React.createElement(FormRow, {
+          label: "Resend to Chat",
+          subLabel: "Tap 'Send' above or type /resend in any channel"
+        })
+      )
     );
   }
 

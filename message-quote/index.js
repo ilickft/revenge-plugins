@@ -22,10 +22,12 @@
   var Messages             = findByProps("sendMessage", "editMessage");
 
   // UI components & helpers
-  var Forms                = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormIcon");
+  var Forms                = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
   var FormRow              = Forms && (Forms.FormRow || Forms.TableRow);
+  var FormSection          = Forms && (Forms.FormSection || Forms.TableSection);
   var FormIcon             = Forms && (Forms.FormIcon || Forms.TableIcon);
   var FormSwitch           = Forms && (Forms.FormSwitch || Forms.FormSwitchRow);
+  var FormDivider          = Forms && Forms.FormDivider;
   var getAssetIDByName     = (vendetta.ui && vendetta.ui.assets && vendetta.ui.assets.getAssetIDByName) || (findByProps("getAssetIDByName") && findByProps("getAssetIDByName").getAssetIDByName);
   var showToast            = (vendetta.ui && vendetta.ui.toasts && vendetta.ui.toasts.showToast) || (findByProps("showToast") && findByProps("showToast").showToast);
 
@@ -684,137 +686,97 @@
     return React.createElement(
       RN.ScrollView,
       {
-        style: { flex: 1, backgroundColor: "#313338" },
-        contentContainerStyle: { padding: 16, paddingBottom: 50 },
+        style: { flex: 1 },
+        contentContainerStyle: { paddingBottom: 40 }
       },
       React.createElement(
-        RN.Text,
-        { style: { color: "#f2f3f5", fontSize: 20, fontWeight: "700", marginBottom: 8 } },
-        "Message Quote Settings"
-      ),
-      React.createElement(
-        RN.Text,
-        { style: { color: "#949ba4", fontSize: 13, marginBottom: 20, lineHeight: 18 } },
-        "Create authentic Discord-style PNG quote cards with avatar, display name, local timestamp, and text directly in chat."
-      ),
-
-      // 1. Context menu toggle
-      React.createElement(
-        RN.View,
-        { style: { backgroundColor: "#2b2d31", borderRadius: 12, padding: 14, marginBottom: 16 } },
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" } },
-          React.createElement(
-            RN.View,
-            { style: { flex: 1, marginRight: 12 } },
-            React.createElement(RN.Text, { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600" } }, "Message Context Menu"),
-            React.createElement(RN.Text, { style: { color: "#949ba4", fontSize: 12, marginTop: 4 } }, "Add 'Quote as PNG' button when long-pressing any message")
-          ),
-          React.createElement(RN.Switch, {
+        FormSection,
+        { title: "GENERAL SETTINGS" },
+        React.createElement(FormRow, {
+          label: "Message Context Menu",
+          subLabel: "Add 'Quote as PNG' button when long-pressing any message",
+          trailing: React.createElement(FormSwitch, {
             value: storage.enableContextMenu !== false,
             onValueChange: function (val) {
               storage.enableContextMenu = val;
               forceUpdate();
-            },
-            trackColor: { false: "#4e5058", true: "#5865f2" }
+            }
           })
-        )
-      ),
-
-      // 2. Link reply toggle
-      React.createElement(
-        RN.View,
-        { style: { backgroundColor: "#2b2d31", borderRadius: 12, padding: 14, marginBottom: 16 } },
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" } },
-          React.createElement(
-            RN.View,
-            { style: { flex: 1, marginRight: 12 } },
-            React.createElement(RN.Text, { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600" } }, "Link as Reply"),
-            React.createElement(RN.Text, { style: { color: "#949ba4", fontSize: 12, marginTop: 4 } }, "Send the generated quote PNG as a Discord reply to the quoted message")
-          ),
-          React.createElement(RN.Switch, {
+        }),
+        React.createElement(FormRow, {
+          label: "Link as Reply",
+          subLabel: "Send quote PNG as a Discord reply to the quoted message",
+          trailing: React.createElement(FormSwitch, {
             value: storage.linkReply !== false,
             onValueChange: function (val) {
               storage.linkReply = val;
               forceUpdate();
+            }
+          })
+        })
+      ),
+
+      React.createElement(
+        FormSection,
+        { title: "CUSTOMIZATION" },
+        React.createElement(
+          RN.View,
+          { style: { paddingHorizontal: 16, paddingVertical: 10 } },
+          React.createElement(RN.Text, { style: { fontSize: 13, color: "#80848e", marginBottom: 6 } }, "Default Username Color (Hex code, optional)"),
+          React.createElement(RN.TextInput, {
+            style: {
+              backgroundColor: "rgba(128, 128, 128, 0.15)",
+              color: "inherit",
+              borderRadius: 8,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              fontSize: 14
             },
-            trackColor: { false: "#4e5058", true: "#5865f2" }
+            placeholder: "#5865f2 (empty = role color or auto)",
+            placeholderTextColor: "#80848e",
+            value: storage.defaultColor || "",
+            onChangeText: function (val) {
+              storage.defaultColor = val;
+              forceUpdate();
+            }
           })
         )
       ),
 
-      // 3. Default color override
       React.createElement(
-        RN.View,
-        { style: { backgroundColor: "#2b2d31", borderRadius: 12, padding: 14, marginBottom: 16 } },
-        React.createElement(RN.Text, { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600", marginBottom: 4 } }, "Default Username Color (Optional)"),
-        React.createElement(RN.Text, { style: { color: "#949ba4", fontSize: 12, marginBottom: 10 } }, "Hex color for username if user has no server role color (leave blank for default)"),
-        React.createElement(RN.TextInput, {
-          style: {
-            backgroundColor: "#1e1f22",
-            color: "#f2f3f5",
-            borderRadius: 8,
-            padding: 10,
-            fontSize: 14,
-            borderWidth: 1,
-            borderColor: "#3f4147"
-          },
-          placeholder: "#5865f2 (empty = auto / white)",
-          placeholderTextColor: "#6d6f78",
-          value: storage.defaultColor || "",
-          onChangeText: function (val) {
-            storage.defaultColor = val;
-            forceUpdate();
-          }
-        })
-      ),
-
-      // 4. Test button & preview
-      React.createElement(
-        RN.View,
-        { style: { backgroundColor: "#2b2d31", borderRadius: 12, padding: 14, marginBottom: 16 } },
-        React.createElement(RN.Text, { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600", marginBottom: 4 } }, "Test Generator"),
-        React.createElement(RN.Text, { style: { color: "#949ba4", fontSize: 12, marginBottom: 12 } }, "Generate a live test card using your current profile to verify the generator."),
-        React.createElement(
-          Btn,
-          {
-            onPress: handleTest,
-            disabled: testing,
-            style: { backgroundColor: "#5865f2", paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, alignItems: "center" }
-          },
-          React.createElement(RN.Text, { style: { color: "#ffffff", fontSize: 14, fontWeight: "600" } }, testing ? "Generating..." : "Generate Test Quote")
-        ),
+        FormSection,
+        { title: "TEST GENERATOR" },
+        React.createElement(FormRow, {
+          label: testing ? "Generating..." : "Generate Test Quote",
+          subLabel: "Creates a live test card using your current profile",
+          onPress: handleTest
+        }),
         previewUrl && React.createElement(
           RN.View,
-          { style: { marginTop: 14, alignItems: "center" } },
+          { style: { padding: 16, alignItems: "center" } },
           React.createElement(RN.Image, {
             source: { uri: previewUrl },
-            style: { width: "100%", height: 100, borderRadius: 8 },
+            style: { width: "100%", height: 110, borderRadius: 8 },
             resizeMode: "contain"
           })
         )
       ),
 
-      // 5. How to use guide
       React.createElement(
-        RN.View,
-        { style: { backgroundColor: "#2b2d31", borderRadius: 12, padding: 14 } },
-        React.createElement(RN.Text, { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600", marginBottom: 8 } }, "How to Use"),
-        React.createElement(RN.Text, { style: { color: "#dbdee1", fontSize: 13, lineHeight: 20 } },
-          "• \uD83D\uDCAC Reply to any message and type ",
-          React.createElement(RN.Text, { style: { color: "#5865f2", fontWeight: "700" } }, "/quote"),
-          "\n• \uD83D\uDCDD Type ",
-          React.createElement(RN.Text, { style: { color: "#5865f2", fontWeight: "700" } }, "/quote text:your message"),
-          " to quote any custom text\n• \uD83D\uDC64 Add ",
-          React.createElement(RN.Text, { style: { color: "#5865f2", fontWeight: "700" } }, "user:@someone"),
-          " to attribute the quote to a specific person\n• \uD83C\uDFA8 Add ",
-          React.createElement(RN.Text, { style: { color: "#5865f2", fontWeight: "700" } }, "color:#hex"),
-          " for custom username coloring\n• \uD83D\uDCF1 Or long-press any message and tap ",
-          React.createElement(RN.Text, { style: { color: "#f2f3f5", fontWeight: "700" } }, "'Quote as PNG'")
-        )
+        FormSection,
+        { title: "USAGE TIPS" },
+        React.createElement(FormRow, {
+          label: "/quote",
+          subLabel: "Reply to any message and run /quote to generate PNG"
+        }),
+        React.createElement(FormRow, {
+          label: "/quote text:<message>",
+          subLabel: "Quote any custom text with optional user attribute"
+        }),
+        React.createElement(FormRow, {
+          label: "Context Menu",
+          subLabel: "Long-press any message and tap 'Quote as PNG'"
+        })
       )
     );
   }

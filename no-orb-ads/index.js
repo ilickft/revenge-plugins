@@ -244,30 +244,41 @@
   function SettingsPage() {
     var React = vendetta.metro.common.React;
     var RN = vendetta.metro.common.ReactNative;
-    var FormRow = findByProps("FormRow") && findByProps("FormRow").FormRow;
-    var FormSection = findByProps("FormSection") && findByProps("FormSection").FormSection;
-    var FormSwitch = findByProps("FormSwitch") && findByProps("FormSwitch").FormSwitch;
+    var Forms = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
+    var FormRow = Forms.FormRow || Forms.TableRow;
+    var FormSection = Forms.FormSection || Forms.TableSection;
+    var FormSwitch = Forms.FormSwitch || Forms.FormSwitchRow;
 
+    if (!React || !RN || !RN.ScrollView) return null;
+
+    var forceUpdate = React.useReducer(function (x) { return x + 1; }, 0)[1];
     var muteOnly = storage.muteOnly || false;
-    var setMute = function (v) { storage.muteOnly = v; };
 
-    if (!FormRow || !FormSection || !FormSwitch) {
-      return React.createElement(RN.View, { style: { padding: 16 } },
-        React.createElement(RN.Text, { style: { color: "#fff" } },
-          "No Orb Ads is active.\n\nAll Quest/Orb video ads are blocked.\nRestart Discord if the bar is still visible."
-        )
-      );
-    }
-
-    return React.createElement(FormSection, { title: "No Orb Ads" },
-      React.createElement(FormRow, {
-        label: "Mute Only (keep video, no sound)",
-        subLabel: "OFF = completely hide the ad video. ON = keep the video but mute it.",
-        trailing: React.createElement(FormSwitch, {
-          value: muteOnly,
-          onValueChange: setMute
+    return React.createElement(
+      RN.ScrollView,
+      {
+        style: { flex: 1 },
+        contentContainerStyle: { paddingBottom: 40 }
+      },
+      React.createElement(
+        FormSection,
+        { title: "ORB & QUEST ADS" },
+        React.createElement(FormRow, {
+          label: "Mute Only Mode",
+          subLabel: muteOnly ? "Video plays silently without audio" : "Video ads are blocked and collapsed completely",
+          trailing: React.createElement(FormSwitch, {
+            value: muteOnly,
+            onValueChange: function (val) {
+              storage.muteOnly = val;
+              forceUpdate();
+            }
+          })
+        }),
+        React.createElement(FormRow, {
+          label: "Bandwidth Saver",
+          subLabel: "Active • Intercepts ad video downloads and hides promo banners"
         })
-      })
+      )
     );
   }
 

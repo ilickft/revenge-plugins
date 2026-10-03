@@ -10,6 +10,11 @@
 
   // ── Metro Modules ─────────────────────────────────────────────────────────
   var ActionSheet      = findByProps("openLazy", "hideActionSheet");
+  var Forms            = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
+  var FormRow          = Forms.FormRow || Forms.TableRow;
+  var FormSection      = Forms.FormSection || Forms.TableSection;
+  var FormSwitch       = Forms.FormSwitch || Forms.FormSwitchRow;
+  var FormDivider      = Forms.FormDivider;
 
   var patches = [];
 
@@ -368,185 +373,68 @@
     return React.createElement(
       RN.ScrollView,
       {
-        style: { flex: 1, backgroundColor: "#1e1f22" },
-        contentContainerStyle: { padding: 16, paddingBottom: 60 }
+        style: { flex: 1 },
+        contentContainerStyle: { paddingBottom: 40 }
       },
 
-      // Header card
       React.createElement(
-        RN.View,
-        {
-          style: {
-            backgroundColor: "#2b2d31",
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-            borderWidth: 1,
-            borderColor: "#383a40"
-          }
-        },
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" } },
-          React.createElement(
-            RN.View,
-            { style: { flex: 1, marginRight: 12 } },
-            React.createElement(
-              RN.Text,
-              { style: { color: "#f2f3f5", fontSize: 20, fontWeight: "700" } },
-              "🛡️ Clean Context Menu"
-            ),
-            React.createElement(
-              RN.Text,
-              { style: { color: "#949ba4", fontSize: 13, marginTop: 4 } },
-              "Hide unwanted items when long-pressing messages."
-            )
-          ),
-          React.createElement(RN.Switch, {
+        FormSection,
+        { title: "GENERAL" },
+        React.createElement(FormRow, {
+          label: "Enable Context Menu Cleaning",
+          subLabel: "Hide unwanted items when long-pressing messages",
+          trailing: React.createElement(FormSwitch, {
             value: storage.enabled !== false,
             onValueChange: function (val) {
               storage.enabled = val;
               forceUpdate();
-            },
-            trackColor: { false: "#4e5058", true: "#5865f2" }
-          })
-        ),
-        React.createElement(
-          RN.View,
-          {
-            style: {
-              marginTop: 12,
-              paddingTop: 10,
-              borderTopWidth: 1,
-              borderTopColor: "#383a40",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center"
             }
-          },
-          React.createElement(
-            RN.Text,
-            { style: { color: "#dbdee1", fontSize: 13, fontWeight: "600" } },
-            "Items Hidden: " + hiddenCount
-          ),
-          React.createElement(
-            Btn,
-            {
-              onPress: resetAll,
-              style: {
-                backgroundColor: "#383a40",
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 6
-              }
-            },
-            React.createElement(
-              RN.Text,
-              { style: { color: "#f23f43", fontSize: 12, fontWeight: "600" } },
-              "Reset All"
-            )
-          )
-        )
-      ),
-
-      // Standard Preset Items Card
-      React.createElement(
-        RN.View,
-        {
-          style: {
-            backgroundColor: "#2b2d31",
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-            borderWidth: 1,
-            borderColor: "#383a40"
-          }
-        },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#f2f3f5", fontSize: 16, fontWeight: "700", marginBottom: 14 } },
-          "Standard Message Actions"
-        ),
-        presets.map(function (p) {
-          var isHidden = Boolean(storage[p.key]);
-          return React.createElement(
-            RN.View,
-            {
-              key: p.key,
-              style: {
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingVertical: 10,
-                borderBottomWidth: 1,
-                borderBottomColor: "#313338"
-              }
-            },
-            React.createElement(
-              RN.View,
-              { style: { flex: 1, marginRight: 10 } },
-              React.createElement(
-                RN.Text,
-                { style: { color: isHidden ? "#f23f43" : "#f2f3f5", fontSize: 15, fontWeight: "600" } },
-                p.title
-              ),
-              React.createElement(
-                RN.Text,
-                { style: { color: "#949ba4", fontSize: 12, marginTop: 2 } },
-                p.desc
-              )
-            ),
-            React.createElement(RN.Switch, {
-              value: isHidden,
-              onValueChange: function () {
-                togglePreset(p.key);
-              },
-              trackColor: { false: "#4e5058", true: "#f23f43" }
-            })
-          );
+          })
+        }),
+        React.createElement(FormRow, {
+          label: "Reset All to Default",
+          subLabel: "Restore all " + hiddenCount + " currently hidden item(s)",
+          onPress: resetAll
         })
       ),
 
-      // Custom Keywords Card
       React.createElement(
-        RN.View,
-        {
-          style: {
-            backgroundColor: "#2b2d31",
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-            borderWidth: 1,
-            borderColor: "#383a40"
-          }
-        },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#f2f3f5", fontSize: 16, fontWeight: "700", marginBottom: 6 } },
-          "Custom Keywords / Phrases"
-        ),
-        React.createElement(
-          RN.Text,
-          { style: { color: "#949ba4", fontSize: 12, marginBottom: 12 } },
-          "Type any text, button title, or plugin action to hide (e.g. \"Quote as PNG\", \"Petpet\")."
-        ),
+        FormSection,
+        { title: "STANDARD ACTIONS" },
+        presets.map(function (p) {
+          var isHidden = Boolean(storage[p.key]);
+          return React.createElement(FormRow, {
+            key: p.key,
+            label: p.title,
+            subLabel: p.desc,
+            trailing: React.createElement(FormSwitch, {
+              value: isHidden,
+              onValueChange: function () {
+                togglePreset(p.key);
+              }
+            })
+          });
+        })
+      ),
+
+      React.createElement(
+        FormSection,
+        { title: "CUSTOM KEYWORDS TO HIDE" },
         React.createElement(
           RN.View,
-          { style: { flexDirection: "row", marginBottom: 12 } },
+          { style: { paddingHorizontal: 16, paddingVertical: 10, flexDirection: "row", alignItems: "center" } },
           React.createElement(RN.TextInput, {
             value: keywordInput,
             onChangeText: setKeywordInput,
-            placeholder: "Enter keyword to hide...",
+            placeholder: "Enter label or keyword (e.g. Petpet)...",
             placeholderTextColor: "#80848e",
             style: {
               flex: 1,
-              backgroundColor: "#1e1f22",
-              color: "#f2f3f5",
+              backgroundColor: "rgba(128, 128, 128, 0.15)",
+              color: "inherit",
               borderRadius: 8,
               paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderWidth: 1,
-              borderColor: "#383a40",
+              paddingVertical: 10,
               fontSize: 14,
               marginRight: 8
             }
@@ -559,6 +447,7 @@
                 backgroundColor: "#5865f2",
                 borderRadius: 8,
                 paddingHorizontal: 16,
+                paddingVertical: 10,
                 justifyContent: "center",
                 alignItems: "center"
               }
@@ -572,125 +461,53 @@
         ),
         (Array.isArray(storage.customKeywords) && storage.customKeywords.length > 0)
           ? storage.customKeywords.map(function (kw, idx) {
-              return React.createElement(
-                RN.View,
-                {
-                  key: "kw-" + idx,
-                  style: {
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    backgroundColor: "#1e1f22",
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderRadius: 8,
-                    marginBottom: 6,
-                    borderWidth: 1,
-                    borderColor: "#383a40"
-                  }
-                },
-                React.createElement(
-                  RN.Text,
-                  { style: { color: "#f23f43", fontSize: 14, fontWeight: "600" } },
-                  "✕ " + kw
-                ),
-                React.createElement(
-                  Btn,
-                  {
-                    onPress: function () { removeKeyword(idx); },
-                    style: { padding: 4 }
-                  },
-                  React.createElement(
-                    RN.Text,
-                    { style: { color: "#949ba4", fontSize: 13, fontWeight: "bold" } },
-                    "Remove"
-                  )
-                )
-              );
+              return React.createElement(FormRow, {
+                key: "kw-" + idx,
+                label: "✕  " + kw,
+                subLabel: "Tap to remove this keyword",
+                onPress: function () { removeKeyword(idx); }
+              });
             })
-          : React.createElement(
-              RN.Text,
-              { style: { color: "#6d6f78", fontSize: 13, fontStyle: "italic" } },
-              "No custom keywords added yet."
-            )
+          : React.createElement(FormRow, {
+              label: "No custom keywords added yet",
+              subLabel: "Add any label above to hide third-party buttons"
+            })
       ),
 
-      // Dynamically Discovered Items Card
       React.createElement(
-        RN.View,
-        {
-          style: {
-            backgroundColor: "#2b2d31",
-            borderRadius: 16,
-            padding: 16,
-            borderWidth: 1,
-            borderColor: "#383a40"
-          }
-        },
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 } },
-          React.createElement(
-            RN.Text,
-            { style: { color: "#f2f3f5", fontSize: 16, fontWeight: "700" } },
-            "Discovered Menu Items"
-          ),
-          (Array.isArray(storage.discoveredItems) && storage.discoveredItems.length > 0) && React.createElement(
-            Btn,
-            {
-              onPress: function () {
-                storage.discoveredItems = [];
-                forceUpdate();
-              },
-              style: { padding: 4 }
-            },
-            React.createElement(
-              RN.Text,
-              { style: { color: "#80848e", fontSize: 12 } },
-              "Clear List"
-            )
-          )
-        ),
-        React.createElement(
-          RN.Text,
-          { style: { color: "#949ba4", fontSize: 12, marginBottom: 12 } },
-          "Items automatically seen when long-pressing messages on your device:"
-        ),
+        FormSection,
+        { title: "DISCOVERED MENU ITEMS (" + (storage.discoveredItems ? storage.discoveredItems.length : 0) + ")" },
         (Array.isArray(storage.discoveredItems) && storage.discoveredItems.length > 0)
-          ? storage.discoveredItems.map(function (label) {
-              var isHidden = Boolean(storage.hiddenItems && storage.hiddenItems[label]);
-              return React.createElement(
-                RN.View,
-                {
+          ? [
+              React.createElement(FormRow, {
+                key: "clear-discovered",
+                label: "Clear Discovered List",
+                subLabel: "Reset the list of scanned menu actions",
+                onPress: function () {
+                  storage.discoveredItems = [];
+                  forceUpdate();
+                }
+              })
+            ].concat(
+              storage.discoveredItems.map(function (label) {
+                var isHidden = Boolean(storage.hiddenItems && storage.hiddenItems[label]);
+                return React.createElement(FormRow, {
                   key: "disc-" + label,
-                  style: {
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingVertical: 8,
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#313338"
-                  }
-                },
-                React.createElement(
-                  RN.Text,
-                  { style: { color: isHidden ? "#f23f43" : "#f2f3f5", fontSize: 14, fontWeight: "500", flex: 1, marginRight: 8 } },
-                  (isHidden ? "🚫 " : "👁️ ") + label
-                ),
-                React.createElement(RN.Switch, {
-                  value: isHidden,
-                  onValueChange: function () {
-                    toggleDiscovered(label);
-                  },
-                  trackColor: { false: "#4e5058", true: "#f23f43" }
-                })
-              );
-            })
-          : React.createElement(
-              RN.Text,
-              { style: { color: "#6d6f78", fontSize: 13, fontStyle: "italic" } },
-              "Long-press any message in chat to automatically populate this list!"
+                  label: label,
+                  subLabel: isHidden ? "Hidden from menu" : "Visible in menu",
+                  trailing: React.createElement(FormSwitch, {
+                    value: isHidden,
+                    onValueChange: function () {
+                      toggleDiscovered(label);
+                    }
+                  })
+                });
+              })
             )
+          : React.createElement(FormRow, {
+              label: "No items discovered yet",
+              subLabel: "Long-press any message in chat to auto-discover actions"
+            })
       )
     );
   }

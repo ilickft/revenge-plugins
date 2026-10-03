@@ -1,6 +1,6 @@
 {
   "name": "Achievements",
-  "description": "Unlock 270+ achievements with top toast banners, sounds, profile Orb shortcut, bio progress sync, and streak tracking.",
+  "description": "Unlock 430+ achievements with top toast banners, sounds, profile Orb shortcut, bio progress sync, and streak tracking.",
   "authors": [
     {
       "name": "Kario"
@@ -10,5 +10,5 @@
   "vendetta": {
     "icon": "TrophyIcon"
   },
-  "hash": "644f64d980d51e326bdcd4ea0f98ce103714f552617afd40578f2cbee2139730"
+  "hash": "c1afe21a52a3aeca513e98d89654a76371db362832e855dc6d4b51bd78637837"
 }

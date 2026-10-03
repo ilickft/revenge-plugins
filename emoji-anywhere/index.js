@@ -13,6 +13,11 @@
   var SelectedChannelStore = findByStoreName("SelectedChannelStore") || findByProps("getChannelId");
   var ChannelStore         = findByStoreName("ChannelStore") || findByProps("getChannel");
   var UserStore            = findByStoreName("UserStore");
+  var Forms                = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
+  var FormRow              = Forms.FormRow || Forms.TableRow;
+  var FormSection          = Forms.FormSection || Forms.TableSection;
+  var FormSwitch           = Forms.FormSwitch || Forms.FormSwitchRow;
+  var FormDivider          = Forms.FormDivider;
 
   var patches = [];
 
@@ -181,7 +186,7 @@
     var React = vendetta.metro.common.React;
     var RN    = vendetta.metro.common.ReactNative;
 
-    if (!React || !RN || !RN.View || !RN.Text) return null;
+    if (!React || !RN || !RN.ScrollView) return null;
 
     var forceUpdate = React.useReducer(function (x) { return x + 1; }, 0)[1];
     var current = storage.emojiName !== undefined ? storage.emojiName : ":)";
@@ -195,174 +200,74 @@
       { label: ". (Dot)", value: "." }
     ];
 
-    var Btn = RN.TouchableOpacity || RN.Pressable || RN.View;
-
     return React.createElement(
       RN.ScrollView,
       {
-        style: { flex: 1, backgroundColor: "#313338" },
-        contentContainerStyle: { padding: 16, paddingBottom: 40 }
+        style: { flex: 1 },
+        contentContainerStyle: { paddingBottom: 40 }
       },
       React.createElement(
-        RN.Text,
-        { style: { color: "#f2f3f5", fontSize: 20, fontWeight: "700", marginBottom: 6 } },
-        "Emoji Anywhere Settings"
-      ),
-      React.createElement(
-        RN.Text,
-        { style: { color: "#949ba4", fontSize: 13, marginBottom: 18, lineHeight: 18 } },
-        "Use emojis from any server without Nitro. Server emojis available in your current channel stay normal."
-      ),
-
-      // Keep server emojis normal toggle card
-      React.createElement(
-        RN.View,
-        {
-          style: {
-            backgroundColor: "#2b2d31",
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 16
-          }
-        },
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" } },
-          React.createElement(
-            RN.View,
-            { style: { flex: 1, marginRight: 12 } },
-            React.createElement(
-              RN.Text,
-              { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600" } },
-              "Keep Server Emojis Normal"
-            ),
-            React.createElement(
-              RN.Text,
-              { style: { color: "#949ba4", fontSize: 12, marginTop: 4, lineHeight: 16 } },
-              "Emojis that belong to the current server and are available without Nitro will be sent as standard emojis, not embedded links."
-            )
-          ),
-          React.createElement(RN.Switch, {
+        FormSection,
+        { title: "EMOJI BEHAVIOR" },
+        React.createElement(FormRow, {
+          label: "Keep Server Emojis Normal",
+          subLabel: "Emojis available in the current server stay normal instead of being embedded as links",
+          trailing: React.createElement(FormSwitch, {
             value: storage.keepServerEmojisNormal !== false,
             onValueChange: function (val) {
               storage.keepServerEmojisNormal = val;
               forceUpdate();
-            },
-            trackColor: { false: "#4e5058", true: "#5865f2" }
+            }
           })
-        )
+        })
       ),
 
-      // Input card
       React.createElement(
-        RN.View,
-        {
-          style: {
-            backgroundColor: "#2b2d31",
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 16
-          }
-        },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600", marginBottom: 4 } },
-          "External Emoji Link Text"
-        ),
-        React.createElement(
-          RN.Text,
-          { style: { color: "#949ba4", fontSize: 13, marginBottom: 10 } },
-          "Type any string, or use {{name}} for the emoji's real name."
-        ),
-        React.createElement(RN.TextInput, {
-          style: {
-            backgroundColor: "#1e1f22",
-            borderRadius: 8,
-            paddingHorizontal: 12,
-            paddingVertical: 10,
-            color: "#f2f3f5",
-            fontSize: 15,
-            borderWidth: 1,
-            borderColor: "#3f4147"
-          },
-          value: current,
-          placeholder: "e.g. :), {{name}}, or custom text",
-          placeholderTextColor: "#80848e",
-          onChangeText: function (text) {
-            storage.emojiName = text;
-            forceUpdate();
-          }
-        }),
-
-        // Preview box
+        FormSection,
+        { title: "EXTERNAL EMOJI LINK TEXT" },
         React.createElement(
           RN.View,
-          {
+          { style: { paddingHorizontal: 16, paddingVertical: 10 } },
+          React.createElement(RN.TextInput, {
             style: {
-              marginTop: 14,
-              padding: 10,
+              backgroundColor: "rgba(128, 128, 128, 0.15)",
+              color: "inherit",
               borderRadius: 8,
-              backgroundColor: "#1e1f22"
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              fontSize: 14
+            },
+            value: current,
+            placeholder: "e.g. :), {{name}}, or custom text",
+            placeholderTextColor: "#80848e",
+            onChangeText: function (text) {
+              storage.emojiName = text;
+              forceUpdate();
             }
-          },
+          }),
           React.createElement(
             RN.Text,
-            { style: { color: "#80848e", fontSize: 12, marginBottom: 4 } },
-            "External Emoji Format:"
-          ),
-          React.createElement(
-            RN.Text,
-            { style: { color: "#5865f2", fontSize: 14, fontFamily: "monospace" } },
-            "[" + (current || ":)") + "](https://cdn.discordapp.com/emojis/...)"
+            { style: { color: "#80848e", fontSize: 12, marginTop: 8 } },
+            "Preview: [" + (current || ":)") + "](https://cdn.discordapp.com/emojis/...)"
           )
         )
       ),
 
-      // Presets card
       React.createElement(
-        RN.View,
-        {
-          style: {
-            backgroundColor: "#2b2d31",
-            borderRadius: 12,
-            padding: 16
-          }
-        },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#f2f3f5", fontSize: 15, fontWeight: "600", marginBottom: 10 } },
-          "Quick Presets"
-        ),
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", flexWrap: "wrap" } },
-          presets.map(function (p) {
-            var active = current === p.value;
-            return React.createElement(
-              Btn,
-              {
-                key: p.label,
-                onPress: function () {
-                  storage.emojiName = p.value;
-                  forceUpdate();
-                },
-                style: {
-                  backgroundColor: active ? "#5865f2" : "#383a40",
-                  paddingVertical: 8,
-                  paddingHorizontal: 12,
-                  borderRadius: 8,
-                  marginRight: 8,
-                  marginBottom: 8
-                }
-              },
-              React.createElement(
-                RN.Text,
-                { style: { color: active ? "#ffffff" : "#dbdee1", fontSize: 13, fontWeight: "500" } },
-                p.label
-              )
-            );
-          })
-        )
+        FormSection,
+        { title: "QUICK PRESETS" },
+        presets.map(function (p) {
+          var active = current === p.value;
+          return React.createElement(FormRow, {
+            key: p.label,
+            label: p.label,
+            subLabel: active ? "Currently selected" : "Tap to use this format",
+            onPress: function () {
+              storage.emojiName = p.value;
+              forceUpdate();
+            }
+          });
+        })
       )
     );
   }

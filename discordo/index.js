@@ -1,6 +1,11 @@
 (function () {
   "use strict";
 
+  var findByProps = vendetta.metro.findByProps;
+  var Forms       = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
+  var FormRow     = Forms.FormRow || Forms.TableRow;
+  var FormSection = Forms.FormSection || Forms.TableSection;
+
   var DISCORDO_URL = "https://discord.com/assets/ae7d16bb2eea76b9b9977db0fad66658.mp3";
 
   function playDiscordo() {
@@ -60,65 +65,28 @@
     var React = vendetta.metro.common.React;
     var RN    = vendetta.metro.common.ReactNative;
 
-    if (!React || !RN || !RN.View || !RN.Text) return null;
-
-    var Btn = RN.TouchableOpacity || RN.Pressable || RN.View;
+    if (!React || !RN || !RN.ScrollView) return null;
 
     return React.createElement(
       RN.ScrollView,
       {
-        style: { flex: 1, backgroundColor: "#313338" },
-        contentContainerStyle: { padding: 16, paddingBottom: 40 }
+        style: { flex: 1 },
+        contentContainerStyle: { paddingBottom: 40 }
       },
       React.createElement(
-        RN.Text,
-        { style: { color: "#f2f3f5", fontSize: 20, fontWeight: "700", marginBottom: 6 } },
-        "Discordo Startup Sound"
-      ),
-      React.createElement(
-        RN.Text,
-        { style: { color: "#949ba4", fontSize: 14, marginBottom: 18, lineHeight: 18 } },
-        "Plays the classic Japanese \"DISCORDO!\" easter egg chime whenever Discord launches."
-      ),
-      React.createElement(
-        RN.View,
-        {
-          style: {
-            backgroundColor: "#2b2d31",
-            borderRadius: 12,
-            padding: 16
+        FormSection,
+        { title: "DISCORDO STARTUP SOUND" },
+        React.createElement(FormRow, {
+          label: "🔊 Play Discordo!",
+          subLabel: "Tap to play the classic Japanese \"DISCORDO!\" easter egg chime",
+          onPress: function () {
+            playDiscordo();
           }
-        },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#f2f3f5", fontSize: 16, fontWeight: "600", marginBottom: 6 } },
-          "Test Sound"
-        ),
-        React.createElement(
-          RN.Text,
-          { style: { color: "#949ba4", fontSize: 13, marginBottom: 14 } },
-          "Tap the button below to test the startup sound right now."
-        ),
-        React.createElement(
-          Btn,
-          {
-            onPress: function () {
-              playDiscordo();
-            },
-            style: {
-              backgroundColor: "#5865f2",
-              paddingVertical: 12,
-              paddingHorizontal: 20,
-              borderRadius: 8,
-              alignItems: "center"
-            }
-          },
-          React.createElement(
-            RN.Text,
-            { style: { color: "#ffffff", fontSize: 15, fontWeight: "600" } },
-            "\uD83D\uDD0A Play Discordo!"
-          )
-        )
+        }),
+        React.createElement(FormRow, {
+          label: "Startup Sound",
+          subLabel: "Chimes automatically every time Discord is launched"
+        })
       )
     );
   }
