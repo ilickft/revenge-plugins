@@ -12,6 +12,7 @@
 
   // ── Stores & Modules ──────────────────────────────────────────────────────
   var UserStore        = findByStoreName("UserStore");
+  var UserProfileStore = findByStoreName("UserProfileStore") || findByProps("getUserProfile");
   var ChannelStore     = findByStoreName("ChannelStore") || findByProps("getChannel");
   var LocaleStore      = findByStoreName("LocaleStore") || findByProps("locale");
   var Messages         = findByProps("sendMessage", "editMessage");
@@ -161,6 +162,7 @@
   if (storage.soundEnabled === undefined) storage.soundEnabled = true;
   if (storage.toastsEnabled === undefined) storage.toastsEnabled = true;
   if (storage.showProgressOnBio === undefined) storage.showProgressOnBio = false;
+  if (storage.savedBaseBio === undefined) storage.savedBaseBio = "";
   if (storage.language === undefined) storage.language = "auto";
   if (storage.stats === undefined) storage.stats = {};
   var sInit = storage.stats;
@@ -232,8 +234,62 @@
     } catch (e) {}
   }
 
-  // ── Bio Progress Sync with 3-Second Debounce ──────────────────────────────
+  // ── Bio Progress Sync with Bottom Trimming & Safe Restore ──────────────────
   var bioDebounceTimer = null;
+
+  function stripAchievementsLine(bio) {
+    if (!bio || typeof bio !== "string") return "";
+    return bio.replace(/(?:^|\r?\n)(?:🏆|\uD83C\uDFC6)\s*(?:Achievements|Достижения)[^\r\n]*/gi, "").trim();
+  }
+
+  function fetchUserBio(callback) {
+    try {
+      var currentUser = UserStore && UserStore.getCurrentUser && UserStore.getCurrentUser();
+      var userId = currentUser && currentUser.id;
+
+      // 1. Try UserProfileStore
+      if (UserProfileStore && UserProfileStore.getUserProfile && userId) {
+        var profile = UserProfileStore.getUserProfile(userId);
+        if (profile && typeof profile.bio === "string" && profile.bio.length > 0) {
+          callback(profile.bio);
+          return;
+        }
+      }
+
+      // 2. Try UserStore currentUser.bio
+      if (currentUser && typeof currentUser.bio === "string" && currentUser.bio.length > 0) {
+        callback(currentUser.bio);
+        return;
+      }
+
+      // 3. Try REST API GET /users/@me/profile
+      var token = TokenModule && TokenModule.getToken && TokenModule.getToken();
+      if (!token) {
+        callback(storage.savedBaseBio || "");
+        return;
+      }
+
+      fetch("https://discord.com/api/v9/users/@me/profile", {
+        headers: { "Authorization": token }
+      }).then(function (res) {
+        if (!res.ok) throw new Error("fetch failed");
+        return res.json();
+      }).then(function (data) {
+        var fetched = (data && data.user_profile && typeof data.user_profile.bio === "string" && data.user_profile.bio) ||
+                      (data && data.user && typeof data.user.bio === "string" && data.user.bio) ||
+                      (data && typeof data.bio === "string" && data.bio) || "";
+        if (fetched) {
+          callback(fetched);
+        } else {
+          callback(storage.savedBaseBio || "");
+        }
+      }).catch(function () {
+        callback(storage.savedBaseBio || "");
+      });
+    } catch (e) {
+      callback(storage.savedBaseBio || "");
+    }
+  }
 
   function syncProgressToBio() {
     try {
@@ -243,41 +299,60 @@
       var currentUser = UserStore && UserStore.getCurrentUser && UserStore.getCurrentUser();
       if (!currentUser) return;
 
-      var currentBio = currentUser.bio || "";
-      var unlockedCount = getUnlockedCount();
-      var totalCount = ACHIEVEMENTS.length;
-      var pct = Math.round((unlockedCount / totalCount) * 100);
+      fetchUserBio(function (rawBio) {
+        var unlockedCount = getUnlockedCount();
+        var totalCount = ACHIEVEMENTS.length;
+        var pct = Math.round((unlockedCount / totalCount) * 100);
 
-      var achLine = (isRussian() ? "🏆 Достижения: " : "🏆 Achievements: ") + unlockedCount + "/" + totalCount + " (" + pct + "%)";
+        var achLine = (isRussian() ? "🏆 Достижения: " : "🏆 Achievements: ") + unlockedCount + "/" + totalCount + " (" + pct + "%)";
 
-      // Clean existing achievements line
-      var cleanBio = currentBio.replace(/(?:^|\n)(?:🏆|\uD83C\uDFC6)\s*(?:Achievements|Достижения)[^\n]*/gi, "").trim();
+        // Clean any previous achievements line from bio
+        var cleanBio = stripAchievementsLine(rawBio);
 
-      var newBio = cleanBio ? (cleanBio + "\n" + achLine) : achLine;
+        // Save original base bio if cleanBio is found and not yet saved or longer
+        if (cleanBio) {
+          if (!storage.savedBaseBio || cleanBio.length >= storage.savedBaseBio.length) {
+            storage.savedBaseBio = cleanBio;
+          }
+        }
 
-      // Max bio length on Discord is 190 chars
-      if (newBio.length > 190) {
-        var maxBase = 190 - (achLine.length + 1);
-        if (maxBase > 0) {
-          cleanBio = cleanBio.slice(0, maxBase).trim();
-          newBio = cleanBio + "\n" + achLine;
+        var baseToUse = cleanBio || storage.savedBaseBio || "";
+
+        // Discord bio character limit is 190
+        var newBio = "";
+        if (baseToUse) {
+          var neededLen = achLine.length + 1; // +1 for newline '\n'
+          var maxBaseLength = 190 - neededLen;
+          if (baseToUse.length > maxBaseLength) {
+            // Cut required space from bottom
+            var trimmedBase = baseToUse.slice(0, Math.max(0, maxBaseLength)).replace(/\s+$/, "");
+            newBio = trimmedBase ? (trimmedBase + "\n" + achLine) : achLine;
+          } else {
+            newBio = baseToUse + "\n" + achLine;
+          }
         } else {
-          newBio = achLine.slice(0, 190);
+          newBio = achLine;
         }
-      }
 
-      fetch("https://discord.com/api/v9/users/@me/profile", {
-        method: "PATCH",
-        headers: {
-          "Authorization": token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ bio: newBio })
-      }).then(function (res) {
-        if (res.ok && currentUser) {
-          currentUser.bio = newBio;
+        if (newBio.length > 190) {
+          newBio = newBio.slice(0, 190);
         }
-      }).catch(function () {});
+
+        fetch("https://discord.com/api/v9/users/@me/profile", {
+          method: "PATCH",
+          headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ bio: newBio })
+        }).then(function (res) {
+          if (res.ok) {
+            if (currentUser) currentUser.bio = newBio;
+            var prof = currentUser && UserProfileStore && UserProfileStore.getUserProfile && UserProfileStore.getUserProfile(currentUser.id);
+            if (prof) prof.bio = newBio;
+          }
+        }).catch(function () {});
+      });
     } catch (e) {}
   }
 
@@ -291,23 +366,31 @@
       if (!token) return;
 
       var currentUser = UserStore && UserStore.getCurrentUser && UserStore.getCurrentUser();
-      if (!currentUser) return;
 
-      var currentBio = currentUser.bio || "";
-      var cleanBio = currentBio.replace(/(?:^|\n)(?:🏆|\uD83C\uDFC6)\s*(?:Achievements|Достижения)[^\n]*/gi, "").trim();
-
-      fetch("https://discord.com/api/v9/users/@me/profile", {
-        method: "PATCH",
-        headers: {
-          "Authorization": token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ bio: cleanBio })
-      }).then(function (res) {
-        if (res.ok && currentUser) {
-          currentUser.bio = cleanBio;
+      fetchUserBio(function (rawBio) {
+        // Restore untrimmed savedBaseBio if available, otherwise strip from rawBio
+        var restoreBio = "";
+        if (storage.savedBaseBio !== undefined && storage.savedBaseBio !== "") {
+          restoreBio = storage.savedBaseBio;
+        } else if (rawBio) {
+          restoreBio = stripAchievementsLine(rawBio);
         }
-      }).catch(function () {});
+
+        fetch("https://discord.com/api/v9/users/@me/profile", {
+          method: "PATCH",
+          headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ bio: restoreBio })
+        }).then(function (res) {
+          if (res.ok) {
+            if (currentUser) currentUser.bio = restoreBio;
+            var prof = currentUser && UserProfileStore && UserProfileStore.getUserProfile && UserProfileStore.getUserProfile(currentUser.id);
+            if (prof) prof.bio = restoreBio;
+          }
+        }).catch(function () {});
+      });
     } catch (e) {}
   }
 
@@ -325,6 +408,50 @@
         syncProgressToBio();
       }, 3000);
     }
+  }
+
+  function showBioWarning(onConfirm, onCancel) {
+    var isRu = isRussian();
+    var title = isRu ? "⚠️ Предупреждение: Синхронизация «О себе»" : "⚠️ Warning: Bio Synchronization";
+    var message = isRu
+      ? "Включение этой опции добавит прогресс ваших достижений новой строкой внизу вашего профиля («О себе»).\n\nЕсли места недостаточно (лимит 190 символов), необходимая часть текста будет обрезана снизу, чтобы поместился счётчик.\n\nВаш исходный профиль сохраняется и будет восстановлен при отключении опции.\n\nВключить синхронизацию?"
+      : "Enabling this will append your achievement progress on a new line at the bottom of your Discord bio.\n\nIf there is not enough space (Discord limit: 190 chars), the required space will be cut from the bottom of your bio to fit the counter.\n\nYour original bio is saved and will be restored when turned off.\n\nAre you sure you want to enable bio sync?";
+    var confirmText = isRu ? "Включить" : "Enable";
+    var cancelText = isRu ? "Отмена" : "Cancel";
+
+    var alerts = vendetta.ui && vendetta.ui.alerts;
+    if (alerts && typeof alerts.showConfirmationAlert === "function") {
+      try {
+        alerts.showConfirmationAlert({
+          title: title,
+          content: message,
+          confirmText: confirmText,
+          cancelText: cancelText,
+          onConfirm: onConfirm,
+          onCancel: onCancel
+        });
+        return;
+      } catch (e) {}
+    }
+
+    var RN = vendetta.metro.common && vendetta.metro.common.ReactNative;
+    var Alert = (RN && RN.Alert) || findByProps("alert");
+    if (Alert && typeof Alert.alert === "function") {
+      try {
+        Alert.alert(
+          title,
+          message,
+          [
+            { text: cancelText, style: "cancel", onPress: onCancel },
+            { text: confirmText, onPress: onConfirm }
+          ],
+          { cancelable: true, onDismiss: onCancel }
+        );
+        return;
+      } catch (e) {}
+    }
+
+    onConfirm();
   }
 
   // ── Unlocking Achievements ────────────────────────────────────────────────
@@ -1616,18 +1743,28 @@
         React.createElement(FormRow, {
           label: isRussian() ? "Показывать прогресс в «О себе» (Bio)" : "Show Progress on Bio",
           subLabel: isRussian()
-            ? "Синхронизировать прогресс достижений в профиле"
-            : "Sync achievements count & % to your bio (delayed by 3s for bursts)",
+            ? "⚠️ Добавляет прогресс в конец bio. Если нет места, текст снизу обрезается."
+            : "⚠️ Appends progress to bio. If space is tight, cuts from the bottom.",
           trailing: React.createElement(FormSwitch, {
             value: storage.showProgressOnBio === true,
             onValueChange: function (val) {
-              storage.showProgressOnBio = val;
               if (val) {
-                scheduleBioUpdate(true);
+                showBioWarning(
+                  function () {
+                    storage.showProgressOnBio = true;
+                    scheduleBioUpdate(true);
+                    forceUpdate();
+                  },
+                  function () {
+                    storage.showProgressOnBio = false;
+                    forceUpdate();
+                  }
+                );
               } else {
+                storage.showProgressOnBio = false;
                 removeProgressFromBio();
+                forceUpdate();
               }
-              forceUpdate();
             }
           })
         }),
