@@ -1293,463 +1293,9 @@
     analyzeCollector();
   }
 
-  // ── Stats Card (/stats command) ───────────────────────────────────────────
-  var statsCardRef = null;
-
-  function StatsCardView(props) {
-    var React = vendetta.metro.common.React;
-    var RN    = vendetta.metro.common.ReactNative;
-    if (!React || !RN) return null;
-
-    var currentUser = UserStore && UserStore.getCurrentUser && UserStore.getCurrentUser();
-    var userId = currentUser && currentUser.id;
-
-    var avatarUrl = (currentUser && currentUser.avatar)
-      ? "https://cdn.discordapp.com/avatars/" + userId + "/" + currentUser.avatar + ".png?size=128"
-      : "https://cdn.discordapp.com/embed/avatars/0.png";
-    var displayName = (currentUser && (currentUser.globalName || currentUser.username)) || "User";
-
-    var unlockedMap = storage.unlocked || {};
-    var total = ACHIEVEMENTS.length;
-    var unlocked = getUnlockedCount();
-    var pct = total > 0 ? Math.round((unlocked / total) * 100) : 0;
-
-    // Count by rarity among unlocked
-    var rarityCount = {};
-    for (var achId in unlockedMap) {
-      var a = ACH_BY_ID[achId];
-      if (a && unlockedMap[achId]) {
-        rarityCount[a.rarity] = (rarityCount[a.rarity] || 0) + 1;
-      }
-    }
-
-    // Stats rows
-    var s = storage.stats || {};
-    var statRows = [
-      { icon: "💬", label: isRussian() ? "Сообщений" : "Messages", value: s.messages_sent || 0 },
-      { icon: "🖼️", label: isRussian() ? "Медиа" : "Media sent", value: (s.photos_sent || 0) + (s.videos_sent || 0) + (s.gifs_sent || 0) },
-      { icon: "🔥", label: isRussian() ? "Стрик" : "Fire streak", value: s.fire_streak || 0 },
-      { icon: "❤️", label: isRussian() ? "Реакций" : "Reactions", value: s.reactions_made || 0 },
-      { icon: "✏️", label: isRussian() ? "Правок" : "Edits", value: s.edits_made || 0 },
-      { icon: "↩️", label: isRussian() ? "Ответов" : "Replies", value: s.replies_made || 0 }
-    ];
-
-    var rarityBadges = [
-      { key: "mythic",    label: "Mythic",   labelRu: "Мифических",   color: "#e74c3c", bg: "rgba(231,76,60,0.15)",   emoji: "🔴" },
-      { key: "legendary", label: "Legendary",labelRu: "Легендарных",  color: "#f1c40f", bg: "rgba(241,196,15,0.15)",  emoji: "🟡" },
-      { key: "epic",      label: "Epic",     labelRu: "Эпических",    color: "#9b59b6", bg: "rgba(155,89,182,0.15)",  emoji: "🟣" },
-      { key: "rare",      label: "Rare",     labelRu: "Редких",       color: "#3498db", bg: "rgba(52,152,219,0.15)",  emoji: "🔵" },
-      { key: "secret",    label: "Secret",   labelRu: "Секретных",    color: "#8e44ad", bg: "rgba(142,68,173,0.15)",  emoji: "🔮" }
-    ];
-
-    // accent color based on unlocked %
-    var accentColor = pct >= 75 ? "#f1c40f" : pct >= 50 ? "#9b59b6" : pct >= 25 ? "#3498db" : "#5865f2";
-
-    var cardW = Math.min((RN.Dimensions.get("window").width || 360) - 32, 380);
-
-    return React.createElement(
-      RN.View,
-      {
-        ref: function (r) { statsCardRef = r; },
-        style: {
-          width: cardW,
-          borderRadius: 20,
-          overflow: "hidden",
-          backgroundColor: "#0e0f11",
-          borderWidth: 1,
-          borderColor: "rgba(255,255,255,0.07)",
-          alignSelf: "center"
-        }
-      },
-
-      // ── Header gradient strip (simulated with layered views) ──
-      React.createElement(
-        RN.View,
-        {
-          style: {
-            height: 80,
-            backgroundColor: accentColor + "22",
-            borderBottomWidth: 1,
-            borderBottomColor: accentColor + "33",
-            justifyContent: "flex-end",
-            paddingHorizontal: 20,
-            paddingBottom: 8
-          }
-        },
-        React.createElement(
-          RN.Text,
-          { style: { color: accentColor + "aa", fontSize: 11, fontWeight: "600", letterSpacing: 2, textTransform: "uppercase" } },
-          isRussian() ? "• ПРОФИЛЬ ДОСТИЖЕНИЙ •" : "• ACHIEVEMENT PROFILE •"
-        )
-      ),
-
-      // ── Avatar + Name row ──
-      React.createElement(
-        RN.View,
-        { style: { flexDirection: "row", alignItems: "flex-end", paddingHorizontal: 20, marginTop: -36 } },
-        // Avatar ring
-        React.createElement(
-          RN.View,
-          {
-            style: {
-              width: 76,
-              height: 76,
-              borderRadius: 38,
-              borderWidth: 3,
-              borderColor: accentColor,
-              backgroundColor: "#1a1b1e",
-              overflow: "hidden",
-              justifyContent: "center",
-              alignItems: "center"
-            }
-          },
-          React.createElement(RN.Image, {
-            source: { uri: avatarUrl },
-            style: { width: 70, height: 70, borderRadius: 35 },
-            defaultSource: { uri: "https://cdn.discordapp.com/embed/avatars/0.png" }
-          })
-        ),
-        React.createElement(
-          RN.View,
-          { style: { marginLeft: 14, marginBottom: 6, flex: 1 } },
-          React.createElement(
-            RN.Text,
-            { style: { color: "#ffffff", fontSize: 18, fontWeight: "800", letterSpacing: 0.2 }, numberOfLines: 1 },
-            displayName
-          ),
-          React.createElement(
-            RN.Text,
-            { style: { color: "#949ba4", fontSize: 12, marginTop: 1 } },
-            isRussian() ? "📊 Статистика · Достижения" : "📊 Stats · Achievements"
-          )
-        )
-      ),
-
-      // ── Progress section ──
-      React.createElement(
-        RN.View,
-        { style: { paddingHorizontal: 20, paddingTop: 20 } },
-        // Label row
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
-          React.createElement(
-            RN.Text,
-            { style: { color: "#c4c9d4", fontSize: 12, fontWeight: "600", letterSpacing: 0.5 } },
-            (isRussian() ? "🏆 ПРОГРЕСС" : "🏆 PROGRESS").toUpperCase()
-          ),
-          React.createElement(
-            RN.View,
-            { style: { flexDirection: "row", alignItems: "center" } },
-            React.createElement(
-              RN.Text,
-              { style: { color: "#ffffff", fontSize: 16, fontWeight: "900" } },
-              unlocked
-            ),
-            React.createElement(
-              RN.Text,
-              { style: { color: "#6b7280", fontSize: 14, fontWeight: "600" } },
-              "/" + total
-            ),
-            React.createElement(
-              RN.View,
-              {
-                style: {
-                  marginLeft: 8,
-                  paddingHorizontal: 8,
-                  paddingVertical: 2,
-                  borderRadius: 10,
-                  backgroundColor: accentColor + "22"
-                }
-              },
-              React.createElement(
-                RN.Text,
-                { style: { color: accentColor, fontSize: 12, fontWeight: "800" } },
-                pct + "%"
-              )
-            )
-          )
-        ),
-        // Progress bar track
-        React.createElement(
-          RN.View,
-          { style: { height: 8, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 4, overflow: "hidden" } },
-          React.createElement(
-            RN.View,
-            {
-              style: {
-                height: 8,
-                width: Math.max(pct, 2) + "%",
-                borderRadius: 4,
-                backgroundColor: accentColor
-              }
-            }
-          )
-        )
-      ),
-
-      // ── Rarity badges ──
-      React.createElement(
-        RN.View,
-        { style: { paddingHorizontal: 20, paddingTop: 14 } },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#6b7280", fontSize: 10, fontWeight: "600", letterSpacing: 1.5, marginBottom: 8 } },
-          (isRussian() ? "РЕДКИЕ РАЗБЛОКИРОВКИ" : "RARE UNLOCKS").toUpperCase()
-        ),
-        React.createElement(
-          RN.View,
-          { style: { flexDirection: "row", flexWrap: "wrap", gap: 6 } },
-          rarityBadges.map(function (rb) {
-            var cnt = rarityCount[rb.key] || 0;
-            return React.createElement(
-              RN.View,
-              {
-                key: rb.key,
-                style: {
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 10,
-                  paddingVertical: 5,
-                  borderRadius: 12,
-                  backgroundColor: cnt > 0 ? rb.bg : "rgba(255,255,255,0.04)",
-                  borderWidth: 1,
-                  borderColor: cnt > 0 ? rb.color + "55" : "rgba(255,255,255,0.05)",
-                  marginBottom: 6,
-                  marginRight: 4
-                }
-              },
-              React.createElement(
-                RN.Text,
-                { style: { fontSize: 13 } },
-                rb.emoji + " "
-              ),
-              React.createElement(
-                RN.Text,
-                { style: { color: cnt > 0 ? rb.color : "#4b5563", fontSize: 12, fontWeight: "700" } },
-                cnt + " " + (isRussian() ? rb.labelRu : rb.label)
-              )
-            );
-          })
-        )
-      ),
-
-      // ── Divider ──
-      React.createElement(
-        RN.View,
-        { style: { height: 1, backgroundColor: "rgba(255,255,255,0.06)", marginHorizontal: 20, marginTop: 14 } }
-      ),
-
-      // ── Mini stat grid ──
-      React.createElement(
-        RN.View,
-        { style: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 12, paddingTop: 14, paddingBottom: 4 } },
-        statRows.map(function (sr) {
-          return React.createElement(
-            RN.View,
-            {
-              key: sr.label,
-              style: {
-                width: "33.33%",
-                paddingHorizontal: 8,
-                paddingBottom: 14,
-                alignItems: "center"
-              }
-            },
-            React.createElement(
-              RN.Text,
-              { style: { fontSize: 18, marginBottom: 2 } },
-              sr.icon
-            ),
-            React.createElement(
-              RN.Text,
-              { style: { color: "#ffffff", fontSize: 14, fontWeight: "800" } },
-              sr.value >= 1000 ? (Math.floor(sr.value / 100) / 10) + "k" : String(sr.value)
-            ),
-            React.createElement(
-              RN.Text,
-              { style: { color: "#6b7280", fontSize: 10, textAlign: "center", marginTop: 1 } },
-              sr.label
-            )
-          );
-        })
-      ),
-
-      // ── Footer ──
-      React.createElement(
-        RN.View,
-        {
-          style: {
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            borderTopWidth: 1,
-            borderTopColor: "rgba(255,255,255,0.05)",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between"
-          }
-        },
-        React.createElement(
-          RN.Text,
-          { style: { color: "#3c4043", fontSize: 10, fontWeight: "500" } },
-          "🏆 Achievements · discord.gg"
-        ),
-        React.createElement(
-          RN.View,
-          {
-            style: {
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-              borderRadius: 6,
-              backgroundColor: accentColor + "1a"
-            }
-          },
-          React.createElement(
-            RN.Text,
-            { style: { color: accentColor + "cc", fontSize: 10, fontWeight: "700" } },
-            pct === 100 ? "✨ COMPLETE" : pct >= 50 ? "⚡ HALFWAY" : "🎯 GRINDING"
-          )
-        )
-      )
-    );
-  }
-
-  function StatsModalView(props) {
-    var React = vendetta.metro.common.React;
-    var RN    = vendetta.metro.common.ReactNative;
-    if (!React || !RN || !RN.Modal) return null;
-
-    var Btn = RN.TouchableOpacity || RN.Pressable || RN.View;
-    var viewShotRef = null;
-
-    function captureAndShare() {
-      try {
-        // Try react-native-view-shot (may be bundled in Discord)
-        var ViewShot = findByProps("captureRef", "captureScreen");
-        if (ViewShot && statsCardRef && typeof ViewShot.captureRef === "function") {
-          ViewShot.captureRef(statsCardRef, {
-            format: "png",
-            quality: 1,
-            result: "tmpfile"
-          }).then(function (uri) {
-            var Share = RN.Share || findByProps("share", "shareAsync");
-            if (Share && typeof Share.share === "function") {
-              Share.share({ url: uri, title: "My Achievement Stats" }).catch(function () {});
-            } else {
-              showToast("📸 " + (isRussian() ? "Файл сохранён: " : "Saved to: ") + uri, null);
-            }
-          }).catch(function () {
-            showToast(isRussian() ? "📸 Нажмите и удерживайте карточку для скриншота" : "📸 Long press the card to screenshot!", null);
-          });
-        } else {
-          showToast(isRussian() ? "📸 Нажмите и удерживайте карточку для скриншота" : "📸 Long press the card to screenshot!", null);
-        }
-      } catch (e) {
-        showToast(isRussian() ? "📸 Нажмите и удерживайте карточку для скриншота" : "📸 Long press the card to screenshot!", null);
-      }
-    }
-
-    return React.createElement(
-      RN.Modal,
-      {
-        visible: Boolean(props.visible),
-        animationType: "slide",
-        transparent: true,
-        onRequestClose: props.onClose
-      },
-      React.createElement(
-        RN.View,
-        {
-          style: {
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.85)",
-            justifyContent: "center",
-            alignItems: "center"
-          }
-        },
-        // Close tap area (background)
-        React.createElement(Btn, {
-          style: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
-          onPress: props.onClose,
-          activeOpacity: 1
-        }),
-        // Card wrapper
-        React.createElement(
-          RN.View,
-          { style: { width: "100%", paddingHorizontal: 16, zIndex: 10 } },
-          // Toolbar
-          React.createElement(
-            RN.View,
-            {
-              style: {
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingHorizontal: 4,
-                paddingBottom: 12
-              }
-            },
-            React.createElement(
-              RN.Text,
-              { style: { color: "#ffffff", fontSize: 15, fontWeight: "700" } },
-              isRussian() ? "📊 Моя статистика" : "📊 My Stats"
-            ),
-            React.createElement(
-              RN.View,
-              { style: { flexDirection: "row", gap: 10 } },
-              React.createElement(
-                Btn,
-                {
-                  onPress: captureAndShare,
-                  activeOpacity: 0.7,
-                  style: {
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingHorizontal: 14,
-                    paddingVertical: 7,
-                    borderRadius: 14,
-                    backgroundColor: "#5865f2",
-                    marginRight: 8
-                  }
-                },
-                React.createElement(
-                  RN.Text,
-                  { style: { color: "#ffffff", fontSize: 12, fontWeight: "700" } },
-                  "📸 " + (isRussian() ? "Сохранить PNG" : "Save PNG")
-                )
-              ),
-              React.createElement(
-                Btn,
-                {
-                  onPress: props.onClose,
-                  activeOpacity: 0.7,
-                  style: {
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    justifyContent: "center",
-                    alignItems: "center"
-                  }
-                },
-                React.createElement(
-                  RN.Text,
-                  { style: { color: "#ffffff", fontSize: 16, fontWeight: "800" } },
-                  "✕"
-                )
-              )
-            )
-          ),
-          // The Stats Card
-          React.createElement(StatsCardView, {})
-        )
-      )
-    );
-  }
-
-  // ── /stats slash command ────────────────────────────────────────────────────
-  var statsModalListeners = [];
+  // ── Stats Card (minimal dark card) ──────────────────────────────────────────
   var isStatsModalOpen = false;
+  var statsModalListeners = [];
 
   function setStatsModalOpen(val) {
     isStatsModalOpen = val;
@@ -1758,24 +1304,355 @@
     }
   }
 
+  function StatsCardView() {
+    var React = vendetta.metro.common.React;
+    var RN    = vendetta.metro.common.ReactNative;
+    if (!React || !RN || !RN.View || !RN.Text) return null;
+
+    try {
+      var currentUser = UserStore && UserStore.getCurrentUser && UserStore.getCurrentUser();
+      var userId = currentUser && currentUser.id;
+      var avatarUrl = (currentUser && currentUser.avatar && userId)
+        ? ("https://cdn.discordapp.com/avatars/" + userId + "/" + currentUser.avatar + ".png?size=128")
+        : null;
+      var displayName = (currentUser && (currentUser.globalName || currentUser.username)) || "User";
+
+      var total    = ACHIEVEMENTS.length;
+      var unlocked = getUnlockedCount();
+      var pct      = total > 0 ? Math.round((unlocked / total) * 100) : 0;
+      var barPct   = Math.max(pct, 2);
+
+      // Count mythic and secret
+      var mythicCount = 0;
+      var secretCount = 0;
+      var unlockedMap = storage.unlocked || {};
+      for (var achId in unlockedMap) {
+        if (!unlockedMap[achId]) continue;
+        var a = ACH_BY_ID[achId];
+        if (!a) continue;
+        if (a.rarity === "mythic")  mythicCount++;
+        if (a.rarity === "secret")  secretCount++;
+      }
+
+      // Accent colour shifts with progress
+      var accent = pct >= 75 ? "#f1c40f" : pct >= 50 ? "#9b59b6" : pct >= 25 ? "#3498db" : "#5865f2";
+
+      return React.createElement(
+        RN.View,
+        {
+          style: {
+            backgroundColor: "#111214",
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.08)",
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: 14
+          }
+        },
+
+        // ─── Row: avatar + name ───
+        React.createElement(
+          RN.View,
+          { style: { flexDirection: "row", alignItems: "center", marginBottom: 14 } },
+          // Avatar circle (only render Image if we have a URL)
+          React.createElement(
+            RN.View,
+            {
+              style: {
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                borderWidth: 2,
+                borderColor: accent,
+                backgroundColor: "#1e1f22",
+                overflow: "hidden",
+                justifyContent: "center",
+                alignItems: "center"
+              }
+            },
+            avatarUrl
+              ? React.createElement(RN.Image, {
+                  source: { uri: avatarUrl },
+                  style: { width: 48, height: 48, borderRadius: 24 }
+                })
+              : React.createElement(
+                  RN.Text,
+                  { style: { fontSize: 22 } },
+                  "👤"
+                )
+          ),
+          // Name + subtitle
+          React.createElement(
+            RN.View,
+            { style: { marginLeft: 12, flex: 1 } },
+            React.createElement(
+              RN.Text,
+              { style: { color: "#f2f3f5", fontSize: 16, fontWeight: "700" }, numberOfLines: 1 },
+              displayName
+            ),
+            React.createElement(
+              RN.Text,
+              { style: { color: "#5c6068", fontSize: 11, marginTop: 2 } },
+              "🏆 Achievement Stats"
+            )
+          )
+        ),
+
+        // ─── Progress label row ───
+        React.createElement(
+          RN.View,
+          { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 } },
+          React.createElement(
+            RN.Text,
+            { style: { color: "#949ba4", fontSize: 11, fontWeight: "600" } },
+            isRussian() ? "🏆 Прогресс" : "🏆 Progress"
+          ),
+          React.createElement(
+            RN.View,
+            { style: { flexDirection: "row", alignItems: "center" } },
+            React.createElement(
+              RN.Text,
+              { style: { color: "#f2f3f5", fontSize: 13, fontWeight: "800" } },
+              String(unlocked)
+            ),
+            React.createElement(
+              RN.Text,
+              { style: { color: "#5c6068", fontSize: 12 } },
+              "/" + total
+            ),
+            React.createElement(
+              RN.View,
+              { style: { marginLeft: 6, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8, backgroundColor: accent + "22" } },
+              React.createElement(
+                RN.Text,
+                { style: { color: accent, fontSize: 11, fontWeight: "800" } },
+                pct + "%"
+              )
+            )
+          )
+        ),
+
+        // ─── Progress bar ───
+        React.createElement(
+          RN.View,
+          { style: { height: 6, backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden", marginBottom: 14 } },
+          React.createElement(
+            RN.View,
+            { style: { height: 6, width: barPct + "%", borderRadius: 3, backgroundColor: accent } }
+          )
+        ),
+
+        // ─── Divider ───
+        React.createElement(
+          RN.View,
+          { style: { height: 1, backgroundColor: "rgba(255,255,255,0.05)", marginBottom: 12 } }
+        ),
+
+        // ─── Bottom badges: Secret + Mythic ───
+        React.createElement(
+          RN.View,
+          { style: { flexDirection: "row" } },
+          // Secret badge
+          React.createElement(
+            RN.View,
+            {
+              style: {
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 8,
+                paddingHorizontal: 10,
+                borderRadius: 10,
+                backgroundColor: secretCount > 0 ? "rgba(142,68,173,0.15)" : "rgba(255,255,255,0.03)",
+                borderWidth: 1,
+                borderColor: secretCount > 0 ? "#8e44ad55" : "rgba(255,255,255,0.04)",
+                marginRight: 8
+              }
+            },
+            React.createElement(
+              RN.Text,
+              { style: { fontSize: 16, marginRight: 6 } },
+              "🔮"
+            ),
+            React.createElement(
+              RN.View,
+              null,
+              React.createElement(
+                RN.Text,
+                { style: { color: secretCount > 0 ? "#8e44ad" : "#4a4f58", fontSize: 13, fontWeight: "800" } },
+                String(secretCount)
+              ),
+              React.createElement(
+                RN.Text,
+                { style: { color: "#5c6068", fontSize: 10 } },
+                isRussian() ? "Секретных" : "Secret"
+              )
+            )
+          ),
+          // Mythic badge
+          React.createElement(
+            RN.View,
+            {
+              style: {
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 8,
+                paddingHorizontal: 10,
+                borderRadius: 10,
+                backgroundColor: mythicCount > 0 ? "rgba(231,76,60,0.15)" : "rgba(255,255,255,0.03)",
+                borderWidth: 1,
+                borderColor: mythicCount > 0 ? "#e74c3c55" : "rgba(255,255,255,0.04)"
+              }
+            },
+            React.createElement(
+              RN.Text,
+              { style: { fontSize: 16, marginRight: 6 } },
+              "🔴"
+            ),
+            React.createElement(
+              RN.View,
+              null,
+              React.createElement(
+                RN.Text,
+                { style: { color: mythicCount > 0 ? "#e74c3c" : "#4a4f58", fontSize: 13, fontWeight: "800" } },
+                String(mythicCount)
+              ),
+              React.createElement(
+                RN.Text,
+                { style: { color: "#5c6068", fontSize: 10 } },
+                isRussian() ? "Мифических" : "Mythic"
+              )
+            )
+          )
+        )
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function StatsModalView(props) {
+    var React = vendetta.metro.common.React;
+    var RN    = vendetta.metro.common.ReactNative;
+    if (!React || !RN || !RN.Modal) return null;
+
+    var Btn = RN.TouchableOpacity || RN.Pressable || RN.View;
+
+    return React.createElement(
+      RN.Modal,
+      {
+        visible: Boolean(props.visible),
+        animationType: "fade",
+        transparent: true,
+        onRequestClose: props.onClose
+      },
+      React.createElement(
+        RN.View,
+        { style: { flex: 1, backgroundColor: "rgba(0,0,0,0.8)", justifyContent: "center", alignItems: "center" } },
+        // tap-away closes
+        React.createElement(Btn, {
+          style: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
+          onPress: props.onClose,
+          activeOpacity: 1
+        }),
+        // card container
+        React.createElement(
+          RN.View,
+          { style: { width: "88%", zIndex: 10 } },
+          // header row
+          React.createElement(
+            RN.View,
+            { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } },
+            React.createElement(
+              RN.Text,
+              { style: { color: "#f2f3f5", fontSize: 14, fontWeight: "700" } },
+              isRussian() ? "📊 Моя статистика" : "📊 My Stats"
+            ),
+            React.createElement(
+              Btn,
+              {
+                onPress: props.onClose,
+                activeOpacity: 0.7,
+                style: {
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  justifyContent: "center",
+                  alignItems: "center"
+                }
+              },
+              React.createElement(
+                RN.Text,
+                { style: { color: "#949ba4", fontSize: 14, fontWeight: "700" } },
+                "✕"
+              )
+            )
+          ),
+          React.createElement(StatsCardView, {})
+        )
+      )
+    );
+  }
+
+  // /stats command — shows safe Alert in chat, full card modal on profile
   function registerStatsCommand() {
     try {
-      var commands = vendetta.commands || (vendetta.metro && vendetta.metro.common && vendetta.metro.common.commands);
+      var commands = vendetta.commands;
       if (!commands || typeof commands.registerCommand !== "function") return;
 
       var unreg = commands.registerCommand({
-        id: "achievements-stats",
-        applicationId: "achievements-stats",
+        name: "stats",
         displayName: "stats",
-        displayDescription: isRussian()
-          ? "Показать карточку со статистикой достижений"
-          : "Show your achievements stats card",
+        description: isRussian() ? "Показать статистику достижений" : "Show your achievement stats",
+        displayDescription: isRussian() ? "Показать статистику достижений" : "Show your achievement stats",
         inputType: 1,
         type: 1,
         options: [],
-        execute: function (args, ctx) {
+        execute: function () {
           try {
-            setStatsModalOpen(true);
+            var total    = ACHIEVEMENTS.length;
+            var unlocked = getUnlockedCount();
+            var pct      = total > 0 ? Math.round((unlocked / total) * 100) : 0;
+            var mythicC  = 0;
+            var secretC  = 0;
+            var unlockedMap = storage.unlocked || {};
+            for (var id in unlockedMap) {
+              if (!unlockedMap[id]) continue;
+              var ac = ACH_BY_ID[id];
+              if (!ac) continue;
+              if (ac.rarity === "mythic")  mythicC++;
+              if (ac.rarity === "secret")  secretC++;
+            }
+            var s = storage.stats || {};
+            var msg = [
+              "🏆 " + (isRussian() ? "Достижения: " : "Achievements: ") + unlocked + "/" + total + " (" + pct + "%)",
+              "🔮 " + (isRussian() ? "Секретные: " : "Secret: ") + secretC + "   🔴 " + (isRussian() ? "Мифические: " : "Mythic: ") + mythicC,
+              "💬 " + (isRussian() ? "Сообщения: " : "Messages: ") + (s.messages_sent || 0),
+              "🔥 " + (isRussian() ? "Стрик: " : "Streak: ") + (s.fire_streak || 0) + (isRussian() ? " дн." : " days")
+            ].join("\n");
+
+            var RN = vendetta.metro.common && vendetta.metro.common.ReactNative;
+            var Alert = RN && RN.Alert;
+            if (Alert && typeof Alert.alert === "function") {
+              Alert.alert(
+                "📊 " + (isRussian() ? "Статистика" : "Achievement Stats"),
+                msg,
+                [
+                  {
+                    text: isRussian() ? "Открыть все" : "View All",
+                    onPress: function () {
+                      setModalOpen(true);
+                    }
+                  },
+                  { text: "OK", style: "cancel" }
+                ]
+              );
+            } else if (showToast) {
+              showToast("🏆 " + unlocked + "/" + total + " (" + pct + "%)", null);
+            }
           } catch (e) {}
           return { shouldntSend: true };
         }
@@ -1784,31 +1661,6 @@
     } catch (e) {}
   }
 
-  // ── StatsCommandHostView (renders the modal triggered by /stats command) ───
-  function StatsCommandHostView() {
-    var React = vendetta.metro.common.React;
-    var RN    = vendetta.metro.common.ReactNative;
-    if (!React || !RN) return null;
-
-    var state = React.useState(isStatsModalOpen);
-    var isOpen = state[0];
-    var setIsOpen = state[1];
-
-    React.useEffect(function () {
-      statsModalListeners.push(setIsOpen);
-      return function () {
-        var idx = statsModalListeners.indexOf(setIsOpen);
-        if (idx !== -1) statsModalListeners.splice(idx, 1);
-      };
-    }, []);
-
-    if (!isOpen) return null;
-
-    return React.createElement(StatsModalView, {
-      visible: true,
-      onClose: function () { setStatsModalOpen(false); }
-    });
-  }
 
   // ── Profile Shortcut & Modal System ───────────────────────────────────────
 
@@ -1967,8 +1819,7 @@
       { key: "achievement-pill-wrapper" },
       origElement,
       pill,
-      modal,
-      React.createElement(StatsCommandHostView, {})
+      modal
     );
   }
 
@@ -2220,6 +2071,13 @@
         contentContainerStyle: { paddingBottom: 40 }
       },
 
+      // Minimal Dark Stats Card
+      React.createElement(
+        RN.View,
+        { style: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 } },
+        React.createElement(StatsCardView, {})
+      ),
+
       // Progress & Stats Section
       React.createElement(
         FormSection,
@@ -2426,7 +2284,6 @@
       seenSignatures = {};
       modalListeners = [];
       statsModalListeners = [];
-      statsCardRef = null;
     },
     settings: Settings
   };
