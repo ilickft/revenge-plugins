@@ -101,7 +101,7 @@ https://ilickft.github.io/revenge-plugins/shadow-ban/
 ---
 
 ### achievements
-Tracks client milestones with notification toasts, authentic audio chimes, streak tracking, a profile badge, and an optional bio sync feature.
+Unlock 430+ achievements with top toast banners, authentic sounds, streaks, profile Orb shortcut, bio progress sync, and a comprehensive settings dashboard with category filters, sound tests, and secret hints.
 
 ```
 https://ilickft.github.io/revenge-plugins/achievements/
