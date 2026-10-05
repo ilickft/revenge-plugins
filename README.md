@@ -20,15 +20,14 @@ a collection of plugins and fonts for [Revenge](https://github.com/revenge-mod/r
   <a href="https://github.com/ilickft/revenge-plugins/commits/main">
     <img src="https://img.shields.io/github/last-commit/ilickft/revenge-plugins?style=flat-square&logo=git&logoColor=white&color=5865F2" alt="Last Commit" />
   </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-5865F2?style=flat-square" alt="License" />
+  </a>
 </p>
 
 <p align="center">
   <a href="https://discord.com/users/1268105742947450902">
     <img src="https://discord-readme-card.ezzud.fr/?userid=1268105742947450902&bgcolor=000000&displaynamecolor=ffffff&tagcolor=9ba1a9&v=2" alt="Discord Profile (ᴋᴀʀɪᴏ)" />
-  </a>
-  <br/>
-  <a href="https://discord.com/users/1268105742947450902">
-    <img src="https://lanyard.cnrad.dev/api/1268105742947450902?theme=dark&bg=000000&showDisplayName=true&animated=true" alt="Discord Activity (Listening / Playing / Streaming)" />
   </a>
 </p>
 
