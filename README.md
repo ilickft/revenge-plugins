@@ -1,10 +1,40 @@
+<div align="center">
+
 # revenge plugins
 
-A collection of plugins and fonts for [Revenge](https://github.com/revenge-mod/revenge-bundle).
+a collection of plugins and fonts for [Revenge](https://github.com/revenge-mod/revenge-bundle)
 
-[Browse Web Library](https://ilickft.github.io/revenge-plugins/) &bull; [GitHub Repository](https://github.com/ilickft/revenge-plugins)
+<p align="center">
+  <a href="https://ilickft.github.io/revenge-plugins/">
+    <img src="https://img.shields.io/badge/Browse_%26_Copy_Plugins-Web_Library-5865F2?style=for-the-badge&logo=compass&logoColor=white" alt="Browse & Copy Plugins" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/revenge-mod/revenge-bundle">
+    <img src="https://img.shields.io/badge/platform-Revenge-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Platform Revenge" />
+  </a>
+  <a href="https://github.com/ilickft/revenge-plugins">
+    <img src="https://img.shields.io/badge/github-revenge--plugins-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub Repository" />
+  </a>
+  <a href="https://github.com/ilickft/revenge-plugins/commits/main">
+    <img src="https://img.shields.io/github/last-commit/ilickft/revenge-plugins?style=flat-square&logo=git&logoColor=white&color=5865F2" alt="Last Commit" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://discord.com/users/1268105742947450902">
+    <img src="https://discord-readme-card.ezzud.fr/?userid=1268105742947450902&bgcolor=000000&displaynamecolor=ffffff&tagcolor=9ba1a9&v=2" alt="Discord Profile (ᴋᴀʀɪᴏ)" />
+  </a>
+  <br/>
+  <a href="https://discord.com/users/1268105742947450902">
+    <img src="https://lanyard.cnrad.dev/api/1268105742947450902?theme=dark&bg=000000&showDisplayName=true&animated=true" alt="Discord Activity (Listening / Playing / Streaming)" />
+  </a>
+</p>
 
 > **Notice:** `clean-context-menu` and `no-orb-ads` are currently broken.
+
+</div>
 
 ---
 
