@@ -4,8 +4,12 @@
 
 a collection of plugins for [Revenge](https://github.com/revenge-mod/revenge-bundle) — the mobile Discord client mod
 
+[![Browse & Copy Plugins](https://img.shields.io/badge/🌐_Browse_%26_Copy_Plugins-Web_Library-5865F2?style=for-the-badge&logo=compass&logoColor=white)](https://ilickft.github.io/revenge-plugins/)
+
 [![platform](https://img.shields.io/badge/platform-Revenge-5865F2?style=flat-square&logo=discord&logoColor=white)](https://github.com/revenge-mod/revenge-bundle)
 [![last commit](https://img.shields.io/github/last-commit/ilickft/revenge-plugins?style=flat-square&color=5865F2)](https://github.com/ilickft/revenge-plugins/commits/main)
+
+> ⚡ **Web Library:** You can browse, search, and 1-click copy any plugin link at **[ilickft.github.io/revenge-plugins](https://ilickft.github.io/revenge-plugins/)**
 
 </div>
 
@@ -181,12 +185,33 @@ https://ilickft.github.io/revenge-plugins/no-orb-ads/
 
 ---
 
+### 🔤 gauge font
+
+> custom font pack replacing Discord's default ggsans font family
+
+replaces Discord's default ggsans font family with the clean, bold Gauge Heavy typeface across the client.
+
+```
+https://ilickft.github.io/revenge-plugins/fonts/Gauge.json
+```
+
+---
+
 ## installation
 
-open Revenge → **Settings → Plugins → `+`** → paste the plugin url.
+### 🌐 web library (instant 1-click copy)
+
+Open the [**Revenge Plugins Web Library**](https://ilickft.github.io/revenge-plugins/) to browse all plugins with search & filters and copy any install URL directly with one click.
+
+### 📲 manual install
+
+1. Copy any plugin URL above.
+2. In Discord, navigate to **Settings → Plugins → `+`**.
+3. Paste the plugin URL and tap **Install**.
 
 ---
 
 ## disclaimer
 
 > client mods violate Discord's Terms of Service. use at your own risk.
+
