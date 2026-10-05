@@ -6,7 +6,6 @@
   const { React, ReactNative: RN, FluxDispatcher } = vendetta.metro.common;
   const storage = vendetta.plugin.storage;
 
-  // ── Metro Stores & Modules ──────────────────────────────────────────────────
   const MessageStore         = findByStoreName("MessageStore") || findByProps("getMessage", "getMessages");
   const ChannelStore         = findByStoreName("ChannelStore") || findByProps("getChannel", "getDMFromUserId");
   const UserStore            = findByStoreName("UserStore");
@@ -21,7 +20,6 @@
   const TokenModule          = findByProps("getToken");
   const MemberSearch         = findByProps("queryMembers") || findByProps("searchMembers");
 
-  // ── UI Components & Helpers ────────────────────────────────────────────────
   const Forms            = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
   const FormRow          = Forms && (Forms.FormRow || Forms.TableRow);
   const FormSection      = Forms && (Forms.FormSection || Forms.TableSection);
@@ -31,7 +29,6 @@
   const getAssetIDByName = (vendetta.ui && vendetta.ui.assets && vendetta.ui.assets.getAssetIDByName) || (findByProps("getAssetIDByName") && findByProps("getAssetIDByName").getAssetIDByName);
   const showToast        = (vendetta.ui && vendetta.ui.toasts && vendetta.ui.toasts.showToast) || (findByProps("showToast") && findByProps("showToast").showToast);
 
-  // ── Plugin State & Defaults ────────────────────────────────────────────────
   if (!Array.isArray(storage.bannedUsers)) {
     storage.bannedUsers = [];
   }
@@ -42,7 +39,6 @@
   if (storage.hideTyping === undefined) storage.hideTyping = true;
   if (storage.enableContextMenu === undefined) storage.enableContextMenu = true;
 
-  // In-memory Set for O(1) ultra-fast lookup across frequent Flux dispatches
   const bannedIdSet = new Set();
 
   function syncBannedSet() {
@@ -66,8 +62,6 @@
 
   let patches            = [];
   let unregisterCommands = [];
-
-  // ── Helpers ────────────────────────────────────────────────────────────────
 
   function toast(msg, isError) {
     try {
@@ -201,7 +195,7 @@
   }
 
   function isBannedDM(channel) {
-    if (!channel || channel.type !== 1) return false; // 1 = Direct Message
+    if (!channel || channel.type !== 1) return false;
     const rids = channel.recipient_ids || channel.recipientIds;
     if (Array.isArray(rids)) {
       for (let i = 0; i < rids.length; i++) {
@@ -253,8 +247,6 @@
         .catch(() => {});
     } catch (e) {}
   }
-
-  // ── Real-time Active Eviction ───────────────────────────────────────────────
 
   function muteUserAudio(userId) {
     try {
@@ -353,8 +345,6 @@
     } catch (e) {}
   }
 
-  // ── Core Ban & Unban Actions ───────────────────────────────────────────────
-
   function shadowBanUser(targetId, userObj) {
     if (!targetId) return false;
     const targetStr = String(targetId);
@@ -385,14 +375,12 @@
     storage.bannedUsers.push(entry);
     syncBannedSet();
 
-    // Trigger instant active client eviction
     if (storage.blockMessages !== false) purgeMessagesForUser(targetStr);
     if (storage.hideVoice !== false) evictUserFromVoice(targetStr);
     if (storage.hideDMs !== false) evictUserFromDM(targetStr);
 
     toast(`Shadow banned ${username}`);
 
-    // If user info was incomplete, attempt background fetch
     if (!u) {
       tryFetchUser(targetStr, (fetched) => {
         if (fetched && fetched.id) {
@@ -433,8 +421,6 @@
     return true;
   }
 
-  // ── Dispatcher Interception (Gateway & Internal Events) ────────────────────
-
   function patchDispatcher() {
     patches.push(
       before("dispatch", FluxDispatcher, (args) => {
@@ -444,7 +430,6 @@
 
           const type = event.type;
 
-          // 1. Text Messages: Incoming new messages
           if (type === "MESSAGE_CREATE" || type === "LOCAL_MESSAGE_CREATE") {
             if (storage.blockMessages !== false) {
               const authorId = event.message && event.message.author && event.message.author.id;
@@ -455,7 +440,6 @@
             }
           }
 
-          // 2. Text Messages: Loading message history (opening channel / scrolling)
           if (type === "LOAD_MESSAGES_SUCCESS" && Array.isArray(event.messages)) {
             if (storage.blockMessages !== false) {
               event.messages = event.messages.filter((m) => {
@@ -464,7 +448,6 @@
             }
           }
 
-          // 3. Text Messages: Message edits
           if (type === "MESSAGE_UPDATE") {
             if (storage.blockMessages !== false) {
               const mAuthor = event.message && event.message.author && event.message.author.id;
@@ -475,7 +458,6 @@
             }
           }
 
-          // 4. Reactions
           if (type === "MESSAGE_REACTION_ADD") {
             if (storage.blockMessages !== false && event.userId && isShadowBanned(event.userId)) {
               args[0] = { type: "__SBAN_BLOCKED__" };
@@ -488,7 +470,6 @@
             }
           }
 
-          // 5. Typing Indicators
           if (type === "TYPING_START") {
             if (storage.hideTyping !== false && event.userId && isShadowBanned(event.userId)) {
               args[0] = { type: "__SBAN_BLOCKED__" };
@@ -496,20 +477,18 @@
             }
           }
 
-          // 6. Voice Channels: Gateway voice state updates
           if (type === "VOICE_STATE_UPDATES" && Array.isArray(event.voiceStates)) {
             if (storage.hideVoice !== false) {
               for (let v = 0; v < event.voiceStates.length; v++) {
                 const vs = event.voiceStates[v];
                 if (vs && vs.userId && isShadowBanned(vs.userId)) {
-                  // Setting channelId to null causes VoiceStateStore to disconnect them
+
                   vs.channelId = null;
                 }
               }
             }
           }
 
-          // 7. Voice Channels: Audio speaking indicators
           if (type === "AUDIO_SPEAKING" || type === "VOICE_SPEAKING" || type === "SPEAKING") {
             if (storage.hideVoice !== false) {
               const spkId = event.userId || event.speakerUserId;
@@ -520,7 +499,6 @@
             }
           }
 
-          // 8. Guild Member Sidebar List
           if (type === "GUILD_MEMBER_LIST_UPDATE" && Array.isArray(event.ops)) {
             if (storage.hideMemberList !== false) {
               for (let o = 0; o < event.ops.length; o++) {
@@ -542,7 +520,6 @@
             }
           }
 
-          // 9. User Presences / Status
           if (type === "PRESENCE_UPDATE") {
             const pUid = (event.user && event.user.id) || event.userId;
             if (pUid && isShadowBanned(pUid)) {
@@ -551,7 +528,6 @@
             }
           }
 
-          // 10. Direct Messages: Suppress DM creation, calls & rings
           if (type === "CHANNEL_CREATE" && event.channel && isBannedDM(event.channel)) {
             if (storage.hideDMs !== false) {
               args[0] = { type: "__SBAN_BLOCKED__" };
@@ -573,7 +549,6 @@
             }
           }
 
-          // 11. Search Results
           if (type === "SEARCH_FINISH" && event.messages && Array.isArray(event.messages)) {
             if (storage.blockMessages !== false) {
               event.messages = event.messages.filter((row) => {
@@ -590,10 +565,8 @@
     );
   }
 
-  // ── Metro Store Patches ────────────────────────────────────────────────────
-
   function patchStores() {
-    // 1. ChannelStore: Hide DMs
+
     if (ChannelStore) {
       if (typeof ChannelStore.getPrivateChannels === "function") {
         patches.push(
@@ -642,7 +615,6 @@
       }
     }
 
-    // 2. VoiceStateStore: Hide voice participants
     if (VoiceStateStore) {
       if (typeof VoiceStateStore.getVoiceStatesForChannel === "function") {
         patches.push(
@@ -692,7 +664,6 @@
       }
     }
 
-    // 3. MemberSearch: Hide from mention autocomplete
     if (MemberSearch && typeof MemberSearch.queryMembers === "function") {
       patches.push(
         after("queryMembers", MemberSearch, (args, res) => {
@@ -706,8 +677,6 @@
     }
   }
 
-  // ── Long-press Context Menu (ActionSheet) ──────────────────────────────────
-
   function patchActionSheet() {
     if (!ActionSheet || typeof ActionSheet.openLazy !== "function") return;
 
@@ -720,7 +689,6 @@
 
         if (!componentPromise || typeof componentPromise.then !== "function") return;
 
-        // Resolve target message from ActionSheet props
         let targetMsg = (sheetProps && (sheetProps.message || (sheetProps.target && sheetProps.target.message))) || null;
         if (!targetMsg && sheetProps) {
           for (const k in sheetProps) {
@@ -732,13 +700,12 @@
           }
         }
 
-        // Or resolve target user directly from sheet props (e.g. Profile sheet)
         const targetUser = (targetMsg && targetMsg.author) || (sheetProps && (sheetProps.user || (sheetProps.target && sheetProps.target.user)));
         if (!targetUser || !targetUser.id) return;
 
         const targetId = String(targetUser.id);
         const currentUserId = UserStore && UserStore.getCurrentUser() && UserStore.getCurrentUser().id;
-        if (currentUserId && targetId === String(currentUserId)) return; // Don't allow shadow banning yourself
+        if (currentUserId && targetId === String(currentUserId)) return;
 
         componentPromise.then((module) => {
           if (!module) return;
@@ -756,7 +723,6 @@
 
             if (!buttonRows) return;
 
-            // Check if already injected
             for (let i = 0; i < buttonRows.length; i++) {
               const p = buttonRows[i] && buttonRows[i].props;
               if (p && (p.label === "Shadow Ban User" || p.label === "Un-shadowban User")) {
@@ -802,8 +768,6 @@
     );
   }
 
-  // ── Slash Commands Registration ────────────────────────────────────────────
-
   function removeSlashCommands(names) {
     try {
       if (vendetta.commands && Array.isArray(vendetta.commands.commands)) {
@@ -822,7 +786,6 @@
 
     if (!vendetta.commands || typeof vendetta.commands.registerCommand !== "function") return;
 
-    // 1. /sban <user>/reply
     unregisterCommands.push(
       vendetta.commands.registerCommand({
         name: "sban",
@@ -838,7 +801,7 @@
             displayName: "user",
             description: "User to shadow ban",
             displayDescription: "User to shadow ban",
-            type: 6, // ApplicationCommandOptionType.USER
+            type: 6,
             required: false,
           },
           {
@@ -846,14 +809,13 @@
             displayName: "id",
             description: "User ID to shadow ban (optional, or reply to their message)",
             displayDescription: "User ID to shadow ban",
-            type: 3, // ApplicationCommandOptionType.STRING
+            type: 3,
             required: false,
           },
         ],
         execute: (args, ctx) => {
           const chanId = (ctx && ctx.channel && ctx.channel.id) || getActiveChannelId();
 
-          // Resolve target user ID
           let targetId = null;
           let userObj = null;
 
@@ -884,7 +846,6 @@
       })
     );
 
-    // 2. /unsban <user>/<id>
     unregisterCommands.push(
       vendetta.commands.registerCommand({
         name: "unsban",
@@ -900,7 +861,7 @@
             displayName: "user",
             description: "User to un-shadowban",
             displayDescription: "User to un-shadowban",
-            type: 6, // ApplicationCommandOptionType.USER
+            type: 6,
             required: false,
           },
           {
@@ -908,7 +869,7 @@
             displayName: "id",
             description: "User ID to un-shadowban (optional, or reply to their message)",
             displayDescription: "User ID to un-shadowban",
-            type: 3, // ApplicationCommandOptionType.STRING
+            type: 3,
             required: false,
           },
         ],
@@ -946,8 +907,6 @@
       })
     );
   }
-
-  // ── Settings UI Component ──────────────────────────────────────────────────
 
   function Settings() {
     const forceUpdate = React.useReducer((x) => x + 1, 0)[1];
@@ -989,7 +948,6 @@
       toast(`Un-shadowbanned all ${count} users.`);
     }
 
-    // Filter users by search
     const filteredList = bannedList.filter((item) => {
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase().trim();
@@ -1195,8 +1153,6 @@
       )
     );
   }
-
-  // ── Plugin Lifecycle ───────────────────────────────────────────────────────
 
   return {
     onLoad: function () {

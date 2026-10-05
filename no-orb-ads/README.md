@@ -1,19 +1,14 @@
 # No Orb Ads
 
-> ⚠️ **Status: Currently Broken** — This plugin is currently broken and may not function properly on recent Discord / Revenge versions.
+> **Status: Currently Broken** on recent Discord versions.
 
-Block or mute Discord Quest and Orb video ads to save data, battery, and bandwidth while farming Orbs.
+Blocks or mutes Discord Quest and Orb video ads to reduce data and bandwidth usage while farming Orbs.
 
 ## Features
 
-- **5-Layer Ad Blocking:**
-  - **Flag Patching:** Overrides quest video playback flags and marks requirements without loading full ad streams.
-  - **Component Hiding:** Automatically suppresses video ad players and promotional containers in the UI.
-  - **Video Collapse:** Collapses ad video containers to prevent rendering overhead.
-  - **REST API Interception:** Intercepts Quest video streaming and telemetry requests to prevent ad media downloads.
-  - **Experiment Gating:** Overrides client experiment stores related to video quest ads.
-- **Mute Only Mode:** Optional setting that leaves video playback active for strict quest verification while completely muting the audio stream.
-- **Settings Dashboard:** Built-in settings toggle in Revenge/Vendetta to switch between full ad blocking and mute-only mode anytime.
+- **Ad Blocking:** Suppresses quest video players and promotional containers to prevent downloading ad streams.
+- **Mute Only Mode:** Optional mode to keep video playing silently for quest tracking while silencing all audio.
+- **Settings Toggle:** Easily toggle between full blocking and mute-only mode in plugin settings.
 
 ## Settings
 

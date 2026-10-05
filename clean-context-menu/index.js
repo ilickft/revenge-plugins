@@ -8,7 +8,6 @@
   var showToast        = vendetta.ui.toasts.showToast;
   var getAssetIDByName = (vendetta.ui.assets && vendetta.ui.assets.getAssetIDByName) || (findByProps("getAssetIDByName") && findByProps("getAssetIDByName").getAssetIDByName);
 
-  // ── Metro Modules ─────────────────────────────────────────────────────────
   var ActionSheet      = findByProps("openLazy", "hideActionSheet");
   var Forms            = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
   var FormRow          = Forms.FormRow || Forms.TableRow;
@@ -18,7 +17,6 @@
 
   var patches = [];
 
-  // ── Default Storage Initialization ────────────────────────────────────────
   if (storage.enabled === undefined) storage.enabled = true;
   if (storage.hideReactions === undefined) storage.hideReactions = false;
   if (storage.hideReply === undefined) storage.hideReply = false;
@@ -38,7 +36,6 @@
   if (!Array.isArray(storage.discoveredItems)) storage.discoveredItems = [];
   if (!storage.hiddenItems) storage.hiddenItems = {};
 
-  // ── Helper: Toast Notification ───────────────────────────────────────────
   function toast(msg, iconName) {
     try {
       if (showToast) {
@@ -48,7 +45,6 @@
     } catch (e) {}
   }
 
-  // ── Helper: Record Discovered Item ────────────────────────────────────────
   function recordDiscovered(label) {
     if (!label || typeof label !== "string") return;
     var trimmed = label.trim();
@@ -62,7 +58,6 @@
     }
   }
 
-  // ── Helper: Extract Item Metadata ─────────────────────────────────────────
   function getItemInfo(item) {
     if (!item || typeof item !== "object") return null;
     var props = item.props || {};
@@ -121,7 +116,6 @@
     };
   }
 
-  // ── Helper: Determine If Item Should Be Hidden ────────────────────────────
   function shouldHide(item) {
     if (!item || typeof item !== "object") return false;
     if (storage.enabled === false) return false;
@@ -129,7 +123,6 @@
     var info = getItemInfo(item);
     if (!info) return false;
 
-    // 1. Quick Reactions Bar
     if (storage.hideReactions && info.isReactions) {
       return true;
     }
@@ -149,7 +142,6 @@
       return false;
     }
 
-    // 2. Preset Rules
     if (storage.hideReply && matchesAny(["reply", "ответить"])) return true;
     if (storage.hideEdit && matchesAny(["edit", "edit message", "edit-message", "редактировать"])) return true;
     if (storage.hideCopyText && matchesAny(["copy text", "copy-text", "скопировать текст"])) return true;
@@ -164,7 +156,6 @@
     if (storage.hideReport && matchesAny(["report", "report message", "report-message", "пожаловаться"])) return true;
     if (storage.hideAddReaction && matchesAny(["add reaction", "add-reaction", "добавить реакцию"])) return true;
 
-    // 3. User-Toggled Discovered / Custom Items
     if (storage.hiddenItems) {
       for (var target in storage.hiddenItems) {
         if (storage.hiddenItems[target]) {
@@ -173,7 +164,6 @@
       }
     }
 
-    // 4. Custom User Keywords
     if (Array.isArray(storage.customKeywords)) {
       for (var ck = 0; ck < storage.customKeywords.length; ck++) {
         var kw = (storage.customKeywords[ck] || "").toLowerCase().trim();
@@ -184,7 +174,6 @@
     return false;
   }
 
-  // ── Recursive React Tree Cleaner ──────────────────────────────────────────
   function cleanTree(node) {
     if (!node) return node;
 
@@ -236,7 +225,6 @@
     return node;
   }
 
-  // ── Hooking ActionSheet.openLazy ──────────────────────────────────────────
   function setupActionSheetPatch() {
     if (!ActionSheet || typeof ActionSheet.openLazy !== "function") return;
 
@@ -277,7 +265,6 @@
     );
   }
 
-  // ── Settings UI ───────────────────────────────────────────────────────────
   function Settings() {
     var React = vendetta.metro.common.React;
     var RN    = vendetta.metro.common.ReactNative;
@@ -294,7 +281,6 @@
 
     var Btn = RN.TouchableOpacity || RN.Pressable || RN.View;
 
-    // Count hidden items
     var hiddenCount = 0;
     var presetKeys = [
       "hideReactions", "hideReply", "hideEdit", "hideCopyText", "hideCopyLink",
@@ -314,20 +300,20 @@
     }
 
     var presets = [
-      { key: "hideReactions",   title: "⚡ Quick Reactions Bar",       desc: "The top row of emoji reactions" },
-      { key: "hideReply",       title: "💬 Reply",                     desc: "Reply to message" },
-      { key: "hideEdit",        title: "✏️ Edit Message",              desc: "Edit message content" },
-      { key: "hideCopyText",    title: "📋 Copy Text",                 desc: "Copy message raw text" },
-      { key: "hideCopyLink",    title: "🔗 Copy Message Link",         desc: "Copy URL link to message" },
-      { key: "hidePin",         title: "📌 Pin / Unpin Message",       desc: "Pin or unpin message" },
-      { key: "hideForward",     title: "↗️ Forward Message",           desc: "Forward message to another chat" },
-      { key: "hideMarkUnread",  title: "👁️ Mark Unread",              desc: "Mark channel unread from here" },
-      { key: "hideThread",      title: "🧵 Create Thread",             desc: "Start a thread from message" },
-      { key: "hideApps",        title: "🤖 Apps / Commands",           desc: "Application commands menu" },
-      { key: "hideTTS",         title: "🔊 Speak Message (TTS)",       desc: "Read message aloud" },
-      { key: "hideDelete",      title: "🗑️ Delete Message",            desc: "Delete message option" },
-      { key: "hideReport",      title: "⚠️ Report Message",            desc: "Report message option" },
-      { key: "hideAddReaction", title: "➕ Add Reaction Button",       desc: "The add reaction button" }
+      { key: "hideReactions",   title: "Quick Reactions Bar",       desc: "The top row of emoji reactions" },
+      { key: "hideReply",       title: "Reply",                     desc: "Reply to message" },
+      { key: "hideEdit",        title: "Edit Message",              desc: "Edit message content" },
+      { key: "hideCopyText",    title: "Copy Text",                 desc: "Copy message raw text" },
+      { key: "hideCopyLink",    title: "Copy Message Link",         desc: "Copy URL link to message" },
+      { key: "hidePin",         title: "Pin / Unpin Message",       desc: "Pin or unpin message" },
+      { key: "hideForward",     title: "↗Forward Message",           desc: "Forward message to another chat" },
+      { key: "hideMarkUnread",  title: "Mark Unread",              desc: "Mark channel unread from here" },
+      { key: "hideThread",      title: "Create Thread",             desc: "Start a thread from message" },
+      { key: "hideApps",        title: "Apps / Commands",           desc: "Application commands menu" },
+      { key: "hideTTS",         title: "Speak Message (TTS)",       desc: "Read message aloud" },
+      { key: "hideDelete",      title: "Delete Message",            desc: "Delete message option" },
+      { key: "hideReport",      title: "Report Message",            desc: "Report message option" },
+      { key: "hideAddReaction", title: "Add Reaction Button",       desc: "The add reaction button" }
     ];
 
     function togglePreset(pKey) {
@@ -463,7 +449,7 @@
           ? storage.customKeywords.map(function (kw, idx) {
               return React.createElement(FormRow, {
                 key: "kw-" + idx,
-                label: "✕  " + kw,
+                label: "" + kw,
                 subLabel: "Tap to remove this keyword",
                 onPress: function () { removeKeyword(idx); }
               });

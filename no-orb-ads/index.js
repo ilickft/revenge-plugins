@@ -10,14 +10,7 @@
 
   var patches = [];
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Storage init (non-destructive)
-  // ─────────────────────────────────────────────────────────────────────────
   if (storage.muteOnly === undefined) storage.muteOnly = false;
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Helpers
-  // ─────────────────────────────────────────────────────────────────────────
 
   function safeAfter(obj, prop, fn) {
     if (!obj || typeof obj[prop] !== "function") return;
@@ -42,7 +35,6 @@
     }
   }
 
-  // Walk a React element tree and call cb(el) on each node.
   function walkTree(el, cb) {
     if (!el || typeof el !== "object") return;
     cb(el);
@@ -55,14 +47,12 @@
     }
   }
 
-  // Null out a React element in-place (keeps array slot, just renders nothing)
   function nullifyEl(el) {
     if (!el || typeof el !== "object") return;
     el.type = function () { return null; };
     el.props = {};
   }
 
-  // Check if a string contains any quest/orb keyword
   var QUEST_KEYS = ["quest", "orb", "reward", "ad_video", "adVideo", "QuestVideo",
                     "questbar", "questBar", "claimquest", "claimQuest",
                     "adsVideo", "videoAd", "video_ad", "promoVideo", "watchAd"];
@@ -74,11 +64,8 @@
     return false;
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Strategy 1: Patch Video component — mute or collapse quest videos
-  // ─────────────────────────────────────────────────────────────────────────
   function patchVideo() {
-    // React Native's Video component (expo-av or react-native-video)
+
     var VideoMod = findByProps("Video") || findByProps("useVideoPlayer");
     if (!VideoMod) return;
 
@@ -103,13 +90,8 @@
     });
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Strategy 2: Hide quest/orb banner from the channel list / home screen
-  // Patches the component that renders the Quest Bar / Quest Banner at the top
-  // of the screen.
-  // ─────────────────────────────────────────────────────────────────────────
   function patchQuestBar() {
-    // Common prop names seen in Discord's metro bundle for quest UI
+
     var candidates = [
       ["QuestBar", "renderQuestBar"],
       ["QuestBanner", "renderQuestBanner"],
@@ -139,14 +121,8 @@
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Strategy 3: Patch ActionSheet / channel render — strip quest nodes from
-  // React tree by walking the subtree returned by any matching render fn.
-  // This is a catch-all that handles future prop name changes.
-  // ─────────────────────────────────────────────────────────────────────────
   function patchRenderFunctions() {
-    // Any module exporting a "renderGuildHeader" or similar that can embed
-    // Quest UI will be patched after-the-fact.
+
     var mods = [];
     try {
       if (typeof findByPropsAll === "function") {
@@ -173,19 +149,15 @@
     });
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Strategy 4: Patch API call that fetches Quest data — so Discord doesn't
-  // even download the video. Return empty quest list.
-  // ─────────────────────────────────────────────────────────────────────────
   function patchQuestAPI() {
-    // Discord fetches quests via REST — we can intercept the HTTP layer
+
     try {
       var HttpUtils = findByProps("getAPIBaseURL", "put", "get", "post");
       if (HttpUtils && typeof HttpUtils.get === "function") {
         safeInstead(HttpUtils, "get", function (args) {
           var url = (args && args[0] && typeof args[0] === "string") ? args[0] : "";
           if (url.indexOf("/quests") !== -1 || url.indexOf("/promotions") !== -1) {
-            // Return a resolved promise with an empty result
+
             return Promise.resolve({ body: { quests: [], promotions: [] } });
           }
           return HttpUtils.get.apply(this, args);
@@ -193,7 +165,6 @@
       }
     } catch (e) {}
 
-    // Also try the APIModule path used in some builds
     try {
       var APIMod = findByProps("getQuests", "fetchQuests");
       if (APIMod) {
@@ -208,10 +179,6 @@
     } catch (e) {}
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Strategy 5: Patch UserSettingsProtoStore / experiment flags that enable
-  // the Orb/Quest UI so it never renders in the first place.
-  // ─────────────────────────────────────────────────────────────────────────
   function patchQuestFlags() {
     var falseProps = [
       "isQuestEnabled",
@@ -225,7 +192,6 @@
       patchAllByProp(falseProps[i], function () { return false; });
     }
 
-    // ExperimentStore may gate the Orb/Quest feature behind an experiment
     try {
       var ExperimentStore = vendetta.metro.findByStoreName("ExperimentStore");
       if (ExperimentStore && typeof ExperimentStore.getUserExperimentBucket === "function") {
@@ -238,9 +204,6 @@
     } catch (e) {}
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Settings UI
-  // ─────────────────────────────────────────────────────────────────────────
   function SettingsPage() {
     var React = vendetta.metro.common.React;
     var RN = vendetta.metro.common.ReactNative;
@@ -282,9 +245,6 @@
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Plugin lifecycle
-  // ─────────────────────────────────────────────────────────────────────────
   return {
     onLoad: function () {
       patchQuestFlags();

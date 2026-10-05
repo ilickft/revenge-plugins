@@ -10,7 +10,6 @@
   var getAssetIDByName = vendetta.ui.assets.getAssetIDByName;
   var FluxDispatcher  = vendetta.metro.common.FluxDispatcher;
 
-  // ── Stores & Modules ──────────────────────────────────────────────────────
   var UserStore        = findByStoreName("UserStore");
   var UserProfileStore = findByStoreName("UserProfileStore") || findByProps("getUserProfile");
   var ChannelStore     = findByStoreName("ChannelStore") || findByProps("getChannel");
@@ -27,7 +26,6 @@
 
   var patches = [];
 
-  // ── Sounds ────────────────────────────────────────────────────────────────
   var SOUND_URLS = {
     default: "https://raw.githubusercontent.com/ilickft/revenge-plugins/main/achievements/default.ogg",
     rare: "https://raw.githubusercontent.com/ilickft/revenge-plugins/main/achievements/rare.ogg",
@@ -35,7 +33,6 @@
     fallback_rare: "https://ettacent.dev/files/rare.ogg"
   };
 
-  // ── Sound Playback ────────────────────────────────────────────────────────
   function playSound(isRare) {
     if (storage.soundEnabled === false) return;
 
@@ -44,7 +41,6 @@
 
     var played = false;
 
-    // Method 1: React Native DCDSoundManager (primary audio module on Discord Mobile)
     try {
       var RN = vendetta.metro.common.ReactNative;
       var DCDSoundManager = RN && RN.NativeModules && RN.NativeModules.DCDSoundManager;
@@ -61,7 +57,7 @@
               }, duration + 500);
             } catch (e) {}
           } else {
-            // Fallback URL
+
             var soundId2 = Math.floor(Math.random() * 1000000) + 2000;
             DCDSoundManager.prepare(fallbackUrl, "notification", soundId2, function (err2, meta2) {
               if (!err2) {
@@ -81,7 +77,6 @@
       }
     } catch (e) {}
 
-    // Method 2: Discord Mobile internal SoundUtils
     if (!played) {
       try {
         var SoundUtils = findByProps("createSound", "playSound");
@@ -96,7 +91,6 @@
       } catch (e) {}
     }
 
-    // Method 3: Standard Audio API (Web / Electron fallback)
     if (!played) {
       try {
         if (typeof Audio !== "undefined") {
@@ -115,19 +109,17 @@
     }
   }
 
-  // ── Rarity Data ───────────────────────────────────────────────────────────
   var RARITY_INFO = {
-    common:    { emoji: "⚪", sound: "default", color: "#95a5a6", en: "Common",    ru: "Обычное" },
-    uncommon:  { emoji: "🟢", sound: "default", color: "#2ecc71", en: "Uncommon",  ru: "Необычное" },
-    rare:      { emoji: "🔵", sound: "rare",    color: "#3498db", en: "Rare",      ru: "Редкое" },
-    epic:      { emoji: "🟣", sound: "rare",    color: "#9b59b6", en: "Epic",      ru: "Эпическое" },
-    legendary: { emoji: "🟡", sound: "rare",    color: "#f1c40f", en: "Legendary", ru: "Легендарное" },
-    mythic:    { emoji: "🔴", sound: "rare",    color: "#e74c3c", en: "Mythic",    ru: "Мифическое" },
-    secret:    { emoji: "🔮", sound: "rare",    color: "#8e44ad", en: "Secret",    ru: "Секретное" }
+    common:    { emoji: "", sound: "default", color: "#95a5a6", en: "Common",    ru: "Обычное" },
+    uncommon:  { emoji: "", sound: "default", color: "#2ecc71", en: "Uncommon",  ru: "Необычное" },
+    rare:      { emoji: "", sound: "rare",    color: "#3498db", en: "Rare",      ru: "Редкое" },
+    epic:      { emoji: "", sound: "rare",    color: "#9b59b6", en: "Epic",      ru: "Эпическое" },
+    legendary: { emoji: "", sound: "rare",    color: "#f1c40f", en: "Legendary", ru: "Легендарное" },
+    mythic:    { emoji: "", sound: "rare",    color: "#e74c3c", en: "Mythic",    ru: "Мифическое" },
+    secret:    { emoji: "", sound: "rare",    color: "#8e44ad", en: "Secret",    ru: "Секретное" }
   };
 
-  // ── Raw Achievements List (Cleaned: 273 obtainable achievements) ──────────
-  var RAW_ACHIEVEMENTS = [["first_message", "messages", "💬", "common", 1, "", "Первые шаги", "Отправьте первое сообщение", "First Steps", "Send your first message", "messages_sent"], ["getting_started", "messages", "🚀", "common", 10, "", "Начало пути", "Отправьте 10 сообщений", "Getting Started", "Send 10 messages", "messages_sent"], ["warming_up", "messages", "🔥", "common", 50, "", "Разминка", "Отправьте 50 сообщений", "Warming Up", "Send 50 messages", "messages_sent"], ["talkative", "messages", "🗣️", "uncommon", 100, "", "Разговорчивый", "Отправьте 100 сообщений", "Talkative", "Send 100 messages", "messages_sent"], ["chatterbox", "messages", "📢", "uncommon", 500, "", "Болтун", "Отправьте 500 сообщений", "Chatterbox", "Send 500 messages", "messages_sent"], ["messenger", "messages", "📬", "rare", 1000, "", "Вестник", "Отправьте 1,000 сообщений", "Messenger", "Send 1,000 messages", "messages_sent"], ["communicator", "messages", "📡", "rare", 2500, "", "Коммуникатор", "Отправьте 2,500 сообщений", "Communicator", "Send 2,500 messages", "messages_sent"], ["orator", "messages", "🎤", "epic", 5000, "", "Оратор", "Отправьте 5,000 сообщений", "Orator", "Send 5,000 messages", "messages_sent"], ["word_master", "messages", "📖", "epic", 10000, "", "Мастер слова", "Отправьте 10,000 сообщений", "Word Master", "Send 10,000 messages", "messages_sent"], ["legend", "messages", "🏆", "legendary", 25000, "", "Легенда общения", "Отправьте 25,000 сообщений", "Legend", "Send 25,000 messages", "messages_sent"], ["immortal", "messages", "👑", "legendary", 50000, "", "Бессмертный", "Отправьте 50,000 сообщений", "Immortal", "Send 50,000 messages", "messages_sent"], ["god_of_words", "messages", "🌟", "mythic", 100000, "", "Бог слов", "Отправьте 100,000 сообщений", "God of Words", "Send 100,000 messages", "messages_sent"], ["minimalist", "messages", "📍", "uncommon", 1, "T50", "Минималист", "Отправьте сообщение из 1 символа (после 50 сообщений)", "Minimalist", "Send a 1-character message (after 50 messages)", ""], ["writer", "messages", "✍️", "uncommon", 1, "", "Писатель", "Отправьте сообщение длиннее 300 символов", "Writer", "Send a message longer than 300 characters", ""], ["novelist", "messages", "📚", "rare", 1, "", "Романист", "Отправьте сообщение длиннее 700 символов", "Novelist", "Send a message longer than 700 characters", ""], ["epic_writer", "messages", "📜", "epic", 1, "", "Эпический писатель", "Отправьте сообщение длиннее 1500 символов", "Epic Writer", "Send a message longer than 1500 characters", ""], ["tolstoy", "messages", "🎭", "legendary", 1, "", "Лев Толстой", "Отправьте сообщение длиннее 3000 символов", "Tolstoy", "Send a message longer than 3000 characters", ""], ["speed_demon", "messages", "⚡", "uncommon", 1, "", "Скоростной демон", "Отправьте 5 сообщений за 30 секунд", "Speed Demon", "Send 5 messages in 30 seconds", ""], ["spam_master", "messages", "💨", "rare", 1, "", "Спам-мастер", "Отправьте 10 сообщений за минуту", "Spam Master", "Send 10 messages in a minute", ""], ["keyboard_warrior", "messages", "⌨️", "epic", 1, "", "Клавиатурный воин", "Отправьте 20 сообщений за минуту", "Keyboard Warrior", "Send 20 messages in a minute", ""], ["typing_god", "messages", "🏎️", "legendary", 1, "", "Бог печати", "Отправьте 30 сообщений за минуту", "Typing God", "Send 30 messages in a minute", ""], ["editor", "messages", "✏️", "common", 1, "", "Редактор", "Отредактируйте сообщение", "Editor", "Edit a message", "edits_made"], ["perfectionist", "messages", "🎯", "uncommon", 25, "", "Перфекционист", "Отредактируйте 25 сообщений", "Perfectionist", "Edit 25 messages", "edits_made"], ["never_satisfied", "messages", "🔧", "rare", 100, "", "Вечно недовольный", "Отредактируйте 100 сообщений", "Never Satisfied", "Edit 100 messages", "edits_made"], ["obsessive_editor", "messages", "⚙️", "epic", 500, "", "Одержимый редактор", "Отредактируйте 500 сообщений", "Obsessive Editor", "Edit 500 messages", "edits_made"], ["replier", "messages", "↩️", "common", 1, "", "Ответчик", "Ответьте на сообщение", "Replier", "Reply to a message", "replies_made"], ["conversationalist", "messages", "💬", "uncommon", 50, "", "Собеседник", "Ответьте на 50 сообщений", "Conversationalist", "Reply to 50 messages", "replies_made"], ["discussion_lover", "messages", "🗨️", "rare", 200, "", "Любитель дискуссий", "Ответьте на 200 сообщений", "Discussion Lover", "Reply to 200 messages", "replies_made"], ["debate_master", "messages", "🎓", "epic", 1000, "", "Мастер дебатов", "Ответьте на 1000 сообщений", "Debate Master", "Reply to 1000 messages", "replies_made"], ["first_photo", "media", "📷", "common", 1, "", "Первый кадр", "Отправьте первое фото", "First Shot", "Send your first photo", "photos_sent"], ["amateur_photographer", "media", "📸", "common", 25, "", "Фотолюбитель", "Отправьте 25 фото", "Amateur Photographer", "Send 25 photos", "photos_sent"], ["photographer", "media", "🖼️", "uncommon", 100, "", "Фотограф", "Отправьте 100 фото", "Photographer", "Send 100 photos", "photos_sent"], ["pro_photographer", "media", "🎨", "rare", 500, "", "Профессионал", "Отправьте 500 фото", "Pro Photographer", "Send 500 photos", "photos_sent"], ["paparazzi", "media", "📹", "epic", 1000, "", "Папарацци", "Отправьте 1000 фото", "Paparazzi", "Send 1000 photos", "photos_sent"], ["photo_legend", "media", "🌟", "legendary", 5000, "", "Легенда фотографии", "Отправьте 5000 фото", "Photo Legend", "Send 5000 photos", "photos_sent"], ["first_video", "media", "🎬", "common", 1, "", "Мотор!", "Отправьте первое видео", "Action!", "Send your first video", "videos_sent"], ["video_amateur", "media", "🎥", "common", 10, "", "Видеолюбитель", "Отправьте 10 видео", "Video Amateur", "Send 10 videos", "videos_sent"], ["videographer", "media", "📽️", "uncommon", 50, "", "Видеограф", "Отправьте 50 видео", "Videographer", "Send 50 videos", "videos_sent"], ["director", "media", "🎦", "rare", 200, "", "Режиссёр", "Отправьте 200 видео", "Director", "Send 200 videos", "videos_sent"], ["hollywood", "media", "⭐", "epic", 1000, "", "Голливуд", "Отправьте 1000 видео", "Hollywood", "Send 1000 videos", "videos_sent"], ["first_voice", "media", "🎙️", "common", 1, "", "Голос", "Отправьте первое голосовое", "Voice", "Send your first voice message", "voice_sent"], ["voice_user", "media", "🔊", "common", 25, "", "Голосовой пользователь", "Отправьте 25 голосовых", "Voice User", "Send 25 voice messages", "voice_sent"], ["podcaster", "media", "🎧", "uncommon", 100, "", "Подкастер", "Отправьте 100 голосовых", "Podcaster", "Send 100 voice messages", "voice_sent"], ["radio_host", "media", "📻", "rare", 500, "", "Радиоведущий", "Отправьте 500 голосовых", "Radio Host", "Send 500 voice messages", "voice_sent"], ["voice_legend", "media", "🎼", "epic", 2000, "", "Голосовая легенда", "Отправьте 2000 голосовых", "Voice Legend", "Send 2000 voice messages", "voice_sent"], ["first_sticker", "media", "🏷️", "common", 1, "", "Стикермен", "Отправьте первый стикер", "Sticker Man", "Send your first sticker", "stickers_sent"], ["sticker_fan", "media", "🎭", "common", 50, "", "Фанат стикеров", "Отправьте 50 стикеров", "Sticker Fan", "Send 50 stickers", "stickers_sent"], ["sticker_lover", "media", "🎨", "uncommon", 250, "", "Любитель стикеров", "Отправьте 250 стикеров", "Sticker Lover", "Send 250 stickers", "stickers_sent"], ["sticker_addict", "media", "🃏", "rare", 1000, "", "Стикерозависимый", "Отправьте 1000 стикеров", "Sticker Addict", "Send 1000 stickers", "stickers_sent"], ["sticker_maniac", "media", "🎪", "epic", 5000, "", "Стикер-маньяк", "Отправьте 5000 стикеров", "Sticker Maniac", "Send 5000 stickers", "stickers_sent"], ["sticker_god", "media", "👑", "legendary", 15000, "", "Бог стикеров", "Отправьте 15000 стикеров", "Sticker God", "Send 15000 stickers", "stickers_sent"], ["first_gif", "media", "🎞️", "common", 1, "", "Гифка", "Отправьте первую GIF", "First GIF", "Send your first GIF", "gifs_sent"], ["gif_user", "media", "🎬", "common", 25, "", "GIF-пользователь", "Отправьте 25 GIF", "GIF User", "Send 25 GIFs", "gifs_sent"], ["animator", "media", "🎭", "uncommon", 100, "", "Аниматор", "Отправьте 100 GIF", "Animator", "Send 100 GIFs", "gifs_sent"], ["gif_master", "media", "🎪", "rare", 500, "", "Мастер GIF", "Отправьте 500 GIF", "GIF Master", "Send 500 GIFs", "gifs_sent"], ["gif_lord", "media", "🌟", "epic", 2000, "", "Повелитель GIF", "Отправьте 2000 GIF", "GIF Lord", "Send 2000 GIFs", "gifs_sent"], ["first_file", "media", "📁", "common", 1, "", "Файлообменник", "Отправьте первый файл", "File Sharer", "Send your first file", "files_sent"], ["file_sharer", "media", "📂", "common", 25, "", "Файлодел", "Отправьте 25 файлов", "File Dealer", "Send 25 files", "files_sent"], ["archivist", "media", "🗄️", "uncommon", 100, "", "Архивариус", "Отправьте 100 файлов", "Archivist", "Send 100 files", "files_sent"], ["data_hoarder", "media", "💾", "rare", 500, "", "Накопитель данных", "Отправьте 500 файлов", "Data Hoarder", "Send 500 files", "files_sent"], ["cloud_storage", "media", "☁️", "epic", 2000, "", "Облачное хранилище", "Отправьте 2000 файлов", "Cloud Storage", "Send 2000 files", "files_sent"], ["first_audio", "media", "🎵", "common", 1, "", "Меломан", "Отправьте первое аудио", "Music Lover", "Send your first audio", "audios_sent"], ["music_lover", "media", "🎶", "common", 25, "", "Любитель музыки", "Отправьте 25 аудио", "Music Fan", "Send 25 audio files", "audios_sent"], ["dj", "media", "🎧", "uncommon", 100, "", "Диджей", "Отправьте 100 аудио", "DJ", "Send 100 audio files", "audios_sent"], ["music_producer", "media", "🎹", "rare", 500, "", "Музыкальный продюсер", "Отправьте 500 аудио", "Music Producer", "Send 500 audio files", "audios_sent"], ["first_chat", "social", "👋", "common", 1, "", "Первый контакт", "Напишите в первый чат", "First Contact", "Write to your first chat", "unique_chats"], ["social_starter", "social", "🤝", "common", 5, "", "Начинающий социал", "Напишите в 5 разных чатов", "Social Starter", "Write to 5 different chats", "unique_chats"], ["social_10", "social", "👥", "common", 10, "", "Общительный", "Напишите в 10 разных чатов", "Sociable", "Write to 10 different chats", "unique_chats"], ["social_25", "social", "👨‍👩‍👧‍👦", "uncommon", 25, "", "Социальный", "Напишите в 25 разных чатов", "Social", "Write to 25 different chats", "unique_chats"], ["social_50", "social", "🎉", "uncommon", 50, "", "Душа компании", "Напишите в 50 разных чатов", "Life of the Party", "Write to 50 different chats", "unique_chats"], ["social_100", "social", "🌐", "rare", 100, "", "Нетворкер", "Напишите в 100 разных чатов", "Networker", "Write to 100 different chats", "unique_chats"], ["social_250", "social", "🦋", "epic", 250, "", "Социальная бабочка", "Напишите в 250 разных чатов", "Social Butterfly", "Write to 250 different chats", "unique_chats"], ["social_500", "social", "🌍", "legendary", 500, "", "Всемирная сеть", "Напишите в 500 разных чатов", "World Wide Web", "Write to 500 different chats", "unique_chats"], ["group_member", "social", "👥", "common", 1, "", "Групповой игрок", "Напишите в групповой чат", "Team Player", "Write to a group chat", ""], ["private_talk", "social", "🔒", "common", 1, "", "Приватный разговор", "Напишите в личные сообщения", "Private Talk", "Write to a private chat", ""], ["channel_writer", "social", "📢", "uncommon", 1, "", "Автор канала", "Напишите в канал", "Channel Author", "Write to a channel", ""], ["bot_friend", "social", "🤖", "common", 1, "", "Друг ботов", "Напишите боту", "Bot Friend", "Write to a bot", ""], ["night_owl", "time", "🦉", "rare", 1, "", "Ночная сова", "Отправьте сообщение между 2:00 и 5:00", "Night Owl", "Send a message between 2:00 and 5:00", ""], ["early_bird", "time", "🐦", "rare", 1, "", "Ранняя пташка", "Отправьте сообщение между 5:00 и 6:00", "Early Bird", "Send a message between 5:00 and 6:00", ""], ["morning_person", "time", "🌅", "uncommon", 1, "", "Жаворонок", "Отправьте сообщение между 6:00 и 7:00", "Morning Person", "Send a message between 6:00 and 7:00", ""], ["lunch_break", "time", "🍽️", "common", 1, "", "Обеденный перерыв", "Отправьте сообщение между 12:00 и 13:00", "Lunch Break", "Send a message between 12:00 and 13:00", ""], ["evening_chatter", "time", "🌆", "common", 1, "", "Вечерний болтун", "Отправьте сообщение между 20:00 и 22:00", "Evening Chatter", "Send a message between 20:00 and 22:00", ""], ["monday_blues", "time", "😫", "common", 1, "", "Понедельник", "Отправьте сообщение в понедельник", "Monday Blues", "Send a message on Monday", ""], ["friday_vibes", "time", "🎊", "common", 1, "", "Пятница!", "Отправьте сообщение в пятницу", "Friday Vibes", "Send a message on Friday", ""], ["weekend_warrior", "time", "🏖️", "common", 1, "", "Воин выходных", "Отправьте сообщение в выходные", "Weekend Warrior", "Send a message on weekend", ""], ["new_year", "time", "🎆", "epic", 1, "", "С Новым Годом!", "Отправьте сообщение 1 января", "Happy New Year!", "Send a message on January 1st", ""], ["valentine", "time", "💕", "epic", 1, "", "Валентинка", "Отправьте сообщение 14 февраля", "Valentine", "Send a message on February 14th", ""], ["defender", "time", "🎖️", "epic", 1, "", "Защитник", "Отправьте сообщение 23 февраля", "Defender", "Send a message on February 23rd", ""], ["womens_day", "time", "💐", "epic", 1, "", "Джентльмен", "Отправьте сообщение 8 марта", "Gentleman", "Send a message on March 8th", ""], ["april_fools", "time", "🃏", "epic", 1, "", "День дурака", "Отправьте сообщение 1 апреля", "April Fools", "Send a message on April 1st", ""], ["may_day", "time", "🌸", "epic", 1, "", "Первомай", "Отправьте сообщение 1 мая", "May Day", "Send a message on May 1st", ""], ["victory_day", "time", "🎗️", "epic", 1, "", "День Победы", "Отправьте сообщение 9 мая", "Victory Day", "Send a message on May 9th", ""], ["halloween", "time", "🎃", "epic", 1, "", "Хэллоуин", "Отправьте сообщение 31 октября", "Halloween", "Send a message on October 31st", ""], ["christmas", "time", "🎄", "epic", 1, "", "Рождество", "Отправьте сообщение 25 декабря", "Christmas", "Send a message on December 25th", ""], ["discord_birthday", "time", "🎂", "epic", 1, "", "День рождения Discord", "Отправьте сообщение в день рождения Discord (13 мая)", "Discord Birthday", "Send a message on Discord birthday (May 13th)", ""], ["midnight", "time", "🌙", "rare", 1, "", "Полуночник", "Отправьте сообщение ровно в 00:00", "Midnight", "Send a message exactly at 00:00", ""], ["high_noon", "time", "☀️", "rare", 1, "", "Полдень", "Отправьте сообщение ровно в 12:00", "High Noon", "Send a message exactly at 12:00", ""], ["lucky_time", "time", "🍀", "rare", 1, "", "Счастливое время", "Отправьте сообщение в 11:11", "Lucky Time", "Send a message at 11:11", ""], ["double_luck", "time", "🎰", "rare", 1, "", "Двойная удача", "Отправьте сообщение в 22:22", "Double Luck", "Send a message at 22:22", ""], ["triple_digits", "time", "🔢", "uncommon", 1, "", "Три одинаковых", "Отправьте сообщение когда минуты = часам", "Triple Digits", "Send a message when minutes = hours", ""], ["fire_streak", "streaks", "✨", "uncommon", 1, "", "Искра", "Заведите огонёк с кем-то", "Spark", "Start a streak with someone", ""], ["fire_streak_7", "streaks", "🔥", "uncommon", 7, "", "Пламя", "Держите огонёк 7 дней", "Flame", "Keep a streak for 7 days", "_fire_streak"], ["fire_streak_14", "streaks", "🔥", "rare", 14, "", "Костёр", "Держите огонёк 14 дней", "Campfire", "Keep a streak for 14 days", "_fire_streak"], ["fire_streak_30", "streaks", "🔥", "rare", 30, "", "Факел", "Держите огонёк 30 дней", "Torch", "Keep a streak for 30 days", "_fire_streak"], ["fire_streak_60", "streaks", "🔥", "epic", 60, "", "Пожар", "Держите огонёк 60 дней", "Blaze", "Keep a streak for 60 days", "_fire_streak"], ["fire_streak_100", "streaks", "🔥", "epic", 100, "", "Вечный огонь", "Держите огонёк 100 дней", "Eternal Flame", "Keep a streak for 100 days", "_fire_streak"], ["fire_streak_200", "streaks", "☀️", "legendary", 200, "", "Солнце", "Держите огонёк 200 дней", "Sun", "Keep a streak for 200 days", "_fire_streak"], ["fire_streak_365", "streaks", "💫", "mythic", 365, "", "Сверхновая", "Держите огонёк 365 дней", "Supernova", "Keep a streak for 365 days", "_fire_streak"], ["multi_streaks_3", "streaks", "🎪", "uncommon", 3, "", "Огненный жонглёр", "Имейте 3 активных огонька", "Fire Juggler", "Have 3 active streaks", "_active_streaks"], ["multi_streaks_5", "streaks", "🧙", "rare", 5, "", "Огненный маг", "Имейте 5 активных огоньков", "Fire Mage", "Have 5 active streaks", "_active_streaks"], ["multi_streaks_10", "streaks", "👑", "epic", 10, "", "Повелитель огня", "Имейте 10 активных огоньков", "Fire Lord", "Have 10 active streaks", "_active_streaks"], ["emoji_only", "special", "😀", "uncommon", 1, "T10", "Эмодзимен", "Отправьте сообщение только из эмодзи (5+ эмодзи)", "Emoji Man", "Send a message with only emojis (5+ emojis)", ""], ["emoji_master", "special", "🎭", "rare", 1, "T10", "Мастер эмодзи", "Отправьте сообщение из 20+ эмодзи", "Emoji Master", "Send a message with 20+ emojis", ""], ["caps_lock", "special", "🔠", "uncommon", 1, "T10", "КАПСЛОКЕР", "Отправьте сообщение ЗАГЛАВНЫМИ БУКВАМИ (10+ букв)", "CAPS LOCK", "Send a message in ALL CAPS (10+ letters)", ""], ["link_sharer", "special", "🔗", "common", 1, "", "Ссылочник", "Отправьте сообщение со ссылкой", "Link Sharer", "Send a message with a link", ""], ["question", "special", "❓", "common", 1, "", "Любопытный", "Задайте вопрос (сообщение с ?)", "Curious", "Ask a question (message with ?)", ""], ["double_question", "special", "⁉️", "uncommon", 1, "", "Очень любопытный", "Используйте ?? в сообщении", "Very Curious", "Use ?? in a message", ""], ["exclamation", "special", "❗", "common", 1, "", "Восклицатель", "Выразите эмоции (сообщение с !!!)", "Exclaimer", "Express emotions (message with !!!)", ""], ["numbers_only", "special", "🔢", "uncommon", 1, "T10", "Математик", "Отправьте сообщение только из цифр (5+ цифр)", "Mathematician", "Send a message with only numbers (5+ digits)", ""], ["hashtag", "special", "#️⃣", "common", 1, "", "Хэштегер", "Используйте хэштег в сообщении", "Hashtagger", "Use a hashtag in a message", ""], ["multi_hashtag", "special", "📊", "uncommon", 1, "", "Тренды", "Используйте 3+ хэштега в сообщении", "Trending", "Use 3+ hashtags in a message", ""], ["mention", "special", "📣", "common", 1, "", "Упоминатель", "Упомяните пользователя (@username)", "Mentioner", "Mention a user (@username)", ""], ["multi_mention", "special", "📢", "rare", 1, "", "Массовое упоминание", "Упомяните 5+ пользователей в сообщении", "Mass Mention", "Mention 5+ users in a message", ""], ["multilingual", "special", "🌍", "uncommon", 1, "", "Полиглот", "Используйте 2 разных алфавита в сообщении", "Polyglot", "Use 2 different alphabets in a message", ""], ["trilingual", "special", "🌐", "rare", 1, "", "Трилингв", "Используйте 3+ разных алфавита в сообщении", "Trilingual", "Use 3+ different alphabets in a message", ""], ["long_word", "special", "📏", "uncommon", 1, "", "Словоблуд", "Используйте слово длиннее 15 букв", "Wordsmith", "Use a word longer than 15 letters", ""], ["mega_word", "special", "📐", "rare", 1, "", "Мега-слово", "Используйте слово длиннее 25 букв", "Mega Word", "Use a word longer than 25 letters", ""], ["repeater", "special", "🔁", "common", 1, "", "Повторяшка", "Повторите одну букву 5+ раз подряд", "Repeater", "Repeat a letter 5+ times in a row", ""], ["mega_repeater", "special", "🔄", "uncommon", 1, "", "Мега-повтор", "Повторите одну букву 15+ раз подряд", "Mega Repeater", "Repeat a letter 15+ times in a row", ""], ["no_vowels", "special", "🤫", "rare", 1, "", "Без гласных", "Отправьте слово без гласных (4+ буквы)", "No Vowels", "Send a word without vowels (4+ letters)", ""], ["all_vowels", "special", "🗣️", "rare", 1, "", "Все гласные", "Используйте все гласные в одном слове", "All Vowels", "Use all vowels in one word", ""], ["first_reaction", "reactions", "❤️", "common", 1, "", "Первая реакция", "Поставьте первую реакцию", "First Reaction", "Add your first reaction", "reactions_made"], ["reactor", "reactions", "⚛️", "common", 25, "", "Реактор", "Поставьте 25 реакций", "Reactor", "Add 25 reactions", "reactions_made"], ["reaction_fan", "reactions", "💖", "uncommon", 100, "", "Фанат реакций", "Поставьте 100 реакций", "Reaction Fan", "Add 100 reactions", "reactions_made"], ["reaction_lover", "reactions", "💝", "rare", 500, "", "Любитель реакций", "Поставьте 500 реакций", "Reaction Lover", "Add 500 reactions", "reactions_made"], ["reaction_master", "reactions", "🏆", "epic", 2000, "", "Мастер реакций", "Поставьте 2000 реакций", "Reaction Master", "Add 2000 reactions", "reactions_made"], ["day_1", "veteran", "📅", "common", 1, "", "День первый", "Используйте Discord 1 день", "Day One", "Use Discord for 1 day", "days_active"], ["week_1", "veteran", "📆", "uncommon", 7, "", "Неделя первая", "Используйте Discord 7 дней", "Week One", "Use Discord for 7 days", "days_active"], ["month_1", "veteran", "🗓️", "rare", 30, "", "Месяц первый", "Используйте Discord 30 дней", "Month One", "Use Discord for 30 days", "days_active"], ["quarter", "veteran", "📊", "epic", 90, "", "Квартал", "Используйте Discord 90 дней", "Quarter", "Use Discord for 90 days", "days_active"], ["half_year", "veteran", "🎯", "epic", 180, "", "Полгода", "Используйте Discord 180 дней", "Half Year", "Use Discord for 180 days", "days_active"], ["year_1", "veteran", "🏆", "legendary", 365, "", "Год первый", "Используйте Discord 365 дней", "Year One", "Use Discord for 365 days", "days_active"], ["media_variety", "collector", "🎨", "uncommon", 1, "", "Разнообразие", "Отправьте фото, видео, голосовое и стикер", "Variety", "Send a photo, video, voice and sticker", ""], ["complete_set", "collector", "📦", "rare", 1, "", "Полный набор", "Отправьте все типы медиа", "Complete Set", "Send all types of media", ""], ["chat_explorer", "explorer", "🧭", "uncommon", 1, "", "Исследователь чатов", "Напишите в ЛС, группу и канал", "Chat Explorer", "Write to DM, group and channel", ""], ["full_explorer", "explorer", "🗺️", "rare", 1, "", "Полный исследователь", "Напишите во все типы чатов", "Full Explorer", "Write to all chat types including bots", ""], ["secret_42", "secret", "🌌", "secret", 1, "S", "Ответ на всё", "Найдите ответ на главный вопрос", "Answer to Everything", "Find the answer to the ultimate question", ""], ["secret_hello_world", "secret", "💻", "secret", 1, "S", "Hello World", "Напишите как настоящий программист", "Hello World", "Write like a true programmer", ""], ["secret_lorem", "secret", "📝", "secret", 1, "S", "Lorem Ipsum", "Используйте заглушку дизайнера", "Lorem Ipsum", "Use the designer's placeholder", ""], ["secret_rickroll", "secret", "🎵", "secret", 1, "S", "Never Gonna", "Вы знаете правила, и я тоже", "Never Gonna", "You know the rules, and so do I", ""], ["secret_konami", "secret", "🎮", "secret", 1, "S", "Konami Code", "Введите легендарный код", "Konami Code", "Enter the legendary code", ""], ["secret_1337", "secret", "💀", "secret", 1, "S", "L33T", "Напишите на языке хакеров", "L33T", "Write in hacker language", ""], ["secret_pi", "secret", "🥧", "secret", 1, "S", "Число Пи", "Вспомните математику", "Pi", "Remember mathematics", ""], ["secret_matrix", "secret", "💊", "secret", 1, "S", "Матрица", "Красная или синяя?", "Matrix", "Red or blue?", ""], ["secret_palindrome", "secret", "🔄", "secret", 1, "S", "Палиндром", "Напишите слово-перевёртыш (5+ букв)", "Palindrome", "Write a palindrome word (5+ letters)", ""], ["secret_gg", "secret", "🎮", "secret", 1, "S", "GG", "Хорошая игра!", "GG", "Good game!", ""], ["secret_lol", "secret", "😂", "secret", 1, "S", "LOL", "Смех да и только", "LOL", "Laughing out loud", ""], ["secret_bruh", "secret", "😑", "secret", 1, "S", "Bruh", "Момент...", "Bruh", "That moment...", ""], ["secret_sus", "secret", "📮", "secret", 1, "S", "Sus", "Подозрительно...", "Sus", "Suspicious...", ""], ["secret_ok_boomer", "secret", "👴", "secret", 1, "S", "OK Boomer", "Ладно, бумер", "OK Boomer", "Alright, boomer", ""], ["secret_f_respect", "secret", "🙏", "secret", 1, "S", "F", "Выразите уважение", "F", "Pay respects", ""], ["secret_nice", "secret", "😏", "secret", 1, "S", "Nice", "Напишите магическое число", "Nice", "Write the magic number", ""], ["secret_uwu", "secret", "🥺", "secret", 1, "S", "UwU", "Милый момент", "UwU", "Cute moment", ""], ["secret_xd", "secret", "😆", "secret", 1, "S", "XD", "Классический смех", "XD", "Classic laugh", ""], ["secret_facepalm", "secret", "🤦", "secret", 1, "S", "Фейспалм", "Используйте 🤦", "Facepalm", "Use 🤦", ""], ["secret_thinking", "secret", "🤔", "secret", 1, "S", "Мыслитель", "Используйте 🤔", "Thinker", "Use 🤔", ""], ["secret_fire_emoji", "secret", "🔥", "secret", 1, "S", "Огонь", "Используйте 🔥", "Fire", "Use 🔥", ""], ["secret_heart", "secret", "❤️", "secret", 1, "S", "Любовь", "Отправьте ❤️", "Love", "Send ❤️", ""], ["secret_goodnight", "secret", "🌙", "secret", 1, "S", "Спокойной ночи", "Пожелайте спокойной ночи после полуночи", "Good Night", "Say good night after midnight", ""], ["secret_goodmorning", "secret", "🌅", "secret", 1, "S", "Доброе утро", "Пожелайте доброго утра до 8:00", "Good Morning", "Say good morning before 8:00", ""], ["secret_birthday", "secret", "🎂", "secret", 1, "S", "С днём рождения", "Поздравьте с днём рождения", "Happy Birthday", "Wish someone happy birthday", ""], ["secret_thanks", "secret", "🙏", "secret", 1, "S", "Благодарность", "Скажите спасибо", "Gratitude", "Say thank you", ""], ["secret_sorry", "secret", "😔", "secret", 1, "S", "Извинения", "Попросите прощения", "Apology", "Apologize", ""], ["secret_welcome", "secret", "👋", "secret", 1, "S", "Добро пожаловать", "Поприветствуйте кого-то", "Welcome", "Welcome someone", ""], ["secret_congrats", "secret", "🎉", "secret", 1, "S", "Поздравления", "Поздравьте с чем-то", "Congratulations", "Congratulate someone", ""], ["secret_bye", "secret", "👋", "secret", 1, "S", "До свидания", "Попрощайтесь", "Goodbye", "Say goodbye", ""], ["private_5", "social", "💌", "common", 5, "", "Близкий круг", "Напишите в 5 личных чатов", "Inner Circle", "Write to 5 private chats", "private_chats_count"], ["private_25", "social", "🤝", "uncommon", 25, "", "Свои люди", "Напишите в 25 личных чатов", "My People", "Write to 25 private chats", "private_chats_count"], ["private_100", "social", "👫", "rare", 100, "", "Личная сеть", "Напишите в 100 личных чатов", "Personal Network", "Write to 100 private chats", "private_chats_count"], ["private_500", "social", "💎", "epic", 500, "", "Армия друзей", "Напишите в 500 личных чатов", "Army of Friends", "Write to 500 private chats", "private_chats_count"], ["group_5", "social", "👨‍👩‍👧", "common", 5, "", "Командный игрок", "Напишите в 5 групп", "Team Player+", "Write to 5 groups", "group_chats_count"], ["group_25", "social", "🏟️", "uncommon", 25, "", "Активист", "Напишите в 25 групп", "Activist", "Write to 25 groups", "group_chats_count"], ["group_100", "social", "🎪", "rare", 100, "", "Универсал", "Напишите в 100 групп", "All-rounder", "Write to 100 groups", "group_chats_count"], ["group_500", "social", "🏛️", "epic", 500, "", "Глава фракций", "Напишите в 500 групп", "Faction Leader", "Write to 500 groups", "group_chats_count"], ["channel_5", "social", "📻", "uncommon", 5, "", "Голос редакции", "Напишите в 5 каналов", "Editorial Voice", "Write to 5 channels", "channel_chats_count"], ["channel_25", "social", "🎙️", "rare", 25, "", "Медиа-магнат", "Напишите в 25 каналов", "Media Mogul", "Write to 25 channels", "channel_chats_count"], ["channel_100", "social", "📡", "epic", 100, "", "Медиа-империя", "Напишите в 100 каналов", "Media Empire", "Write to 100 channels", "channel_chats_count"], ["bot_5", "social", "🤖", "common", 5, "", "Бот-фанат", "Напишите 5 ботам", "Bot Fan", "Write to 5 bots", "bot_chats_count"], ["bot_25", "social", "⚙️", "uncommon", 25, "", "Автоматизатор", "Напишите 25 ботам", "Automator", "Write to 25 bots", "bot_chats_count"], ["bot_100", "social", "🦾", "rare", 100, "", "Кибернетик", "Напишите 100 ботам", "Cybernetician", "Write to 100 bots", "bot_chats_count"], ["social_1000", "social", "🌌", "mythic", 1000, "", "Бог общения", "Напишите в 1,000 разных чатов", "God of Communication", "Write to 1,000 different chats", "unique_chats"], ["photo_god", "media", "🌌", "mythic", 10000, "", "Бог фотографии", "Отправьте 10,000 фото", "God of Photography", "Send 10,000 photos", "photos_sent"], ["video_god", "media", "🌌", "mythic", 5000, "", "Бог видео", "Отправьте 5,000 видео", "God of Video", "Send 5,000 videos", "videos_sent"], ["voice_god", "media", "🌌", "mythic", 10000, "", "Бог голоса", "Отправьте 10,000 голосовых", "God of Voice", "Send 10,000 voice messages", "voice_sent"], ["sticker_overlord", "media", "🌌", "mythic", 50000, "", "Властелин стикеров", "Отправьте 50,000 стикеров", "Sticker Overlord", "Send 50,000 stickers", "stickers_sent"], ["gif_god", "media", "🌌", "mythic", 10000, "", "Бог GIF", "Отправьте 10,000 GIF", "God of GIFs", "Send 10,000 GIFs", "gifs_sent"], ["file_god", "media", "🌌", "mythic", 10000, "", "Бог файлов", "Отправьте 10,000 файлов", "File God", "Send 10,000 files", "files_sent"], ["audio_god", "media", "🌌", "mythic", 2500, "", "Бог аудио", "Отправьте 2,500 аудио", "God of Audio", "Send 2,500 audio files", "audios_sent"], ["editor_legend", "messages", "🏆", "legendary", 2500, "", "Легендарный редактор", "Отредактируйте 2,500 сообщений", "Editor Legend", "Edit 2,500 messages", "edits_made"], ["reply_legend", "messages", "🏆", "legendary", 5000, "", "Легендарный собеседник", "Ответьте на 5,000 сообщений", "Reply Legend", "Reply to 5,000 messages", "replies_made"], ["reaction_god", "reactions", "🌌", "mythic", 10000, "", "Бог реакций", "Поставьте 10,000 реакций", "Reaction God", "Add 10,000 reactions", "reactions_made"], ["two_years", "veteran", "🎖️", "mythic", 730, "", "Два года", "Используйте Discord 730 дней", "Two Years", "Use Discord for 730 days", "days_active"], ["three_years", "veteran", "💎", "mythic", 1095, "", "Три года", "Используйте Discord 1,095 дней", "Three Years", "Use Discord for 1,095 days", "days_active"], ["fire_streak_500", "streaks", "☄️", "mythic", 500, "", "Метеор", "Держите огонёк 500 дней", "Meteor", "Keep a streak for 500 days", "_fire_streak"], ["fire_streak_1000", "streaks", "🌌", "mythic", 1000, "", "Галактика", "Держите огонёк 1,000 дней", "Galaxy", "Keep a streak for 1,000 days", "_fire_streak"], ["multi_streaks_15", "streaks", "🌟", "legendary", 15, "", "Огненный император", "Имейте 15 активных огоньков", "Fire Emperor", "Have 15 active streaks", "_active_streaks"], ["multi_streaks_25", "streaks", "🌌", "mythic", 25, "", "Звёздный император", "Имейте 25 активных огоньков", "Star Emperor", "Have 25 active streaks", "_active_streaks"], ["lightspeed", "messages", "💫", "mythic", 1, "", "Скорость света", "Отправьте 50 сообщений за минуту", "Lightspeed", "Send 50 messages in a minute", ""], ["russian_christmas", "time", "🎁", "epic", 1, "", "Православное Рождество", "Отправьте сообщение 7 января", "Orthodox Christmas", "Send a message on January 7th", ""], ["cosmonauts_day", "time", "🚀", "epic", 1, "", "День космонавтики", "Отправьте сообщение 12 апреля", "Cosmonautics Day", "Send a message on April 12th", ""], ["pi_day", "time", "🥧", "epic", 1, "", "День числа Пи", "Отправьте сообщение 14 марта", "Pi Day", "Send a message on March 14th", ""], ["programmers_day", "time", "💻", "epic", 1, "", "День программиста", "Отправьте сообщение 13 сентября", "Programmers' Day", "Send a message on September 13th", ""], ["friendship_day", "time", "🤝", "epic", 1, "", "День дружбы", "Отправьте сообщение 30 июля", "Friendship Day", "Send a message on July 30th", ""], ["triple_threes", "time", "🎲", "rare", 1, "", "Три тройки", "Отправьте сообщение в 3:33", "Triple Threes", "Send a message at 3:33", ""], ["lucky_777", "time", "🎰", "rare", 1, "", "Джекпот", "Отправьте сообщение в 7:07", "Jackpot", "Send a message at 7:07", ""], ["thirteen_thirteen", "time", "🔮", "rare", 1, "", "Чёртова дюжина", "Отправьте сообщение в 13:13", "Devil's Dozen", "Send a message at 13:13", ""], ["twenty_three", "time", "🌃", "rare", 1, "", "Перед сном", "Отправьте сообщение в 23:23", "Before Sleep", "Send a message at 23:23", ""], ["three_am_club", "time", "🌙", "epic", 1, "", "Клуб 3:00", "Отправьте сообщение ровно в 3:00", "3 AM Club", "Send a message exactly at 3:00", ""], ["triple_question", "special", "⁉️", "rare", 1, "", "Очень-очень любопытный", "Используйте ??? в сообщении", "Extremely Curious", "Use ??? in a message", ""], ["secret_terminator", "secret", "🦾", "secret", 1, "S", "Я вернусь", "Цитата робота из будущего", "I'll Be Back", "Quote from a future robot", ""], ["secret_force", "secret", "⚔️", "secret", 1, "S", "Сила с тобой", "Цитата далёкой галактики", "May The Force", "Far far away quote", ""], ["secret_wakanda", "secret", "🐆", "secret", 1, "S", "Ваканда навсегда", "Цитата супергероя", "Wakanda Forever", "Superhero quote", ""], ["secret_winter_is_coming", "secret", "🐺", "secret", 1, "S", "Зима близко", "Цитата с престолов", "Winter Is Coming", "Throne quote", ""], ["secret_bazinga", "secret", "🤓", "secret", 1, "S", "Базинга", "Любимое слово физика", "Bazinga", "Physicist's favorite", ""], ["secret_gandalf", "secret", "🧙‍♂️", "secret", 1, "S", "Ты не пройдёшь", "Цитата мага", "You Shall Not Pass", "Wizard quote", ""], ["secret_inception", "secret", "🌀", "secret", 1, "S", "Глубже", "Цитата из сна", "Inception", "Dream quote", ""], ["secret_chicken_dinner", "secret", "🍗", "secret", 1, "S", "Победный ужин", "Цитата королевской битвы", "Chicken Dinner", "Battle royale quote", ""], ["secret_meow", "secret", "🐱", "secret", 1, "S", "Мяу", "Привет от кота", "Meow", "Cat says hi", ""], ["secret_woof", "secret", "🐶", "secret", 1, "S", "Гав", "Привет от пса", "Woof", "Dog says hi", ""], ["secret_phi", "secret", "🌀", "secret", 1, "S", "Золотое сечение", "Магическое число 1.618", "Golden Ratio", "The magic 1.618", ""], ["secret_e_const", "secret", "🔢", "secret", 1, "S", "Число Эйлера", "Константа e", "Euler's Number", "Constant e", ""], ["secret_binary", "secret", "💾", "secret", 1, "S", "Двоичный код", "Сообщение из 0 и 1", "Binary Code", "Message of 0s and 1s", ""], ["secret_hex", "secret", "🎨", "secret", 1, "S", "Hex-код", "Шестнадцатеричное сообщение", "Hex Code", "Hexadecimal message", ""], ["secret_morse", "secret", "📡", "secret", 1, "S", "Морзянка", "Точки, тире и пробелы", "Morse Code", "Dots, dashes and spaces", ""], ["new_years_eve", "time", "🎆", "epic", 1, "", "Канун Нового Года", "Отправьте сообщение 31 декабря", "New Years Eve", "Send a message on December 31st", ""], ["leap_day", "time", "📆", "legendary", 1, "", "Високосный день", "Отправьте сообщение 29 февраля", "Leap Day", "Send a message on February 29th", ""], ["summer_solstice", "time", "☀️", "epic", 1, "", "Летнее солнцестояние", "Отправьте сообщение 21 июня", "Summer Solstice", "Send a message on June 21st", ""], ["winter_solstice", "time", "❄️", "epic", 1, "", "Зимнее солнцестояние", "Отправьте сообщение 21 декабря", "Winter Solstice", "Send a message on December 21st", ""], ["earth_day", "time", "🌍", "epic", 1, "", "День Земли", "Отправьте сообщение 22 апреля", "Earth Day", "Send a message on April 22nd", ""], ["friday_13", "time", "🔪", "legendary", 1, "", "Пятница 13-е", "Отправьте сообщение в пятницу 13-го", "Friday the 13th", "Send a message on Friday the 13th", ""], ["high_five", "time", "✋", "rare", 1, "", "Дай пять", "Отправьте сообщение в 5:55", "High Five", "Send a message at 5:55", ""], ["nine_nine", "time", "9️⃣", "rare", 1, "", "Девяносто девять", "Отправьте сообщение в 9:09", "Nine Nine", "Send a message at 9:09", ""], ["interrobang", "special", "⁉️", "rare", 1, "", "Интерробанг", "Используйте ?! или !? в сообщении", "Interrobang", "Use ?! or !? in a message", ""], ["lots_of_dots", "special", "⋯", "common", 1, "", "Многоточие", "Закончите сообщение на ...", "Trailing Off", "End a message with ...", ""], ["sequence_numbers", "special", "🔢", "uncommon", 1, "", "Последовательность", "Отправьте 5+ цифр подряд по порядку", "Sequence", "Send 5+ consecutive digits in order", ""], ["triple_emoji_combo", "special", "🎰", "uncommon", 1, "", "Тройное комбо", "Повторите эмодзи 3+ раз подряд", "Triple Combo", "Repeat an emoji 3+ times in a row", ""], ["emoticon_only", "special", "🙂", "common", 1, "", "Смайлик", "Отправьте только смайлик типа :) или ^_^", "Emoticon", "Send a single emoticon like :) or ^_^", ""], ["same_word_3x", "special", "🔁", "uncommon", 1, "", "Заело", "Повторите одно слово 3+ раз", "Stuck Record", "Repeat the same word 3+ times", ""], ["mega_collector", "collector", "🎁", "epic", 1, "", "Мега-коллекционер", "Отправьте 100+ каждого типа медиа", "Mega Collector", "Send 100+ of every media type", ""], ["chat_emperor", "explorer", "👑", "legendary", 1, "", "Император чатов", "Напишите в 50+ ЛС, групп, каналов и ботов", "Chat Emperor", "Write to 50+ DMs, groups, channels and bots", ""], ["secret_father", "secret", "🌠", "secret", 1, "S", "Я твой отец", "Шокирующее откровение", "I Am Your Father", "Shocking revelation", ""], ["secret_shut_up_money", "secret", "💰", "secret", 1, "S", "Заткнись и возьми мои деньги", "Цитата покупателя", "Take My Money", "Buyer quote", ""], ["secret_great_power", "secret", "🕷️", "secret", 1, "S", "С большой силой", "Цитата паука", "Great Power", "Spider quote", ""], ["secret_elementary", "secret", "🔍", "secret", 1, "S", "Элементарно", "Цитата детектива", "Elementary", "Detective quote", ""], ["secret_to_be", "secret", "💀", "secret", 1, "S", "Быть или не быть", "Шекспир", "To Be Or Not To Be", "Shakespeare", ""], ["secret_houston", "secret", "🚀", "secret", 1, "S", "Хьюстон, у нас проблема", "Цитата астронавта", "Houston", "Astronaut quote", ""], ["secret_poehali", "secret", "🛰️", "secret", 1, "S", "Поехали!", "Цитата Гагарина", "Poyekhali", "Gagarin quote", ""], ["secret_precious", "secret", "💍", "secret", 1, "S", "Моя прелесть", "Цитата Голлума", "My Precious", "Gollum quote", ""], ["first_poll", "interactive", "📊", "common", 1, "", "Опросник", "Создайте первый опрос", "First Poll", "Create your first poll", "polls_created"], ["pollster", "interactive", "📈", "uncommon", 10, "", "Социолог", "Создайте 10 опросов", "Pollster", "Create 10 polls", "polls_created"], ["poll_master", "interactive", "📉", "rare", 50, "", "Мастер опросов", "Создайте 50 опросов", "Poll Master", "Create 50 polls", "polls_created"], ["referendum", "interactive", "🗳️", "epic", 200, "", "Референдум", "Создайте 200 опросов", "Referendum", "Create 200 polls", "polls_created"], ["first_spoiler", "interactive", "🫥", "common", 1, "", "Спойлерист", "Отправьте медиа со спойлером", "Spoilerist", "Send media with spoiler", "spoilers_sent"], ["spoiler_addict", "interactive", "👁️", "rare", 100, "", "Любитель тайн", "Отправьте 100 спойлеров", "Mystery Lover", "Send 100 spoilers", "spoilers_sent"], ["first_dice", "luck", "🎲", "common", 1, "", "Игрок", "Бросьте кубик", "Roller", "Roll a dice", "dice_rolled"], ["dice_addict", "luck", "🎰", "uncommon", 50, "", "Зависимый от удачи", "Бросьте 50 кубиков", "Luck Addict", "Roll 50 dice", "dice_rolled"], ["dice_legend", "luck", "🎯", "rare", 250, "", "Легенда удачи", "Бросьте 250 кубиков", "Luck Legend", "Roll 250 dice", "dice_rolled"], ["lucky_six", "luck", "🎲", "rare", 1, "", "Шестёрка!", "Выбросите 6 на кубике", "Lucky Six", "Roll a 6 on dice", ""], ["dart_bullseye", "luck", "🎯", "rare", 1, "", "Яблочко", "Попадите точно в центр на дартсе", "Bullseye", "Hit the bullseye on darts", ""], ["bowling_strike", "luck", "🎳", "rare", 1, "", "Страйк", "Сделайте страйк в боулинге", "Strike", "Roll a strike in bowling", ""], ["basketball_score", "luck", "🏀", "rare", 1, "", "Точный бросок", "Забейте мяч в баскетболе", "Slam Dunk", "Score in basketball", ""], ["football_goal", "luck", "⚽", "rare", 1, "", "Гол!", "Забейте гол в футболе", "Goal!", "Score in football", ""], ["slot_jackpot", "luck", "🎰", "mythic", 1, "", "ДЖЕКПОТ 777", "Выбейте 777 на слот-машине", "JACKPOT 777", "Hit 777 on the slot machine", ""], ["genz_rizz", "special", "🔥", "rare", 1, "S", "Rizz Господа", "Отправил сообщение с «rizz»", "Rizz God", "Sent a message containing «rizz»", ""], ["genz_slay", "special", "💅", "common", 1, "S", "Слей", "Отправил сообщение с «slay»", "Slay", "Sent a message containing «slay»", ""], ["genz_bussin", "special", "😤", "common", 1, "S", "Буссин", "Отправил сообщение с «bussin»", "Bussin", "Sent a message containing «bussin»", ""], ["genz_no_cap", "special", "🧢", "common", 1, "S", "Без Кэпа", "Отправил сообщение с «no cap» или «nocap»", "No Cap", "Sent a message containing «no cap» or «nocap»", ""], ["genz_lowkey", "special", "🤫", "common", 1, "S", "Лоукей", "Отправил сообщение с «lowkey»", "Lowkey", "Sent a message containing «lowkey»", ""], ["genz_highkey", "special", "📢", "common", 1, "S", "Хайкей", "Отправил сообщение с «highkey»", "Highkey", "Sent a message containing «highkey»", ""], ["genz_based", "special", "🗿", "rare", 1, "S", "Основан", "Отправил сообщение с «based»", "Based", "Sent a message containing «based»", ""], ["genz_cringe", "special", "😬", "common", 1, "S", "Кринж", "Отправил сообщение с «cringe»", "Cringe", "Sent a message containing «cringe»", ""], ["genz_mid", "special", "😐", "common", 1, "S", "Мид", "Отправил сообщение с «mid»", "Mid", "Sent a message containing «mid»", ""], ["genz_sheesh", "special", "😤", "common", 1, "S", "Шиш", "Отправил сообщение с «sheesh»", "Sheesh", "Sent a message containing «sheesh»", ""], ["genz_yeet", "special", "🚀", "common", 1, "S", "Йит", "Отправил сообщение с «yeet»", "Yeet", "Sent a message containing «yeet»", ""], ["genz_vibe", "special", "✨", "common", 1, "S", "Вайб", "Отправил сообщение с «vibes» или «vibe check»", "Vibe Check", "Sent a message containing «vibes» or «vibe check»", ""], ["genz_rent_free", "special", "🧠", "rare", 1, "S", "Живёт В Голове", "Отправил сообщение с «rent free»", "Living Rent Free", "Sent a message containing «rent free»", ""], ["genz_understood", "special", "🎯", "rare", 1, "S", "Понял Задание", "Отправил «understood the assignment»", "Understood the Assignment", "Sent «understood the assignment»", ""], ["genz_main_char", "special", "⭐", "rare", 1, "S", "Главный Персонаж", "Отправил «main character» или «main character energy»", "Main Character", "Sent «main character» or «main character energy»", ""], ["genz_era", "special", "🕰️", "common", 1, "S", "Эра", "Отправил сообщение с «era» (напр. «villain era»)", "Era", "Sent a message with «era» (e.g. «villain era»)", ""], ["genz_delulu", "special", "🌈", "rare", 1, "S", "Делюлу", "Отправил сообщение с «delulu»", "Delulu", "Sent a message containing «delulu»", ""], ["genz_salty", "special", "🧂", "common", 1, "S", "Солёный", "Отправил сообщение с «salty»", "Salty", "Sent a message containing «salty»", ""], ["genz_ghosted", "special", "👻", "common", 1, "S", "Гостед", "Отправил сообщение с «ghosted»", "Ghosted", "Sent a message containing «ghosted»", ""], ["genz_glow_up", "special", "✨", "rare", 1, "S", "Трансформация", "Отправил сообщение с «glow up»", "Glow Up", "Sent a message containing «glow up»", ""], ["genz_flex", "special", "💪", "common", 1, "S", "Флекс", "Отправил сообщение с «flex»", "Flex", "Sent a message containing «flex»", ""], ["genz_goat", "special", "🐐", "rare", 1, "S", "GOAT", "Отправил сообщение с «goat» или «GOAT»", "GOAT", "Sent a message containing «goat» or «GOAT»", ""], ["genz_caught_4k", "special", "📸", "rare", 1, "S", "Пойман В 4К", "Отправил «caught in 4k»", "Caught in 4K", "Sent «caught in 4k»", ""], ["genz_brainrot", "special", "🧠", "rare", 1, "S", "Ротация Мозга", "Отправил сообщение с «brainrot» или «brain rot»", "Brain Rot", "Sent a message containing «brainrot» or «brain rot»", ""], ["genz_ick", "special", "🤢", "common", 1, "S", "Ик", "Отправил сообщение с «the ick» или «ick»", "The Ick", "Sent a message containing «the ick» or «ick»", ""], ["genz_simp", "special", "💔", "common", 1, "S", "Симп", "Отправил сообщение с «simp»", "Simp", "Sent a message containing «simp»", ""], ["genz_pick_me", "special", "🙋", "common", 1, "S", "Выбери Меня", "Отправил «pick me» или «pickme»", "Pick Me", "Sent «pick me» or «pickme»", ""], ["genz_press_f", "special", "⌨️", "common", 1, "S", "Нажми F", "Отправил «press f» или «f in chat»", "Press F", "Sent «press f» or «f in chat»", ""], ["genz_gg_ez", "special", "🎮", "common", 1, "S", "GG EZ", "Отправил «gg ez» или «gg easy»", "GG EZ", "Sent «gg ez» or «gg easy»", ""], ["genz_plot_armor", "special", "🛡️", "rare", 1, "S", "Броня Сюжета", "Отправил «plot armor»", "Plot Armor", "Sent «plot armor»", ""], ["genz_lore", "special", "📖", "common", 1, "S", "Лор", "Отправил сообщение с «lore» или «lore drop»", "Lore", "Sent a message containing «lore» or «lore drop»", ""], ["genz_shitpost", "special", "💩", "common", 1, "S", "Шитпост", "Отправил «shitpost» или «shitposting»", "Shitpost", "Sent «shitpost» or «shitposting»", ""], ["genz_cursed", "special", "🤮", "rare", 1, "S", "Проклятый", "Отправил сообщение с «cursed»", "Cursed", "Sent a message containing «cursed»", ""], ["genz_blessed", "special", "🙏", "common", 1, "S", "Благословенный", "Отправил сообщение с «blessed»", "Blessed", "Sent a message containing «blessed»", ""], ["genz_galaxy_brain", "special", "🌌", "rare", 1, "S", "Галактический Мозг", "Отправил «galaxy brain»", "Galaxy Brain", "Sent «galaxy brain»", ""], ["genz_touch_grass", "special", "🌿", "rare", 1, "S", "Трогай Траву", "Отправил «touch grass» или «go outside»", "Touch Grass", "Sent «touch grass» or «go outside»", ""], ["genz_ratio", "special", "📊", "rare", 1, "S", "Рейшо", "Отправил «ratio» или «L + ratio»", "Ratio'd", "Sent «ratio» or «L + ratio»", ""], ["genz_clout", "special", "👑", "common", 1, "S", "Клаут", "Отправил сообщение с «clout»", "Clout", "Sent a message containing «clout»", ""], ["genz_cope", "special", "😭", "common", 1, "S", "Коп", "Отправил «cope», «coping», или «skill issue»", "Cope", "Sent «cope», «coping», or «skill issue»", ""], ["genz_seethe", "special", "😤", "common", 1, "S", "Сейс", "Отправил сообщение с «seethe»", "Seethe", "Sent a message containing «seethe»", ""], ["genz_mald", "special", "😡", "common", 1, "S", "Малд", "Отправил сообщение с «mald» или «malding»", "Malding", "Sent a message containing «mald» or «malding»", ""], ["genz_sigma", "special", "😎", "rare", 1, "S", "Сигма", "Отправил «sigma» или «sigma male»", "Sigma", "Sent «sigma» or «sigma male»", ""], ["genz_grindset", "special", "💼", "rare", 1, "S", "Гриндсет", "Отправил «grindset», «sigma grindset» или «hustle»", "Grindset", "Sent «grindset», «sigma grindset», or «hustle»", ""], ["genz_chronically_online", "special", "📱", "rare", 1, "S", "Хронически Онлайн", "Отправил «chronically online»", "Chronically Online", "Sent «chronically online»", ""], ["genz_doomscroll", "special", "📜", "common", 1, "S", "Думскролл", "Отправил «doomscroll» или «doom scrolling»", "Doomscroll", "Sent «doomscroll» or «doom scrolling»", ""], ["genz_parasocial", "special", "👁️", "rare", 1, "S", "Парасоциальный", "Отправил «parasocial»", "Parasocial", "Sent a message containing «parasocial»", ""], ["genz_clip_it", "special", "🎬", "common", 1, "S", "Клипани", "Отправил «clip it» или «clip that»", "Clip It", "Sent «clip it» or «clip that»", ""], ["genz_no_bitches", "special", "🚫", "rare", 1, "S", "Нет Битчей", "Отправил «no bitches» или «do you have any bitches»", "No Bitches", "Sent «no bitches» or «do you have any bitches»", ""], ["genz_didnt_ask", "special", "🤷", "common", 1, "S", "Не Спрашивал", "Отправил «didn't ask» или «nobody asked»", "Didn't Ask", "Sent «didn't ask» or «nobody asked»", ""], ["genz_npc", "special", "🤖", "rare", 1, "S", "NPC", "Отправил сообщение с «npc» или «npc behavior»", "NPC", "Sent a message containing «npc» or «npc behavior»", ""], ["genz_fr_fr", "special", "💯", "common", 1, "S", "Факт Факт", "Отправил «fr fr», «frfr», или «for real»", "Fr Fr", "Sent «fr fr», «frfr», or «for real»", ""], ["genz_hit_diff", "special", "💥", "rare", 1, "S", "Бьёт Иначе", "Отправил «hit different» или «hits different»", "Hits Different", "Sent «hit different» or «hits different»", ""], ["genz_deadass", "special", "💀", "common", 1, "S", "Дедасс", "Отправил «deadass»", "Deadass", "Sent a message containing «deadass»", ""], ["genz_big_brain", "special", "🧠", "rare", 1, "S", "Большой Мозг", "Отправил «big brain» или «5head»", "Big Brain", "Sent «big brain» or «5head»", ""], ["tiktok_pov", "special", "📱", "common", 1, "S", "PoV", "Отправил «pov:» или «point of view»", "PoV", "Sent «pov:» or «point of view»", ""], ["tiktok_fyp", "special", "🎯", "common", 1, "S", "FYP", "Отправил «fyp», «for you page» или «for you»", "FYP", "Sent «fyp», «for you page», or «for you»", ""], ["tiktok_duet", "special", "🎤", "common", 1, "S", "Дуэт", "Отправил «duet» в контексте тиктока", "TikTok Duet", "Sent «duet» in a TikTok context", ""], ["tiktok_stitched", "special", "✂️", "common", 1, "S", "Стич", "Отправил «stitch this» или «stitched»", "Stitched", "Sent «stitch this» or «stitched»", ""], ["tiktok_live", "special", "🔴", "common", 1, "S", "Тикток Лайв", "Отправил «go live» или «tiktok live»", "TikTok Live", "Sent «go live» or «tiktok live»", ""], ["tiktok_algo", "special", "⚙️", "rare", 1, "S", "Алгоритм", "Отправил «the algorithm» или «feed the algorithm»", "The Algorithm", "Sent «the algorithm» or «feed the algorithm»", ""], ["tiktok_sounds", "special", "🔊", "common", 1, "S", "Использую Звук", "Отправил «use this sound» или «using this sound»", "Use This Sound", "Sent «use this sound» or «using this sound»", ""], ["tiktok_greenscreen", "special", "💚", "common", 1, "S", "Зелёный Экран", "Отправил «green screen»", "Green Screen", "Sent «green screen»", ""], ["tiktok_ratio_comment", "special", "📊", "rare", 1, "S", "Комментарий Рейшо", "Отправил «ratio» в ответ на чужое сообщение", "Ratio Comment", "Sent «ratio» as a reply", ""], ["tiktok_foryou", "special", "💫", "common", 1, "S", "Рекомендации", "Отправил «for you» или «landed on your fyp»", "For You", "Sent «for you» or «landed on your fyp»", ""], ["tiktok_tok", "special", "🎵", "common", 1, "S", "ТикТокер", "Отправил «tiktok» в сообщении", "TikToker", "Sent a message containing «tiktok»", ""], ["insta_reel", "special", "🎥", "common", 1, "S", "Рилс", "Отправил «reel» или «reels»", "Reels", "Sent a message containing «reel» or «reels»", ""], ["insta_story", "special", "⭕", "common", 1, "S", "Сториз", "Отправил «story» или «insta story»", "Story Time", "Sent «story» or «insta story»", ""], ["insta_close_friends", "special", "💚", "rare", 1, "S", "Близкие Друзья", "Отправил «close friends» или «cf»", "Close Friends", "Sent «close friends» or «cf»", ""], ["insta_collab", "special", "🤝", "common", 1, "S", "Коллаб", "Отправил «collab» или «collaboration»", "Collab", "Sent «collab» or «collaboration»", ""], ["insta_dm", "special", "💌", "common", 1, "S", "DM Меня", "Отправил «dm me», «slide into dms», или «check your dms»", "DM Me", "Sent «dm me», «slide into dms», or «check your dms»", ""], ["insta_aesthetic", "special", "🎨", "rare", 1, "S", "Эстетика", "Отправил «aesthetic» или «core aesthetic»", "Aesthetic", "Sent «aesthetic» or «core aesthetic»", ""], ["insta_follow_back", "special", "👀", "common", 1, "S", "Взаимная Подписка", "Отправил «follow back» или «f4f»", "Follow Back", "Sent «follow back» or «f4f»", ""], ["insta_explore", "special", "🔍", "common", 1, "S", "Страница Обзора", "Отправил «explore page» или «on the explore»", "Explore Page", "Sent «explore page» or «on the explore»", ""], ["twitter_ratio_l", "special", "📉", "rare", 1, "S", "L + Рейшо", "Отправил «L +» или «L + ratio»", "L + Ratio", "Sent «L +» or «L + ratio»", ""], ["twitter_w", "special", "🏆", "common", 1, "S", "W", "Отправил «W» или «taking the W»", "W", "Sent «W» or «taking the W»", ""], ["twitter_l", "special", "📉", "common", 1, "S", "L", "Отправил «took an L» или «big L»", "L", "Sent «took an L» or «big L»", ""], ["twitter_thread", "special", "🧵", "rare", 1, "S", "Тред", "Отправил «thread» или «a thread»", "Thread", "Sent «thread» or «a thread»", ""], ["twitter_quote_tweet", "special", "💬", "common", 1, "S", "Цитата", "Отправил «quote tweet» или «quote this»", "Quote Tweet", "Sent «quote tweet» or «quote this»", ""], ["alpha_skibidi", "special", "🚽", "rare", 1, "S", "Скибиди", "Отправил «skibidi»", "Skibidi", "Sent a message containing «skibidi»", ""], ["alpha_sigma_ohio", "special", "🏠", "rare", 1, "S", "Огайо", "Отправил «ohio» или «only in ohio»", "Ohio", "Sent «ohio» or «only in ohio»", ""], ["alpha_fanum_tax", "special", "💸", "rare", 1, "S", "Фанум Такс", "Отправил «fanum tax»", "Fanum Tax", "Sent «fanum tax»", ""], ["alpha_rizz_w", "special", "🎯", "rare", 1, "S", "Безграничный Ризз", "Отправил «rizzler» или «unspoken rizz»", "Rizz W", "Sent «rizzler» or «unspoken rizz»", ""], ["alpha_hawk_tuah", "special", "🦅", "legendary", 1, "S", "Хок Туа", "Отправил «hawk tuah»", "Hawk Tuah", "Sent «hawk tuah»", ""], ["alpha_gyatt", "special", "😳", "rare", 1, "S", "Гайат", "Отправил «gyatt» или «gyat»", "Gyatt", "Sent «gyatt» or «gyat»", ""], ["alpha_mewing", "special", "😤", "common", 1, "S", "Мьюинг", "Отправил «mewing»", "Mewing", "Sent a message containing «mewing»", ""], ["alpha_looksmaxx", "special", "💎", "rare", 1, "S", "Луксмакс", "Отправил «looksmaxxing» или «looksmax»", "Looksmax", "Sent «looksmaxxing» or «looksmax»", ""], ["alpha_gooning", "special", "🧌", "rare", 1, "S", "Гунинг", "Отправил «gooning»", "Gooning", "Sent a message containing «gooning»", ""], ["alpha_glaze", "special", "🪟", "common", 1, "S", "Глейз", "Отправил «glazing» или «glaze»", "Glazing", "Sent «glazing» or «glaze»", ""], ["alpha_aura", "special", "✨", "rare", 1, "S", "Аура", "Отправил «aura» или «negative aura»", "Aura", "Sent «aura» or «negative aura»", ""], ["alpha_cooked", "special", "🍳", "common", 1, "S", "Сгорел", "Отправил «cooked» или «you're cooked»", "Cooked", "Sent «cooked» or «you're cooked»", ""], ["alpha_bomboclat", "special", "💥", "rare", 1, "S", "Бомбоклат", "Отправил «bomboclat»", "Bomboclat", "Sent «bomboclat»", ""], ["alpha_what_da_dog", "special", "🐶", "rare", 1, "S", "Что Делает Собака", "Отправил «what da dog doin»", "What Da Dog Doin", "Sent «what da dog doin»", ""], ["alpha_bro_cooked", "special", "🧑‍🍳", "common", 1, "S", "Бро Сгорел", "Отправил «bro is cooked» или «bro cooked»", "Bro Is Cooked", "Sent «bro is cooked» or «bro cooked»", ""], ["alpha_bro_told", "special", "🗣️", "common", 1, "S", "Бро Сказал", "Отправил «bro said», «bro told me» или «bro thought»", "Bro Told", "Sent «bro said», «bro told me», or «bro thought»", ""], ["alpha_ts_real", "special", "💯", "rare", 1, "S", "Это Реально", "Отправил «ts is real», «this is real»", "This Is Real", "Sent «ts is real» or «this is real»", ""], ["alpha_aint_real", "special", "🤯", "rare", 1, "S", "Это Нереально", "Отправил «ain't real», «this ain't real»", "Ain't Real", "Sent «ain't real» or «this ain't real»", ""], ["alpha_nuh_uh", "special", "🙅", "common", 1, "S", "Нет", "Отправил «nuh uh» или «nuh-uh»", "Nuh Uh", "Sent «nuh uh» or «nuh-uh»", ""], ["alpha_yuh", "special", "👍", "common", 1, "S", "Юх", "Отправил «yuh», «yuh yuh» или «yurrr»", "Yuh", "Sent «yuh», «yuh yuh», or «yurrr»", ""], ["alpha_its_giving", "special", "💁", "rare", 1, "S", "Это Даёт", "Отправил «it's giving» или «its giving»", "It's Giving", "Sent «it's giving» or «its giving»", ""], ["alpha_ate_no_left", "special", "🍽️", "rare", 1, "S", "Съел И Ничего", "Отправил «ate and left no crumbs»", "Ate, Left No Crumbs", "Sent «ate and left no crumbs»", ""], ["alpha_mother", "special", "👑", "rare", 1, "S", "Матушка", "Отправил «mother» (в мемном контексте)", "Mother", "Sent «mother» (in meme context)", ""], ["alpha_very_demure", "special", "🌸", "rare", 1, "S", "Очень Скромно", "Отправил «very demure» или «very mindful»", "Very Demure", "Sent «very demure» or «very mindful»", ""], ["alpha_no_skips", "special", "⏭️", "common", 1, "S", "Без Скипов", "Отправил «no skips» или «banger»", "No Skips", "Sent «no skips» or «banger»", ""], ["alpha_sped_up", "special", "⏩", "common", 1, "S", "Ускорено", "Отправил «sped up» или «slowed + reverb»", "Sped Up", "Sent «sped up» or «slowed + reverb»", ""], ["alpha_we_are_so_back", "special", "💪", "legendary", 1, "S", "Мы Вернулись", "Отправил «we are so back» или «we're so back»", "We Are SO Back", "Sent «we are so back» or «we're so back»", ""], ["alpha_its_over", "special", "😔", "rare", 1, "S", "Всё Кончено", "Отправил «it's over» или «its over»", "It's Over", "Sent «it's over» or «its over»", ""], ["alpha_real", "special", "💯", "common", 1, "S", "Реальный", "Отправил «real» или «realest»", "Real", "Sent «real» or «realest»", ""], ["alpha_cap", "special", "🧢", "common", 1, "S", "Кэп", "Отправил «cap» или «capping»", "Cap", "Sent «cap» or «capping»", ""], ["alpha_mf", "special", "🤦", "common", 1, "S", "МФ", "Отправил «mf» или «this mf»", "MF", "Sent «mf» or «this mf»", ""], ["alpha_buss", "special", "🔥", "rare", 1, "S", "Басс", "Отправил «buss» или «bussin bussin»", "Buss", "Sent «buss» or «bussin bussin»", ""], ["alpha_pmo", "special", "😤", "common", 1, "S", "PMO", "Отправил «pmo» или «pisses me off»", "PMO", "Sent «pmo» or «pisses me off»", ""], ["alpha_type_beat", "special", "🎵", "rare", 1, "S", "Тайп Бит", "Отправил «type beat» (напр. «lofi type beat»)", "Type Beat", "Sent «type beat» (e.g. «lofi type beat»)", ""], ["alpha_understood_assignment", "special", "✅", "legendary", 5, "S", "Мастер Задания", "Отправил «understood the assignment» 5 раз", "Assignment Master", "Sent «understood the assignment» 5 times", ""], ["meme_ngl", "special", "🫣", "common", 1, "S", "НГЛ", "Отправил «ngl» или «not gonna lie»", "NGL", "Sent «ngl» or «not gonna lie»", ""], ["meme_tbh", "special", "🤷", "common", 1, "S", "Честно", "Отправил «tbh» или «to be honest»", "TBH", "Sent «tbh» or «to be honest»", ""], ["meme_imo", "special", "💬", "common", 1, "S", "ПМО", "Отправил «imo» или «in my opinion»", "IMO", "Sent «imo» or «in my opinion»", ""], ["meme_istg", "special", "🤬", "common", 1, "S", "Клянусь", "Отправил «istg» или «i swear to god»", "ISTG", "Sent «istg» or «i swear to god»", ""], ["meme_ong", "special", "💯", "common", 1, "S", "ОНГ", "Отправил «ong» или «on god»", "ONG", "Sent «ong» or «on god»", ""], ["meme_say_less", "special", "🤐", "common", 1, "S", "Больше Не Надо", "Отправил «say less»", "Say Less", "Sent «say less»", ""], ["meme_it_do_be", "special", "😔", "common", 1, "S", "Ну Бывает", "Отправил «it do be like that»", "It Do Be", "Sent «it do be like that»", ""], ["meme_ong_fr", "special", "🔥", "rare", 1, "S", "Ong Fr", "Отправил «ong fr» или «on god for real»", "Ong Fr", "Sent «ong fr» or «on god for real»", ""], ["meme_bestie", "special", "👫", "common", 1, "S", "Бести", "Отправил «bestie»", "Bestie", "Sent a message containing «bestie»", ""], ["meme_periodt", "special", "💅", "common", 1, "S", "Период", "Отправил «periodt» или «period»", "Periodt", "Sent «periodt» or «period.»", ""], ["meme_no_printer", "special", "🖨️", "rare", 1, "S", "Только Факты", "Отправил «facts no printer»", "Facts No Printer", "Sent «facts no printer»", ""], ["meme_sending", "special", "😂", "common", 1, "S", "В Потоке", "Отправил «i'm sending» или «sending me»", "Sending Me", "Sent «i'm sending» or «sending me»", ""], ["meme_im_weak", "special", "😵", "common", 1, "S", "Без Сил", "Отправил «i'm weak» или «im dead»", "I'm Weak", "Sent «i'm weak» or «im dead»", ""], ["meme_dead", "special", "💀", "common", 1, "S", "Мёртвый", "Отправил «im dead» или «i'm dying»", "I'm Dead", "Sent «im dead» or «i'm dying»", ""], ["meme_whats_the_vibe", "special", "✨", "common", 1, "S", "Какой Вайб", "Отправил «what's the vibe» или «what's the energy»", "What's the Vibe", "Sent «what's the vibe» or «what's the energy»", ""], ["meme_hold_on", "special", "🛑", "common", 1, "S", "Стоп", "Отправил «hold on step bro» или «hold on»", "Hold On", "Sent «hold on step» or «hold on»", ""], ["meme_not_me", "special", "🙈", "common", 1, "S", "Не Я", "Отправил «not me» или «not me doing»", "Not Me", "Sent «not me» or «not me doing»", ""], ["meme_core", "special", "🎯", "rare", 1, "S", "Кор", "Отправил «core» как часть эстетики (напр. «cottagecore»)", "Core", "Sent «core» as part of an aesthetic (e.g. «cottagecore»)", ""], ["meme_ate", "special", "🍽️", "common", 1, "S", "Съел", "Отправил «ate» или «she ate»", "Ate", "Sent «ate» or «she ate»", ""], ["meme_snatched", "special", "💅", "rare", 1, "S", "Снатчед", "Отправил «snatched» или «outfit snatched»", "Snatched", "Sent «snatched» or «outfit snatched»", ""], ["meme_slaps", "special", "🎵", "common", 1, "S", "Слэпс", "Отправил «this slaps» или «song slaps»", "Slaps", "Sent «this slaps» or «song slaps»", ""], ["meme_no_thoughts", "special", "🫥", "rare", 1, "S", "Пустая Голова", "Отправил «no thoughts head empty»", "No Thoughts", "Sent «no thoughts head empty»", ""], ["meme_rotting", "special", "😴", "rare", 1, "S", "Гнию", "Отправил «rotting in bed» или «bed rotting»", "Bed Rotting", "Sent «rotting in bed» or «bed rotting»", ""], ["meme_villain_arc", "special", "😈", "legendary", 1, "S", "Вилейн Эра", "Отправил «villain arc» или «entering villain arc»", "Villain Arc", "Sent «villain arc» or «entering villain arc»", ""], ["meme_main_char_energy", "special", "⭐", "rare", 1, "S", "Энергия Главного", "Отправил «main character energy»", "Main Character Energy", "Sent «main character energy»", ""], ["meme_pookie", "special", "🐻", "common", 1, "S", "Пуки", "Отправил «pookie»", "Pookie", "Sent a message containing «pookie»", ""], ["meme_beige_flag", "special", "🏳️", "rare", 1, "S", "Бежевый Флаг", "Отправил «beige flag»", "Beige Flag", "Sent «beige flag»", ""], ["meme_red_flag", "special", "🚩", "common", 1, "S", "Красный Флаг", "Отправил «red flag» или «🚩🚩🚩»", "Red Flag", "Sent «red flag» or «🚩🚩🚩»", ""], ["meme_green_flag", "special", "✅", "common", 1, "S", "Зелёный Флаг", "Отправил «green flag»", "Green Flag", "Sent «green flag»", ""], ["meme_ratioed", "special", "📊", "rare", 1, "S", "Рейшоед", "Отправил «ratioed»", "Ratioed", "Sent «ratioed»", ""], ["meme_touch_grass_100", "special", "🌿", "legendary", 10, "S", "Садовник", "Написал «touch grass» 10 раз. Выйди на улицу!", "Grass Toucher", "Sent «touch grass» 10 times. Go outside!", ""], ["meme_yap", "special", "🗣️", "common", 1, "S", "Яп", "Отправил «yapping» или «yap session»", "Yap", "Sent «yapping» or «yap session»", ""], ["meme_understood_x10", "special", "✅", "legendary", 10, "S", "Суперисполнитель", "Отправил «understood the assignment» 10 раз", "Assignment God", "Sent «understood the assignment» 10 times", ""], ["meme_lowk_unhinged", "special", "🤪", "rare", 1, "S", "Немного Неуравновешен", "Отправил «lowkey unhinged» или «unhinged»", "Lowkey Unhinged", "Sent «lowkey unhinged» or «unhinged»", ""], ["meme_ate_that", "special", "🍽️", "rare", 1, "S", "Съел Это", "Отправил «ate that» или «absolutely ate»", "Ate That", "Sent «ate that» or «absolutely ate»", ""], ["meme_understood_assignment_2", "special", "🎯", "legendary", 3, "S", "Троекратный Исполнитель", "Отправил «understood the assignment» 3 раза", "Triple Assignment", "Sent «understood the assignment» 3 times", ""], ["meme_zero_rizz", "special", "📉", "rare", 1, "S", "Ноль Ризза", "Отправил «zero rizz» или «negative rizz»", "Zero Rizz", "Sent «zero rizz» or «negative rizz»", ""], ["meme_W_rizz", "special", "🏆", "legendary", 1, "S", "W Ризз", "Отправил «W rizz» или «ultimate rizz»", "W Rizz", "Sent «W rizz» or «ultimate rizz»", ""], ["meme_banger", "special", "🎵", "common", 1, "S", "Банер", "Отправил «banger» или «absolute banger»", "Banger", "Sent «banger» or «absolute banger»", ""], ["meme_mid_song", "special", "😐", "common", 1, "S", "Мид Трек", "Отправил «mid song» или «that song is mid»", "Mid Song", "Sent «mid song» or «that song is mid»", ""], ["meme_frfr_ong", "special", "💯", "rare", 1, "S", "Fr Fr Ong", "Отправил «frfr ong» или «for real on god»", "Frfr Ong", "Sent «frfr ong» or «for real on god»", ""], ["meme_looksmaxx_grind", "special", "💪", "legendary", 1, "S", "Луксмакс Гринд", "Отправил «looksmaxxing grind» или «maxxing»", "Looksmaxx Grind", "Sent «looksmaxxing grind» or «maxxing»", ""], ["alpha_rizz_up", "special", "💫", "rare", 1, "S", "Ризз Ап", "Отправил «rizz up» или «rizzed her up»", "Rizz Up", "Sent «rizz up» or «rizzed her up»", ""], ["alpha_ohio_only", "special", "🏠", "legendary", 3, "S", "Только В Огайо", "Отправил «only in ohio» 3 раза", "Only In Ohio", "Sent «only in ohio» 3 times", ""]];
+  var RAW_ACHIEVEMENTS = [["first_message", "messages", "", "common", 1, "", "Первые шаги", "Отправьте первое сообщение", "First Steps", "Send your first message", "messages_sent"], ["getting_started", "messages", "", "common", 10, "", "Начало пути", "Отправьте 10 сообщений", "Getting Started", "Send 10 messages", "messages_sent"], ["warming_up", "messages", "", "common", 50, "", "Разминка", "Отправьте 50 сообщений", "Warming Up", "Send 50 messages", "messages_sent"], ["talkative", "messages", "", "uncommon", 100, "", "Разговорчивый", "Отправьте 100 сообщений", "Talkative", "Send 100 messages", "messages_sent"], ["chatterbox", "messages", "", "uncommon", 500, "", "Болтун", "Отправьте 500 сообщений", "Chatterbox", "Send 500 messages", "messages_sent"], ["messenger", "messages", "", "rare", 1000, "", "Вестник", "Отправьте 1,000 сообщений", "Messenger", "Send 1,000 messages", "messages_sent"], ["communicator", "messages", "", "rare", 2500, "", "Коммуникатор", "Отправьте 2,500 сообщений", "Communicator", "Send 2,500 messages", "messages_sent"], ["orator", "messages", "", "epic", 5000, "", "Оратор", "Отправьте 5,000 сообщений", "Orator", "Send 5,000 messages", "messages_sent"], ["word_master", "messages", "", "epic", 10000, "", "Мастер слова", "Отправьте 10,000 сообщений", "Word Master", "Send 10,000 messages", "messages_sent"], ["legend", "messages", "", "legendary", 25000, "", "Легенда общения", "Отправьте 25,000 сообщений", "Legend", "Send 25,000 messages", "messages_sent"], ["immortal", "messages", "", "legendary", 50000, "", "Бессмертный", "Отправьте 50,000 сообщений", "Immortal", "Send 50,000 messages", "messages_sent"], ["god_of_words", "messages", "", "mythic", 100000, "", "Бог слов", "Отправьте 100,000 сообщений", "God of Words", "Send 100,000 messages", "messages_sent"], ["minimalist", "messages", "", "uncommon", 1, "T50", "Минималист", "Отправьте сообщение из 1 символа (после 50 сообщений)", "Minimalist", "Send a 1-character message (after 50 messages)", ""], ["writer", "messages", "", "uncommon", 1, "", "Писатель", "Отправьте сообщение длиннее 300 символов", "Writer", "Send a message longer than 300 characters", ""], ["novelist", "messages", "", "rare", 1, "", "Романист", "Отправьте сообщение длиннее 700 символов", "Novelist", "Send a message longer than 700 characters", ""], ["epic_writer", "messages", "", "epic", 1, "", "Эпический писатель", "Отправьте сообщение длиннее 1500 символов", "Epic Writer", "Send a message longer than 1500 characters", ""], ["tolstoy", "messages", "", "legendary", 1, "", "Лев Толстой", "Отправьте сообщение длиннее 3000 символов", "Tolstoy", "Send a message longer than 3000 characters", ""], ["speed_demon", "messages", "", "uncommon", 1, "", "Скоростной демон", "Отправьте 5 сообщений за 30 секунд", "Speed Demon", "Send 5 messages in 30 seconds", ""], ["spam_master", "messages", "", "rare", 1, "", "Спам-мастер", "Отправьте 10 сообщений за минуту", "Spam Master", "Send 10 messages in a minute", ""], ["keyboard_warrior", "messages", "", "epic", 1, "", "Клавиатурный воин", "Отправьте 20 сообщений за минуту", "Keyboard Warrior", "Send 20 messages in a minute", ""], ["typing_god", "messages", "", "legendary", 1, "", "Бог печати", "Отправьте 30 сообщений за минуту", "Typing God", "Send 30 messages in a minute", ""], ["editor", "messages", "", "common", 1, "", "Редактор", "Отредактируйте сообщение", "Editor", "Edit a message", "edits_made"], ["perfectionist", "messages", "", "uncommon", 25, "", "Перфекционист", "Отредактируйте 25 сообщений", "Perfectionist", "Edit 25 messages", "edits_made"], ["never_satisfied", "messages", "", "rare", 100, "", "Вечно недовольный", "Отредактируйте 100 сообщений", "Never Satisfied", "Edit 100 messages", "edits_made"], ["obsessive_editor", "messages", "", "epic", 500, "", "Одержимый редактор", "Отредактируйте 500 сообщений", "Obsessive Editor", "Edit 500 messages", "edits_made"], ["replier", "messages", "↩", "common", 1, "", "Ответчик", "Ответьте на сообщение", "Replier", "Reply to a message", "replies_made"], ["conversationalist", "messages", "", "uncommon", 50, "", "Собеседник", "Ответьте на 50 сообщений", "Conversationalist", "Reply to 50 messages", "replies_made"], ["discussion_lover", "messages", "", "rare", 200, "", "Любитель дискуссий", "Ответьте на 200 сообщений", "Discussion Lover", "Reply to 200 messages", "replies_made"], ["debate_master", "messages", "", "epic", 1000, "", "Мастер дебатов", "Ответьте на 1000 сообщений", "Debate Master", "Reply to 1000 messages", "replies_made"], ["first_photo", "media", "", "common", 1, "", "Первый кадр", "Отправьте первое фото", "First Shot", "Send your first photo", "photos_sent"], ["amateur_photographer", "media", "", "common", 25, "", "Фотолюбитель", "Отправьте 25 фото", "Amateur Photographer", "Send 25 photos", "photos_sent"], ["photographer", "media", "", "uncommon", 100, "", "Фотограф", "Отправьте 100 фото", "Photographer", "Send 100 photos", "photos_sent"], ["pro_photographer", "media", "", "rare", 500, "", "Профессионал", "Отправьте 500 фото", "Pro Photographer", "Send 500 photos", "photos_sent"], ["paparazzi", "media", "", "epic", 1000, "", "Папарацци", "Отправьте 1000 фото", "Paparazzi", "Send 1000 photos", "photos_sent"], ["photo_legend", "media", "", "legendary", 5000, "", "Легенда фотографии", "Отправьте 5000 фото", "Photo Legend", "Send 5000 photos", "photos_sent"], ["first_video", "media", "", "common", 1, "", "Мотор!", "Отправьте первое видео", "Action!", "Send your first video", "videos_sent"], ["video_amateur", "media", "", "common", 10, "", "Видеолюбитель", "Отправьте 10 видео", "Video Amateur", "Send 10 videos", "videos_sent"], ["videographer", "media", "", "uncommon", 50, "", "Видеограф", "Отправьте 50 видео", "Videographer", "Send 50 videos", "videos_sent"], ["director", "media", "", "rare", 200, "", "Режиссёр", "Отправьте 200 видео", "Director", "Send 200 videos", "videos_sent"], ["hollywood", "media", "", "epic", 1000, "", "Голливуд", "Отправьте 1000 видео", "Hollywood", "Send 1000 videos", "videos_sent"], ["first_voice", "media", "", "common", 1, "", "Голос", "Отправьте первое голосовое", "Voice", "Send your first voice message", "voice_sent"], ["voice_user", "media", "", "common", 25, "", "Голосовой пользователь", "Отправьте 25 голосовых", "Voice User", "Send 25 voice messages", "voice_sent"], ["podcaster", "media", "", "uncommon", 100, "", "Подкастер", "Отправьте 100 голосовых", "Podcaster", "Send 100 voice messages", "voice_sent"], ["radio_host", "media", "", "rare", 500, "", "Радиоведущий", "Отправьте 500 голосовых", "Radio Host", "Send 500 voice messages", "voice_sent"], ["voice_legend", "media", "", "epic", 2000, "", "Голосовая легенда", "Отправьте 2000 голосовых", "Voice Legend", "Send 2000 voice messages", "voice_sent"], ["first_sticker", "media", "", "common", 1, "", "Стикермен", "Отправьте первый стикер", "Sticker Man", "Send your first sticker", "stickers_sent"], ["sticker_fan", "media", "", "common", 50, "", "Фанат стикеров", "Отправьте 50 стикеров", "Sticker Fan", "Send 50 stickers", "stickers_sent"], ["sticker_lover", "media", "", "uncommon", 250, "", "Любитель стикеров", "Отправьте 250 стикеров", "Sticker Lover", "Send 250 stickers", "stickers_sent"], ["sticker_addict", "media", "", "rare", 1000, "", "Стикерозависимый", "Отправьте 1000 стикеров", "Sticker Addict", "Send 1000 stickers", "stickers_sent"], ["sticker_maniac", "media", "", "epic", 5000, "", "Стикер-маньяк", "Отправьте 5000 стикеров", "Sticker Maniac", "Send 5000 stickers", "stickers_sent"], ["sticker_god", "media", "", "legendary", 15000, "", "Бог стикеров", "Отправьте 15000 стикеров", "Sticker God", "Send 15000 stickers", "stickers_sent"], ["first_gif", "media", "", "common", 1, "", "Гифка", "Отправьте первую GIF", "First GIF", "Send your first GIF", "gifs_sent"], ["gif_user", "media", "", "common", 25, "", "GIF-пользователь", "Отправьте 25 GIF", "GIF User", "Send 25 GIFs", "gifs_sent"], ["animator", "media", "", "uncommon", 100, "", "Аниматор", "Отправьте 100 GIF", "Animator", "Send 100 GIFs", "gifs_sent"], ["gif_master", "media", "", "rare", 500, "", "Мастер GIF", "Отправьте 500 GIF", "GIF Master", "Send 500 GIFs", "gifs_sent"], ["gif_lord", "media", "", "epic", 2000, "", "Повелитель GIF", "Отправьте 2000 GIF", "GIF Lord", "Send 2000 GIFs", "gifs_sent"], ["first_file", "media", "", "common", 1, "", "Файлообменник", "Отправьте первый файл", "File Sharer", "Send your first file", "files_sent"], ["file_sharer", "media", "", "common", 25, "", "Файлодел", "Отправьте 25 файлов", "File Dealer", "Send 25 files", "files_sent"], ["archivist", "media", "", "uncommon", 100, "", "Архивариус", "Отправьте 100 файлов", "Archivist", "Send 100 files", "files_sent"], ["data_hoarder", "media", "", "rare", 500, "", "Накопитель данных", "Отправьте 500 файлов", "Data Hoarder", "Send 500 files", "files_sent"], ["cloud_storage", "media", "", "epic", 2000, "", "Облачное хранилище", "Отправьте 2000 файлов", "Cloud Storage", "Send 2000 files", "files_sent"], ["first_audio", "media", "", "common", 1, "", "Меломан", "Отправьте первое аудио", "Music Lover", "Send your first audio", "audios_sent"], ["music_lover", "media", "", "common", 25, "", "Любитель музыки", "Отправьте 25 аудио", "Music Fan", "Send 25 audio files", "audios_sent"], ["dj", "media", "", "uncommon", 100, "", "Диджей", "Отправьте 100 аудио", "DJ", "Send 100 audio files", "audios_sent"], ["music_producer", "media", "", "rare", 500, "", "Музыкальный продюсер", "Отправьте 500 аудио", "Music Producer", "Send 500 audio files", "audios_sent"], ["first_chat", "social", "", "common", 1, "", "Первый контакт", "Напишите в первый чат", "First Contact", "Write to your first chat", "unique_chats"], ["social_starter", "social", "", "common", 5, "", "Начинающий социал", "Напишите в 5 разных чатов", "Social Starter", "Write to 5 different chats", "unique_chats"], ["social_10", "social", "", "common", 10, "", "Общительный", "Напишите в 10 разных чатов", "Sociable", "Write to 10 different chats", "unique_chats"], ["social_25", "social", "", "uncommon", 25, "", "Социальный", "Напишите в 25 разных чатов", "Social", "Write to 25 different chats", "unique_chats"], ["social_50", "social", "", "uncommon", 50, "", "Душа компании", "Напишите в 50 разных чатов", "Life of the Party", "Write to 50 different chats", "unique_chats"], ["social_100", "social", "", "rare", 100, "", "Нетворкер", "Напишите в 100 разных чатов", "Networker", "Write to 100 different chats", "unique_chats"], ["social_250", "social", "", "epic", 250, "", "Социальная бабочка", "Напишите в 250 разных чатов", "Social Butterfly", "Write to 250 different chats", "unique_chats"], ["social_500", "social", "", "legendary", 500, "", "Всемирная сеть", "Напишите в 500 разных чатов", "World Wide Web", "Write to 500 different chats", "unique_chats"], ["group_member", "social", "", "common", 1, "", "Групповой игрок", "Напишите в групповой чат", "Team Player", "Write to a group chat", ""], ["private_talk", "social", "", "common", 1, "", "Приватный разговор", "Напишите в личные сообщения", "Private Talk", "Write to a private chat", ""], ["channel_writer", "social", "", "uncommon", 1, "", "Автор канала", "Напишите в канал", "Channel Author", "Write to a channel", ""], ["bot_friend", "social", "", "common", 1, "", "Друг ботов", "Напишите боту", "Bot Friend", "Write to a bot", ""], ["night_owl", "time", "", "rare", 1, "", "Ночная сова", "Отправьте сообщение между 2:00 и 5:00", "Night Owl", "Send a message between 2:00 and 5:00", ""], ["early_bird", "time", "", "rare", 1, "", "Ранняя пташка", "Отправьте сообщение между 5:00 и 6:00", "Early Bird", "Send a message between 5:00 and 6:00", ""], ["morning_person", "time", "", "uncommon", 1, "", "Жаворонок", "Отправьте сообщение между 6:00 и 7:00", "Morning Person", "Send a message between 6:00 and 7:00", ""], ["lunch_break", "time", "", "common", 1, "", "Обеденный перерыв", "Отправьте сообщение между 12:00 и 13:00", "Lunch Break", "Send a message between 12:00 and 13:00", ""], ["evening_chatter", "time", "", "common", 1, "", "Вечерний болтун", "Отправьте сообщение между 20:00 и 22:00", "Evening Chatter", "Send a message between 20:00 and 22:00", ""], ["monday_blues", "time", "", "common", 1, "", "Понедельник", "Отправьте сообщение в понедельник", "Monday Blues", "Send a message on Monday", ""], ["friday_vibes", "time", "", "common", 1, "", "Пятница!", "Отправьте сообщение в пятницу", "Friday Vibes", "Send a message on Friday", ""], ["weekend_warrior", "time", "", "common", 1, "", "Воин выходных", "Отправьте сообщение в выходные", "Weekend Warrior", "Send a message on weekend", ""], ["new_year", "time", "", "epic", 1, "", "С Новым Годом!", "Отправьте сообщение 1 января", "Happy New Year!", "Send a message on January 1st", ""], ["valentine", "time", "", "epic", 1, "", "Валентинка", "Отправьте сообщение 14 февраля", "Valentine", "Send a message on February 14th", ""], ["defender", "time", "", "epic", 1, "", "Защитник", "Отправьте сообщение 23 февраля", "Defender", "Send a message on February 23rd", ""], ["womens_day", "time", "", "epic", 1, "", "Джентльмен", "Отправьте сообщение 8 марта", "Gentleman", "Send a message on March 8th", ""], ["april_fools", "time", "", "epic", 1, "", "День дурака", "Отправьте сообщение 1 апреля", "April Fools", "Send a message on April 1st", ""], ["may_day", "time", "", "epic", 1, "", "Первомай", "Отправьте сообщение 1 мая", "May Day", "Send a message on May 1st", ""], ["victory_day", "time", "", "epic", 1, "", "День Победы", "Отправьте сообщение 9 мая", "Victory Day", "Send a message on May 9th", ""], ["halloween", "time", "", "epic", 1, "", "Хэллоуин", "Отправьте сообщение 31 октября", "Halloween", "Send a message on October 31st", ""], ["christmas", "time", "", "epic", 1, "", "Рождество", "Отправьте сообщение 25 декабря", "Christmas", "Send a message on December 25th", ""], ["discord_birthday", "time", "", "epic", 1, "", "День рождения Discord", "Отправьте сообщение в день рождения Discord (13 мая)", "Discord Birthday", "Send a message on Discord birthday (May 13th)", ""], ["midnight", "time", "", "rare", 1, "", "Полуночник", "Отправьте сообщение ровно в 00:00", "Midnight", "Send a message exactly at 00:00", ""], ["high_noon", "time", "", "rare", 1, "", "Полдень", "Отправьте сообщение ровно в 12:00", "High Noon", "Send a message exactly at 12:00", ""], ["lucky_time", "time", "", "rare", 1, "", "Счастливое время", "Отправьте сообщение в 11:11", "Lucky Time", "Send a message at 11:11", ""], ["double_luck", "time", "", "rare", 1, "", "Двойная удача", "Отправьте сообщение в 22:22", "Double Luck", "Send a message at 22:22", ""], ["triple_digits", "time", "", "uncommon", 1, "", "Три одинаковых", "Отправьте сообщение когда минуты = часам", "Triple Digits", "Send a message when minutes = hours", ""], ["fire_streak", "streaks", "", "uncommon", 1, "", "Искра", "Заведите огонёк с кем-то", "Spark", "Start a streak with someone", ""], ["fire_streak_7", "streaks", "", "uncommon", 7, "", "Пламя", "Держите огонёк 7 дней", "Flame", "Keep a streak for 7 days", "_fire_streak"], ["fire_streak_14", "streaks", "", "rare", 14, "", "Костёр", "Держите огонёк 14 дней", "Campfire", "Keep a streak for 14 days", "_fire_streak"], ["fire_streak_30", "streaks", "", "rare", 30, "", "Факел", "Держите огонёк 30 дней", "Torch", "Keep a streak for 30 days", "_fire_streak"], ["fire_streak_60", "streaks", "", "epic", 60, "", "Пожар", "Держите огонёк 60 дней", "Blaze", "Keep a streak for 60 days", "_fire_streak"], ["fire_streak_100", "streaks", "", "epic", 100, "", "Вечный огонь", "Держите огонёк 100 дней", "Eternal Flame", "Keep a streak for 100 days", "_fire_streak"], ["fire_streak_200", "streaks", "", "legendary", 200, "", "Солнце", "Держите огонёк 200 дней", "Sun", "Keep a streak for 200 days", "_fire_streak"], ["fire_streak_365", "streaks", "", "mythic", 365, "", "Сверхновая", "Держите огонёк 365 дней", "Supernova", "Keep a streak for 365 days", "_fire_streak"], ["multi_streaks_3", "streaks", "", "uncommon", 3, "", "Огненный жонглёр", "Имейте 3 активных огонька", "Fire Juggler", "Have 3 active streaks", "_active_streaks"], ["multi_streaks_5", "streaks", "", "rare", 5, "", "Огненный маг", "Имейте 5 активных огоньков", "Fire Mage", "Have 5 active streaks", "_active_streaks"], ["multi_streaks_10", "streaks", "", "epic", 10, "", "Повелитель огня", "Имейте 10 активных огоньков", "Fire Lord", "Have 10 active streaks", "_active_streaks"], ["emoji_only", "special", "", "uncommon", 1, "T10", "Эмодзимен", "Отправьте сообщение только из эмодзи (5+ эмодзи)", "Emoji Man", "Send a message with only emojis (5+ emojis)", ""], ["emoji_master", "special", "", "rare", 1, "T10", "Мастер эмодзи", "Отправьте сообщение из 20+ эмодзи", "Emoji Master", "Send a message with 20+ emojis", ""], ["caps_lock", "special", "", "uncommon", 1, "T10", "КАПСЛОКЕР", "Отправьте сообщение ЗАГЛАВНЫМИ БУКВАМИ (10+ букв)", "CAPS LOCK", "Send a message in ALL CAPS (10+ letters)", ""], ["link_sharer", "special", "", "common", 1, "", "Ссылочник", "Отправьте сообщение со ссылкой", "Link Sharer", "Send a message with a link", ""], ["question", "special", "", "common", 1, "", "Любопытный", "Задайте вопрос (сообщение с ?)", "Curious", "Ask a question (message with ?)", ""], ["double_question", "special", "⁉", "uncommon", 1, "", "Очень любопытный", "Используйте ?? в сообщении", "Very Curious", "Use ?? in a message", ""], ["exclamation", "special", "", "common", 1, "", "Восклицатель", "Выразите эмоции (сообщение с !!!)", "Exclaimer", "Express emotions (message with !!!)", ""], ["numbers_only", "special", "", "uncommon", 1, "T10", "Математик", "Отправьте сообщение только из цифр (5+ цифр)", "Mathematician", "Send a message with only numbers (5+ digits)", ""], ["hashtag", "special", "#⃣", "common", 1, "", "Хэштегер", "Используйте хэштег в сообщении", "Hashtagger", "Use a hashtag in a message", ""], ["multi_hashtag", "special", "", "uncommon", 1, "", "Тренды", "Используйте 3+ хэштега в сообщении", "Trending", "Use 3+ hashtags in a message", ""], ["mention", "special", "", "common", 1, "", "Упоминатель", "Упомяните пользователя (@username)", "Mentioner", "Mention a user (@username)", ""], ["multi_mention", "special", "", "rare", 1, "", "Массовое упоминание", "Упомяните 5+ пользователей в сообщении", "Mass Mention", "Mention 5+ users in a message", ""], ["multilingual", "special", "", "uncommon", 1, "", "Полиглот", "Используйте 2 разных алфавита в сообщении", "Polyglot", "Use 2 different alphabets in a message", ""], ["trilingual", "special", "", "rare", 1, "", "Трилингв", "Используйте 3+ разных алфавита в сообщении", "Trilingual", "Use 3+ different alphabets in a message", ""], ["long_word", "special", "", "uncommon", 1, "", "Словоблуд", "Используйте слово длиннее 15 букв", "Wordsmith", "Use a word longer than 15 letters", ""], ["mega_word", "special", "", "rare", 1, "", "Мега-слово", "Используйте слово длиннее 25 букв", "Mega Word", "Use a word longer than 25 letters", ""], ["repeater", "special", "", "common", 1, "", "Повторяшка", "Повторите одну букву 5+ раз подряд", "Repeater", "Repeat a letter 5+ times in a row", ""], ["mega_repeater", "special", "", "uncommon", 1, "", "Мега-повтор", "Повторите одну букву 15+ раз подряд", "Mega Repeater", "Repeat a letter 15+ times in a row", ""], ["no_vowels", "special", "", "rare", 1, "", "Без гласных", "Отправьте слово без гласных (4+ буквы)", "No Vowels", "Send a word without vowels (4+ letters)", ""], ["all_vowels", "special", "", "rare", 1, "", "Все гласные", "Используйте все гласные в одном слове", "All Vowels", "Use all vowels in one word", ""], ["first_reaction", "reactions", "", "common", 1, "", "Первая реакция", "Поставьте первую реакцию", "First Reaction", "Add your first reaction", "reactions_made"], ["reactor", "reactions", "", "common", 25, "", "Реактор", "Поставьте 25 реакций", "Reactor", "Add 25 reactions", "reactions_made"], ["reaction_fan", "reactions", "", "uncommon", 100, "", "Фанат реакций", "Поставьте 100 реакций", "Reaction Fan", "Add 100 reactions", "reactions_made"], ["reaction_lover", "reactions", "", "rare", 500, "", "Любитель реакций", "Поставьте 500 реакций", "Reaction Lover", "Add 500 reactions", "reactions_made"], ["reaction_master", "reactions", "", "epic", 2000, "", "Мастер реакций", "Поставьте 2000 реакций", "Reaction Master", "Add 2000 reactions", "reactions_made"], ["day_1", "veteran", "", "common", 1, "", "День первый", "Используйте Discord 1 день", "Day One", "Use Discord for 1 day", "days_active"], ["week_1", "veteran", "", "uncommon", 7, "", "Неделя первая", "Используйте Discord 7 дней", "Week One", "Use Discord for 7 days", "days_active"], ["month_1", "veteran", "", "rare", 30, "", "Месяц первый", "Используйте Discord 30 дней", "Month One", "Use Discord for 30 days", "days_active"], ["quarter", "veteran", "", "epic", 90, "", "Квартал", "Используйте Discord 90 дней", "Quarter", "Use Discord for 90 days", "days_active"], ["half_year", "veteran", "", "epic", 180, "", "Полгода", "Используйте Discord 180 дней", "Half Year", "Use Discord for 180 days", "days_active"], ["year_1", "veteran", "", "legendary", 365, "", "Год первый", "Используйте Discord 365 дней", "Year One", "Use Discord for 365 days", "days_active"], ["media_variety", "collector", "", "uncommon", 1, "", "Разнообразие", "Отправьте фото, видео, голосовое и стикер", "Variety", "Send a photo, video, voice and sticker", ""], ["complete_set", "collector", "", "rare", 1, "", "Полный набор", "Отправьте все типы медиа", "Complete Set", "Send all types of media", ""], ["chat_explorer", "explorer", "", "uncommon", 1, "", "Исследователь чатов", "Напишите в ЛС, группу и канал", "Chat Explorer", "Write to DM, group and channel", ""], ["full_explorer", "explorer", "", "rare", 1, "", "Полный исследователь", "Напишите во все типы чатов", "Full Explorer", "Write to all chat types including bots", ""], ["secret_42", "secret", "", "secret", 1, "S", "Ответ на всё", "Найдите ответ на главный вопрос", "Answer to Everything", "Find the answer to the ultimate question", ""], ["secret_hello_world", "secret", "", "secret", 1, "S", "Hello World", "Напишите как настоящий программист", "Hello World", "Write like a true programmer", ""], ["secret_lorem", "secret", "", "secret", 1, "S", "Lorem Ipsum", "Используйте заглушку дизайнера", "Lorem Ipsum", "Use the designer's placeholder", ""], ["secret_rickroll", "secret", "", "secret", 1, "S", "Never Gonna", "Вы знаете правила, и я тоже", "Never Gonna", "You know the rules, and so do I", ""], ["secret_konami", "secret", "", "secret", 1, "S", "Konami Code", "Введите легендарный код", "Konami Code", "Enter the legendary code", ""], ["secret_1337", "secret", "", "secret", 1, "S", "L33T", "Напишите на языке хакеров", "L33T", "Write in hacker language", ""], ["secret_pi", "secret", "", "secret", 1, "S", "Число Пи", "Вспомните математику", "Pi", "Remember mathematics", ""], ["secret_matrix", "secret", "", "secret", 1, "S", "Матрица", "Красная или синяя?", "Matrix", "Red or blue?", ""], ["secret_palindrome", "secret", "", "secret", 1, "S", "Палиндром", "Напишите слово-перевёртыш (5+ букв)", "Palindrome", "Write a palindrome word (5+ letters)", ""], ["secret_gg", "secret", "", "secret", 1, "S", "GG", "Хорошая игра!", "GG", "Good game!", ""], ["secret_lol", "secret", "", "secret", 1, "S", "LOL", "Смех да и только", "LOL", "Laughing out loud", ""], ["secret_bruh", "secret", "", "secret", 1, "S", "Bruh", "Момент...", "Bruh", "That moment...", ""], ["secret_sus", "secret", "", "secret", 1, "S", "Sus", "Подозрительно...", "Sus", "Suspicious...", ""], ["secret_ok_boomer", "secret", "", "secret", 1, "S", "OK Boomer", "Ладно, бумер", "OK Boomer", "Alright, boomer", ""], ["secret_f_respect", "secret", "", "secret", 1, "S", "F", "Выразите уважение", "F", "Pay respects", ""], ["secret_nice", "secret", "", "secret", 1, "S", "Nice", "Напишите магическое число", "Nice", "Write the magic number", ""], ["secret_uwu", "secret", "", "secret", 1, "S", "UwU", "Милый момент", "UwU", "Cute moment", ""], ["secret_xd", "secret", "", "secret", 1, "S", "XD", "Классический смех", "XD", "Classic laugh", ""], ["secret_facepalm", "secret", "", "secret", 1, "S", "Фейспалм", "Используйте ", "Facepalm", "Use ", ""], ["secret_thinking", "secret", "", "secret", 1, "S", "Мыслитель", "Используйте ", "Thinker", "Use ", ""], ["secret_fire_emoji", "secret", "", "secret", 1, "S", "Огонь", "Используйте ", "Fire", "Use ", ""], ["secret_heart", "secret", "", "secret", 1, "S", "Любовь", "Отправьте ", "Love", "Send ", ""], ["secret_goodnight", "secret", "", "secret", 1, "S", "Спокойной ночи", "Пожелайте спокойной ночи после полуночи", "Good Night", "Say good night after midnight", ""], ["secret_goodmorning", "secret", "", "secret", 1, "S", "Доброе утро", "Пожелайте доброго утра до 8:00", "Good Morning", "Say good morning before 8:00", ""], ["secret_birthday", "secret", "", "secret", 1, "S", "С днём рождения", "Поздравьте с днём рождения", "Happy Birthday", "Wish someone happy birthday", ""], ["secret_thanks", "secret", "", "secret", 1, "S", "Благодарность", "Скажите спасибо", "Gratitude", "Say thank you", ""], ["secret_sorry", "secret", "", "secret", 1, "S", "Извинения", "Попросите прощения", "Apology", "Apologize", ""], ["secret_welcome", "secret", "", "secret", 1, "S", "Добро пожаловать", "Поприветствуйте кого-то", "Welcome", "Welcome someone", ""], ["secret_congrats", "secret", "", "secret", 1, "S", "Поздравления", "Поздравьте с чем-то", "Congratulations", "Congratulate someone", ""], ["secret_bye", "secret", "", "secret", 1, "S", "До свидания", "Попрощайтесь", "Goodbye", "Say goodbye", ""], ["private_5", "social", "", "common", 5, "", "Близкий круг", "Напишите в 5 личных чатов", "Inner Circle", "Write to 5 private chats", "private_chats_count"], ["private_25", "social", "", "uncommon", 25, "", "Свои люди", "Напишите в 25 личных чатов", "My People", "Write to 25 private chats", "private_chats_count"], ["private_100", "social", "", "rare", 100, "", "Личная сеть", "Напишите в 100 личных чатов", "Personal Network", "Write to 100 private chats", "private_chats_count"], ["private_500", "social", "", "epic", 500, "", "Армия друзей", "Напишите в 500 личных чатов", "Army of Friends", "Write to 500 private chats", "private_chats_count"], ["group_5", "social", "", "common", 5, "", "Командный игрок", "Напишите в 5 групп", "Team Player+", "Write to 5 groups", "group_chats_count"], ["group_25", "social", "", "uncommon", 25, "", "Активист", "Напишите в 25 групп", "Activist", "Write to 25 groups", "group_chats_count"], ["group_100", "social", "", "rare", 100, "", "Универсал", "Напишите в 100 групп", "All-rounder", "Write to 100 groups", "group_chats_count"], ["group_500", "social", "", "epic", 500, "", "Глава фракций", "Напишите в 500 групп", "Faction Leader", "Write to 500 groups", "group_chats_count"], ["channel_5", "social", "", "uncommon", 5, "", "Голос редакции", "Напишите в 5 каналов", "Editorial Voice", "Write to 5 channels", "channel_chats_count"], ["channel_25", "social", "", "rare", 25, "", "Медиа-магнат", "Напишите в 25 каналов", "Media Mogul", "Write to 25 channels", "channel_chats_count"], ["channel_100", "social", "", "epic", 100, "", "Медиа-империя", "Напишите в 100 каналов", "Media Empire", "Write to 100 channels", "channel_chats_count"], ["bot_5", "social", "", "common", 5, "", "Бот-фанат", "Напишите 5 ботам", "Bot Fan", "Write to 5 bots", "bot_chats_count"], ["bot_25", "social", "", "uncommon", 25, "", "Автоматизатор", "Напишите 25 ботам", "Automator", "Write to 25 bots", "bot_chats_count"], ["bot_100", "social", "", "rare", 100, "", "Кибернетик", "Напишите 100 ботам", "Cybernetician", "Write to 100 bots", "bot_chats_count"], ["social_1000", "social", "", "mythic", 1000, "", "Бог общения", "Напишите в 1,000 разных чатов", "God of Communication", "Write to 1,000 different chats", "unique_chats"], ["photo_god", "media", "", "mythic", 10000, "", "Бог фотографии", "Отправьте 10,000 фото", "God of Photography", "Send 10,000 photos", "photos_sent"], ["video_god", "media", "", "mythic", 5000, "", "Бог видео", "Отправьте 5,000 видео", "God of Video", "Send 5,000 videos", "videos_sent"], ["voice_god", "media", "", "mythic", 10000, "", "Бог голоса", "Отправьте 10,000 голосовых", "God of Voice", "Send 10,000 voice messages", "voice_sent"], ["sticker_overlord", "media", "", "mythic", 50000, "", "Властелин стикеров", "Отправьте 50,000 стикеров", "Sticker Overlord", "Send 50,000 stickers", "stickers_sent"], ["gif_god", "media", "", "mythic", 10000, "", "Бог GIF", "Отправьте 10,000 GIF", "God of GIFs", "Send 10,000 GIFs", "gifs_sent"], ["file_god", "media", "", "mythic", 10000, "", "Бог файлов", "Отправьте 10,000 файлов", "File God", "Send 10,000 files", "files_sent"], ["audio_god", "media", "", "mythic", 2500, "", "Бог аудио", "Отправьте 2,500 аудио", "God of Audio", "Send 2,500 audio files", "audios_sent"], ["editor_legend", "messages", "", "legendary", 2500, "", "Легендарный редактор", "Отредактируйте 2,500 сообщений", "Editor Legend", "Edit 2,500 messages", "edits_made"], ["reply_legend", "messages", "", "legendary", 5000, "", "Легендарный собеседник", "Ответьте на 5,000 сообщений", "Reply Legend", "Reply to 5,000 messages", "replies_made"], ["reaction_god", "reactions", "", "mythic", 10000, "", "Бог реакций", "Поставьте 10,000 реакций", "Reaction God", "Add 10,000 reactions", "reactions_made"], ["two_years", "veteran", "", "mythic", 730, "", "Два года", "Используйте Discord 730 дней", "Two Years", "Use Discord for 730 days", "days_active"], ["three_years", "veteran", "", "mythic", 1095, "", "Три года", "Используйте Discord 1,095 дней", "Three Years", "Use Discord for 1,095 days", "days_active"], ["fire_streak_500", "streaks", "", "mythic", 500, "", "Метеор", "Держите огонёк 500 дней", "Meteor", "Keep a streak for 500 days", "_fire_streak"], ["fire_streak_1000", "streaks", "", "mythic", 1000, "", "Галактика", "Держите огонёк 1,000 дней", "Galaxy", "Keep a streak for 1,000 days", "_fire_streak"], ["multi_streaks_15", "streaks", "", "legendary", 15, "", "Огненный император", "Имейте 15 активных огоньков", "Fire Emperor", "Have 15 active streaks", "_active_streaks"], ["multi_streaks_25", "streaks", "", "mythic", 25, "", "Звёздный император", "Имейте 25 активных огоньков", "Star Emperor", "Have 25 active streaks", "_active_streaks"], ["lightspeed", "messages", "", "mythic", 1, "", "Скорость света", "Отправьте 50 сообщений за минуту", "Lightspeed", "Send 50 messages in a minute", ""], ["russian_christmas", "time", "", "epic", 1, "", "Православное Рождество", "Отправьте сообщение 7 января", "Orthodox Christmas", "Send a message on January 7th", ""], ["cosmonauts_day", "time", "", "epic", 1, "", "День космонавтики", "Отправьте сообщение 12 апреля", "Cosmonautics Day", "Send a message on April 12th", ""], ["pi_day", "time", "", "epic", 1, "", "День числа Пи", "Отправьте сообщение 14 марта", "Pi Day", "Send a message on March 14th", ""], ["programmers_day", "time", "", "epic", 1, "", "День программиста", "Отправьте сообщение 13 сентября", "Programmers' Day", "Send a message on September 13th", ""], ["friendship_day", "time", "", "epic", 1, "", "День дружбы", "Отправьте сообщение 30 июля", "Friendship Day", "Send a message on July 30th", ""], ["triple_threes", "time", "", "rare", 1, "", "Три тройки", "Отправьте сообщение в 3:33", "Triple Threes", "Send a message at 3:33", ""], ["lucky_777", "time", "", "rare", 1, "", "Джекпот", "Отправьте сообщение в 7:07", "Jackpot", "Send a message at 7:07", ""], ["thirteen_thirteen", "time", "", "rare", 1, "", "Чёртова дюжина", "Отправьте сообщение в 13:13", "Devil's Dozen", "Send a message at 13:13", ""], ["twenty_three", "time", "", "rare", 1, "", "Перед сном", "Отправьте сообщение в 23:23", "Before Sleep", "Send a message at 23:23", ""], ["three_am_club", "time", "", "epic", 1, "", "Клуб 3:00", "Отправьте сообщение ровно в 3:00", "3 AM Club", "Send a message exactly at 3:00", ""], ["triple_question", "special", "⁉", "rare", 1, "", "Очень-очень любопытный", "Используйте ??? в сообщении", "Extremely Curious", "Use ??? in a message", ""], ["secret_terminator", "secret", "", "secret", 1, "S", "Я вернусь", "Цитата робота из будущего", "I'll Be Back", "Quote from a future robot", ""], ["secret_force", "secret", "", "secret", 1, "S", "Сила с тобой", "Цитата далёкой галактики", "May The Force", "Far far away quote", ""], ["secret_wakanda", "secret", "", "secret", 1, "S", "Ваканда навсегда", "Цитата супергероя", "Wakanda Forever", "Superhero quote", ""], ["secret_winter_is_coming", "secret", "", "secret", 1, "S", "Зима близко", "Цитата с престолов", "Winter Is Coming", "Throne quote", ""], ["secret_bazinga", "secret", "", "secret", 1, "S", "Базинга", "Любимое слово физика", "Bazinga", "Physicist's favorite", ""], ["secret_gandalf", "secret", "", "secret", 1, "S", "Ты не пройдёшь", "Цитата мага", "You Shall Not Pass", "Wizard quote", ""], ["secret_inception", "secret", "", "secret", 1, "S", "Глубже", "Цитата из сна", "Inception", "Dream quote", ""], ["secret_chicken_dinner", "secret", "", "secret", 1, "S", "Победный ужин", "Цитата королевской битвы", "Chicken Dinner", "Battle royale quote", ""], ["secret_meow", "secret", "", "secret", 1, "S", "Мяу", "Привет от кота", "Meow", "Cat says hi", ""], ["secret_woof", "secret", "", "secret", 1, "S", "Гав", "Привет от пса", "Woof", "Dog says hi", ""], ["secret_phi", "secret", "", "secret", 1, "S", "Золотое сечение", "Магическое число 1.618", "Golden Ratio", "The magic 1.618", ""], ["secret_e_const", "secret", "", "secret", 1, "S", "Число Эйлера", "Константа e", "Euler's Number", "Constant e", ""], ["secret_binary", "secret", "", "secret", 1, "S", "Двоичный код", "Сообщение из 0 и 1", "Binary Code", "Message of 0s and 1s", ""], ["secret_hex", "secret", "", "secret", 1, "S", "Hex-код", "Шестнадцатеричное сообщение", "Hex Code", "Hexadecimal message", ""], ["secret_morse", "secret", "", "secret", 1, "S", "Морзянка", "Точки, тире и пробелы", "Morse Code", "Dots, dashes and spaces", ""], ["new_years_eve", "time", "", "epic", 1, "", "Канун Нового Года", "Отправьте сообщение 31 декабря", "New Years Eve", "Send a message on December 31st", ""], ["leap_day", "time", "", "legendary", 1, "", "Високосный день", "Отправьте сообщение 29 февраля", "Leap Day", "Send a message on February 29th", ""], ["summer_solstice", "time", "", "epic", 1, "", "Летнее солнцестояние", "Отправьте сообщение 21 июня", "Summer Solstice", "Send a message on June 21st", ""], ["winter_solstice", "time", "", "epic", 1, "", "Зимнее солнцестояние", "Отправьте сообщение 21 декабря", "Winter Solstice", "Send a message on December 21st", ""], ["earth_day", "time", "", "epic", 1, "", "День Земли", "Отправьте сообщение 22 апреля", "Earth Day", "Send a message on April 22nd", ""], ["friday_13", "time", "", "legendary", 1, "", "Пятница 13-е", "Отправьте сообщение в пятницу 13-го", "Friday the 13th", "Send a message on Friday the 13th", ""], ["high_five", "time", "", "rare", 1, "", "Дай пять", "Отправьте сообщение в 5:55", "High Five", "Send a message at 5:55", ""], ["nine_nine", "time", "9⃣", "rare", 1, "", "Девяносто девять", "Отправьте сообщение в 9:09", "Nine Nine", "Send a message at 9:09", ""], ["interrobang", "special", "⁉", "rare", 1, "", "Интерробанг", "Используйте ?! или !? в сообщении", "Interrobang", "Use ?! or !? in a message", ""], ["lots_of_dots", "special", "⋯", "common", 1, "", "Многоточие", "Закончите сообщение на ...", "Trailing Off", "End a message with ...", ""], ["sequence_numbers", "special", "", "uncommon", 1, "", "Последовательность", "Отправьте 5+ цифр подряд по порядку", "Sequence", "Send 5+ consecutive digits in order", ""], ["triple_emoji_combo", "special", "", "uncommon", 1, "", "Тройное комбо", "Повторите эмодзи 3+ раз подряд", "Triple Combo", "Repeat an emoji 3+ times in a row", ""], ["emoticon_only", "special", "", "common", 1, "", "Смайлик", "Отправьте только смайлик типа :) или ^_^", "Emoticon", "Send a single emoticon like :) or ^_^", ""], ["same_word_3x", "special", "", "uncommon", 1, "", "Заело", "Повторите одно слово 3+ раз", "Stuck Record", "Repeat the same word 3+ times", ""], ["mega_collector", "collector", "", "epic", 1, "", "Мега-коллекционер", "Отправьте 100+ каждого типа медиа", "Mega Collector", "Send 100+ of every media type", ""], ["chat_emperor", "explorer", "", "legendary", 1, "", "Император чатов", "Напишите в 50+ ЛС, групп, каналов и ботов", "Chat Emperor", "Write to 50+ DMs, groups, channels and bots", ""], ["secret_father", "secret", "", "secret", 1, "S", "Я твой отец", "Шокирующее откровение", "I Am Your Father", "Shocking revelation", ""], ["secret_shut_up_money", "secret", "", "secret", 1, "S", "Заткнись и возьми мои деньги", "Цитата покупателя", "Take My Money", "Buyer quote", ""], ["secret_great_power", "secret", "", "secret", 1, "S", "С большой силой", "Цитата паука", "Great Power", "Spider quote", ""], ["secret_elementary", "secret", "", "secret", 1, "S", "Элементарно", "Цитата детектива", "Elementary", "Detective quote", ""], ["secret_to_be", "secret", "", "secret", 1, "S", "Быть или не быть", "Шекспир", "To Be Or Not To Be", "Shakespeare", ""], ["secret_houston", "secret", "", "secret", 1, "S", "Хьюстон, у нас проблема", "Цитата астронавта", "Houston", "Astronaut quote", ""], ["secret_poehali", "secret", "", "secret", 1, "S", "Поехали!", "Цитата Гагарина", "Poyekhali", "Gagarin quote", ""], ["secret_precious", "secret", "", "secret", 1, "S", "Моя прелесть", "Цитата Голлума", "My Precious", "Gollum quote", ""], ["first_poll", "interactive", "", "common", 1, "", "Опросник", "Создайте первый опрос", "First Poll", "Create your first poll", "polls_created"], ["pollster", "interactive", "", "uncommon", 10, "", "Социолог", "Создайте 10 опросов", "Pollster", "Create 10 polls", "polls_created"], ["poll_master", "interactive", "", "rare", 50, "", "Мастер опросов", "Создайте 50 опросов", "Poll Master", "Create 50 polls", "polls_created"], ["referendum", "interactive", "", "epic", 200, "", "Референдум", "Создайте 200 опросов", "Referendum", "Create 200 polls", "polls_created"], ["first_spoiler", "interactive", "", "common", 1, "", "Спойлерист", "Отправьте медиа со спойлером", "Spoilerist", "Send media with spoiler", "spoilers_sent"], ["spoiler_addict", "interactive", "", "rare", 100, "", "Любитель тайн", "Отправьте 100 спойлеров", "Mystery Lover", "Send 100 spoilers", "spoilers_sent"], ["first_dice", "luck", "", "common", 1, "", "Игрок", "Бросьте кубик", "Roller", "Roll a dice", "dice_rolled"], ["dice_addict", "luck", "", "uncommon", 50, "", "Зависимый от удачи", "Бросьте 50 кубиков", "Luck Addict", "Roll 50 dice", "dice_rolled"], ["dice_legend", "luck", "", "rare", 250, "", "Легенда удачи", "Бросьте 250 кубиков", "Luck Legend", "Roll 250 dice", "dice_rolled"], ["lucky_six", "luck", "", "rare", 1, "", "Шестёрка!", "Выбросите 6 на кубике", "Lucky Six", "Roll a 6 on dice", ""], ["dart_bullseye", "luck", "", "rare", 1, "", "Яблочко", "Попадите точно в центр на дартсе", "Bullseye", "Hit the bullseye on darts", ""], ["bowling_strike", "luck", "", "rare", 1, "", "Страйк", "Сделайте страйк в боулинге", "Strike", "Roll a strike in bowling", ""], ["basketball_score", "luck", "", "rare", 1, "", "Точный бросок", "Забейте мяч в баскетболе", "Slam Dunk", "Score in basketball", ""], ["football_goal", "luck", "", "rare", 1, "", "Гол!", "Забейте гол в футболе", "Goal!", "Score in football", ""], ["slot_jackpot", "luck", "", "mythic", 1, "", "ДЖЕКПОТ 777", "Выбейте 777 на слот-машине", "JACKPOT 777", "Hit 777 on the slot machine", ""], ["genz_rizz", "special", "", "rare", 1, "S", "Rizz Господа", "Отправил сообщение с «rizz»", "Rizz God", "Sent a message containing «rizz»", ""], ["genz_slay", "special", "", "common", 1, "S", "Слей", "Отправил сообщение с «slay»", "Slay", "Sent a message containing «slay»", ""], ["genz_bussin", "special", "", "common", 1, "S", "Буссин", "Отправил сообщение с «bussin»", "Bussin", "Sent a message containing «bussin»", ""], ["genz_no_cap", "special", "", "common", 1, "S", "Без Кэпа", "Отправил сообщение с «no cap» или «nocap»", "No Cap", "Sent a message containing «no cap» or «nocap»", ""], ["genz_lowkey", "special", "", "common", 1, "S", "Лоукей", "Отправил сообщение с «lowkey»", "Lowkey", "Sent a message containing «lowkey»", ""], ["genz_highkey", "special", "", "common", 1, "S", "Хайкей", "Отправил сообщение с «highkey»", "Highkey", "Sent a message containing «highkey»", ""], ["genz_based", "special", "", "rare", 1, "S", "Основан", "Отправил сообщение с «based»", "Based", "Sent a message containing «based»", ""], ["genz_cringe", "special", "", "common", 1, "S", "Кринж", "Отправил сообщение с «cringe»", "Cringe", "Sent a message containing «cringe»", ""], ["genz_mid", "special", "", "common", 1, "S", "Мид", "Отправил сообщение с «mid»", "Mid", "Sent a message containing «mid»", ""], ["genz_sheesh", "special", "", "common", 1, "S", "Шиш", "Отправил сообщение с «sheesh»", "Sheesh", "Sent a message containing «sheesh»", ""], ["genz_yeet", "special", "", "common", 1, "S", "Йит", "Отправил сообщение с «yeet»", "Yeet", "Sent a message containing «yeet»", ""], ["genz_vibe", "special", "", "common", 1, "S", "Вайб", "Отправил сообщение с «vibes» или «vibe check»", "Vibe Check", "Sent a message containing «vibes» or «vibe check»", ""], ["genz_rent_free", "special", "", "rare", 1, "S", "Живёт В Голове", "Отправил сообщение с «rent free»", "Living Rent Free", "Sent a message containing «rent free»", ""], ["genz_understood", "special", "", "rare", 1, "S", "Понял Задание", "Отправил «understood the assignment»", "Understood the Assignment", "Sent «understood the assignment»", ""], ["genz_main_char", "special", "", "rare", 1, "S", "Главный Персонаж", "Отправил «main character» или «main character energy»", "Main Character", "Sent «main character» or «main character energy»", ""], ["genz_era", "special", "", "common", 1, "S", "Эра", "Отправил сообщение с «era» (напр. «villain era»)", "Era", "Sent a message with «era» (e.g. «villain era»)", ""], ["genz_delulu", "special", "", "rare", 1, "S", "Делюлу", "Отправил сообщение с «delulu»", "Delulu", "Sent a message containing «delulu»", ""], ["genz_salty", "special", "", "common", 1, "S", "Солёный", "Отправил сообщение с «salty»", "Salty", "Sent a message containing «salty»", ""], ["genz_ghosted", "special", "", "common", 1, "S", "Гостед", "Отправил сообщение с «ghosted»", "Ghosted", "Sent a message containing «ghosted»", ""], ["genz_glow_up", "special", "", "rare", 1, "S", "Трансформация", "Отправил сообщение с «glow up»", "Glow Up", "Sent a message containing «glow up»", ""], ["genz_flex", "special", "", "common", 1, "S", "Флекс", "Отправил сообщение с «flex»", "Flex", "Sent a message containing «flex»", ""], ["genz_goat", "special", "", "rare", 1, "S", "GOAT", "Отправил сообщение с «goat» или «GOAT»", "GOAT", "Sent a message containing «goat» or «GOAT»", ""], ["genz_caught_4k", "special", "", "rare", 1, "S", "Пойман В 4К", "Отправил «caught in 4k»", "Caught in 4K", "Sent «caught in 4k»", ""], ["genz_brainrot", "special", "", "rare", 1, "S", "Ротация Мозга", "Отправил сообщение с «brainrot» или «brain rot»", "Brain Rot", "Sent a message containing «brainrot» or «brain rot»", ""], ["genz_ick", "special", "", "common", 1, "S", "Ик", "Отправил сообщение с «the ick» или «ick»", "The Ick", "Sent a message containing «the ick» or «ick»", ""], ["genz_simp", "special", "", "common", 1, "S", "Симп", "Отправил сообщение с «simp»", "Simp", "Sent a message containing «simp»", ""], ["genz_pick_me", "special", "", "common", 1, "S", "Выбери Меня", "Отправил «pick me» или «pickme»", "Pick Me", "Sent «pick me» or «pickme»", ""], ["genz_press_f", "special", "", "common", 1, "S", "Нажми F", "Отправил «press f» или «f in chat»", "Press F", "Sent «press f» or «f in chat»", ""], ["genz_gg_ez", "special", "", "common", 1, "S", "GG EZ", "Отправил «gg ez» или «gg easy»", "GG EZ", "Sent «gg ez» or «gg easy»", ""], ["genz_plot_armor", "special", "", "rare", 1, "S", "Броня Сюжета", "Отправил «plot armor»", "Plot Armor", "Sent «plot armor»", ""], ["genz_lore", "special", "", "common", 1, "S", "Лор", "Отправил сообщение с «lore» или «lore drop»", "Lore", "Sent a message containing «lore» or «lore drop»", ""], ["genz_shitpost", "special", "", "common", 1, "S", "Шитпост", "Отправил «shitpost» или «shitposting»", "Shitpost", "Sent «shitpost» or «shitposting»", ""], ["genz_cursed", "special", "", "rare", 1, "S", "Проклятый", "Отправил сообщение с «cursed»", "Cursed", "Sent a message containing «cursed»", ""], ["genz_blessed", "special", "", "common", 1, "S", "Благословенный", "Отправил сообщение с «blessed»", "Blessed", "Sent a message containing «blessed»", ""], ["genz_galaxy_brain", "special", "", "rare", 1, "S", "Галактический Мозг", "Отправил «galaxy brain»", "Galaxy Brain", "Sent «galaxy brain»", ""], ["genz_touch_grass", "special", "", "rare", 1, "S", "Трогай Траву", "Отправил «touch grass» или «go outside»", "Touch Grass", "Sent «touch grass» or «go outside»", ""], ["genz_ratio", "special", "", "rare", 1, "S", "Рейшо", "Отправил «ratio» или «L + ratio»", "Ratio'd", "Sent «ratio» or «L + ratio»", ""], ["genz_clout", "special", "", "common", 1, "S", "Клаут", "Отправил сообщение с «clout»", "Clout", "Sent a message containing «clout»", ""], ["genz_cope", "special", "", "common", 1, "S", "Коп", "Отправил «cope», «coping», или «skill issue»", "Cope", "Sent «cope», «coping», or «skill issue»", ""], ["genz_seethe", "special", "", "common", 1, "S", "Сейс", "Отправил сообщение с «seethe»", "Seethe", "Sent a message containing «seethe»", ""], ["genz_mald", "special", "", "common", 1, "S", "Малд", "Отправил сообщение с «mald» или «malding»", "Malding", "Sent a message containing «mald» or «malding»", ""], ["genz_sigma", "special", "", "rare", 1, "S", "Сигма", "Отправил «sigma» или «sigma male»", "Sigma", "Sent «sigma» or «sigma male»", ""], ["genz_grindset", "special", "", "rare", 1, "S", "Гриндсет", "Отправил «grindset», «sigma grindset» или «hustle»", "Grindset", "Sent «grindset», «sigma grindset», or «hustle»", ""], ["genz_chronically_online", "special", "", "rare", 1, "S", "Хронически Онлайн", "Отправил «chronically online»", "Chronically Online", "Sent «chronically online»", ""], ["genz_doomscroll", "special", "", "common", 1, "S", "Думскролл", "Отправил «doomscroll» или «doom scrolling»", "Doomscroll", "Sent «doomscroll» or «doom scrolling»", ""], ["genz_parasocial", "special", "", "rare", 1, "S", "Парасоциальный", "Отправил «parasocial»", "Parasocial", "Sent a message containing «parasocial»", ""], ["genz_clip_it", "special", "", "common", 1, "S", "Клипани", "Отправил «clip it» или «clip that»", "Clip It", "Sent «clip it» or «clip that»", ""], ["genz_no_bitches", "special", "", "rare", 1, "S", "Нет Битчей", "Отправил «no bitches» или «do you have any bitches»", "No Bitches", "Sent «no bitches» or «do you have any bitches»", ""], ["genz_didnt_ask", "special", "", "common", 1, "S", "Не Спрашивал", "Отправил «didn't ask» или «nobody asked»", "Didn't Ask", "Sent «didn't ask» or «nobody asked»", ""], ["genz_npc", "special", "", "rare", 1, "S", "NPC", "Отправил сообщение с «npc» или «npc behavior»", "NPC", "Sent a message containing «npc» or «npc behavior»", ""], ["genz_fr_fr", "special", "", "common", 1, "S", "Факт Факт", "Отправил «fr fr», «frfr», или «for real»", "Fr Fr", "Sent «fr fr», «frfr», or «for real»", ""], ["genz_hit_diff", "special", "", "rare", 1, "S", "Бьёт Иначе", "Отправил «hit different» или «hits different»", "Hits Different", "Sent «hit different» or «hits different»", ""], ["genz_deadass", "special", "", "common", 1, "S", "Дедасс", "Отправил «deadass»", "Deadass", "Sent a message containing «deadass»", ""], ["genz_big_brain", "special", "", "rare", 1, "S", "Большой Мозг", "Отправил «big brain» или «5head»", "Big Brain", "Sent «big brain» or «5head»", ""], ["tiktok_pov", "special", "", "common", 1, "S", "PoV", "Отправил «pov:» или «point of view»", "PoV", "Sent «pov:» or «point of view»", ""], ["tiktok_fyp", "special", "", "common", 1, "S", "FYP", "Отправил «fyp», «for you page» или «for you»", "FYP", "Sent «fyp», «for you page», or «for you»", ""], ["tiktok_duet", "special", "", "common", 1, "S", "Дуэт", "Отправил «duet» в контексте тиктока", "TikTok Duet", "Sent «duet» in a TikTok context", ""], ["tiktok_stitched", "special", "", "common", 1, "S", "Стич", "Отправил «stitch this» или «stitched»", "Stitched", "Sent «stitch this» or «stitched»", ""], ["tiktok_live", "special", "", "common", 1, "S", "Тикток Лайв", "Отправил «go live» или «tiktok live»", "TikTok Live", "Sent «go live» or «tiktok live»", ""], ["tiktok_algo", "special", "", "rare", 1, "S", "Алгоритм", "Отправил «the algorithm» или «feed the algorithm»", "The Algorithm", "Sent «the algorithm» or «feed the algorithm»", ""], ["tiktok_sounds", "special", "", "common", 1, "S", "Использую Звук", "Отправил «use this sound» или «using this sound»", "Use This Sound", "Sent «use this sound» or «using this sound»", ""], ["tiktok_greenscreen", "special", "", "common", 1, "S", "Зелёный Экран", "Отправил «green screen»", "Green Screen", "Sent «green screen»", ""], ["tiktok_ratio_comment", "special", "", "rare", 1, "S", "Комментарий Рейшо", "Отправил «ratio» в ответ на чужое сообщение", "Ratio Comment", "Sent «ratio» as a reply", ""], ["tiktok_foryou", "special", "", "common", 1, "S", "Рекомендации", "Отправил «for you» или «landed on your fyp»", "For You", "Sent «for you» or «landed on your fyp»", ""], ["tiktok_tok", "special", "", "common", 1, "S", "ТикТокер", "Отправил «tiktok» в сообщении", "TikToker", "Sent a message containing «tiktok»", ""], ["insta_reel", "special", "", "common", 1, "S", "Рилс", "Отправил «reel» или «reels»", "Reels", "Sent a message containing «reel» or «reels»", ""], ["insta_story", "special", "", "common", 1, "S", "Сториз", "Отправил «story» или «insta story»", "Story Time", "Sent «story» or «insta story»", ""], ["insta_close_friends", "special", "", "rare", 1, "S", "Близкие Друзья", "Отправил «close friends» или «cf»", "Close Friends", "Sent «close friends» or «cf»", ""], ["insta_collab", "special", "", "common", 1, "S", "Коллаб", "Отправил «collab» или «collaboration»", "Collab", "Sent «collab» or «collaboration»", ""], ["insta_dm", "special", "", "common", 1, "S", "DM Меня", "Отправил «dm me», «slide into dms», или «check your dms»", "DM Me", "Sent «dm me», «slide into dms», or «check your dms»", ""], ["insta_aesthetic", "special", "", "rare", 1, "S", "Эстетика", "Отправил «aesthetic» или «core aesthetic»", "Aesthetic", "Sent «aesthetic» or «core aesthetic»", ""], ["insta_follow_back", "special", "", "common", 1, "S", "Взаимная Подписка", "Отправил «follow back» или «f4f»", "Follow Back", "Sent «follow back» or «f4f»", ""], ["insta_explore", "special", "", "common", 1, "S", "Страница Обзора", "Отправил «explore page» или «on the explore»", "Explore Page", "Sent «explore page» or «on the explore»", ""], ["twitter_ratio_l", "special", "", "rare", 1, "S", "L + Рейшо", "Отправил «L +» или «L + ratio»", "L + Ratio", "Sent «L +» or «L + ratio»", ""], ["twitter_w", "special", "", "common", 1, "S", "W", "Отправил «W» или «taking the W»", "W", "Sent «W» or «taking the W»", ""], ["twitter_l", "special", "", "common", 1, "S", "L", "Отправил «took an L» или «big L»", "L", "Sent «took an L» or «big L»", ""], ["twitter_thread", "special", "", "rare", 1, "S", "Тред", "Отправил «thread» или «a thread»", "Thread", "Sent «thread» or «a thread»", ""], ["twitter_quote_tweet", "special", "", "common", 1, "S", "Цитата", "Отправил «quote tweet» или «quote this»", "Quote Tweet", "Sent «quote tweet» or «quote this»", ""], ["alpha_skibidi", "special", "", "rare", 1, "S", "Скибиди", "Отправил «skibidi»", "Skibidi", "Sent a message containing «skibidi»", ""], ["alpha_sigma_ohio", "special", "", "rare", 1, "S", "Огайо", "Отправил «ohio» или «only in ohio»", "Ohio", "Sent «ohio» or «only in ohio»", ""], ["alpha_fanum_tax", "special", "", "rare", 1, "S", "Фанум Такс", "Отправил «fanum tax»", "Fanum Tax", "Sent «fanum tax»", ""], ["alpha_rizz_w", "special", "", "rare", 1, "S", "Безграничный Ризз", "Отправил «rizzler» или «unspoken rizz»", "Rizz W", "Sent «rizzler» or «unspoken rizz»", ""], ["alpha_hawk_tuah", "special", "", "legendary", 1, "S", "Хок Туа", "Отправил «hawk tuah»", "Hawk Tuah", "Sent «hawk tuah»", ""], ["alpha_gyatt", "special", "", "rare", 1, "S", "Гайат", "Отправил «gyatt» или «gyat»", "Gyatt", "Sent «gyatt» or «gyat»", ""], ["alpha_mewing", "special", "", "common", 1, "S", "Мьюинг", "Отправил «mewing»", "Mewing", "Sent a message containing «mewing»", ""], ["alpha_looksmaxx", "special", "", "rare", 1, "S", "Луксмакс", "Отправил «looksmaxxing» или «looksmax»", "Looksmax", "Sent «looksmaxxing» or «looksmax»", ""], ["alpha_gooning", "special", "", "rare", 1, "S", "Гунинг", "Отправил «gooning»", "Gooning", "Sent a message containing «gooning»", ""], ["alpha_glaze", "special", "", "common", 1, "S", "Глейз", "Отправил «glazing» или «glaze»", "Glazing", "Sent «glazing» or «glaze»", ""], ["alpha_aura", "special", "", "rare", 1, "S", "Аура", "Отправил «aura» или «negative aura»", "Aura", "Sent «aura» or «negative aura»", ""], ["alpha_cooked", "special", "", "common", 1, "S", "Сгорел", "Отправил «cooked» или «you're cooked»", "Cooked", "Sent «cooked» or «you're cooked»", ""], ["alpha_bomboclat", "special", "", "rare", 1, "S", "Бомбоклат", "Отправил «bomboclat»", "Bomboclat", "Sent «bomboclat»", ""], ["alpha_what_da_dog", "special", "", "rare", 1, "S", "Что Делает Собака", "Отправил «what da dog doin»", "What Da Dog Doin", "Sent «what da dog doin»", ""], ["alpha_bro_cooked", "special", "", "common", 1, "S", "Бро Сгорел", "Отправил «bro is cooked» или «bro cooked»", "Bro Is Cooked", "Sent «bro is cooked» or «bro cooked»", ""], ["alpha_bro_told", "special", "", "common", 1, "S", "Бро Сказал", "Отправил «bro said», «bro told me» или «bro thought»", "Bro Told", "Sent «bro said», «bro told me», or «bro thought»", ""], ["alpha_ts_real", "special", "", "rare", 1, "S", "Это Реально", "Отправил «ts is real», «this is real»", "This Is Real", "Sent «ts is real» or «this is real»", ""], ["alpha_aint_real", "special", "", "rare", 1, "S", "Это Нереально", "Отправил «ain't real», «this ain't real»", "Ain't Real", "Sent «ain't real» or «this ain't real»", ""], ["alpha_nuh_uh", "special", "", "common", 1, "S", "Нет", "Отправил «nuh uh» или «nuh-uh»", "Nuh Uh", "Sent «nuh uh» or «nuh-uh»", ""], ["alpha_yuh", "special", "", "common", 1, "S", "Юх", "Отправил «yuh», «yuh yuh» или «yurrr»", "Yuh", "Sent «yuh», «yuh yuh», or «yurrr»", ""], ["alpha_its_giving", "special", "", "rare", 1, "S", "Это Даёт", "Отправил «it's giving» или «its giving»", "It's Giving", "Sent «it's giving» or «its giving»", ""], ["alpha_ate_no_left", "special", "", "rare", 1, "S", "Съел И Ничего", "Отправил «ate and left no crumbs»", "Ate, Left No Crumbs", "Sent «ate and left no crumbs»", ""], ["alpha_mother", "special", "", "rare", 1, "S", "Матушка", "Отправил «mother» (в мемном контексте)", "Mother", "Sent «mother» (in meme context)", ""], ["alpha_very_demure", "special", "", "rare", 1, "S", "Очень Скромно", "Отправил «very demure» или «very mindful»", "Very Demure", "Sent «very demure» or «very mindful»", ""], ["alpha_no_skips", "special", "", "common", 1, "S", "Без Скипов", "Отправил «no skips» или «banger»", "No Skips", "Sent «no skips» or «banger»", ""], ["alpha_sped_up", "special", "", "common", 1, "S", "Ускорено", "Отправил «sped up» или «slowed + reverb»", "Sped Up", "Sent «sped up» or «slowed + reverb»", ""], ["alpha_we_are_so_back", "special", "", "legendary", 1, "S", "Мы Вернулись", "Отправил «we are so back» или «we're so back»", "We Are SO Back", "Sent «we are so back» or «we're so back»", ""], ["alpha_its_over", "special", "", "rare", 1, "S", "Всё Кончено", "Отправил «it's over» или «its over»", "It's Over", "Sent «it's over» or «its over»", ""], ["alpha_real", "special", "", "common", 1, "S", "Реальный", "Отправил «real» или «realest»", "Real", "Sent «real» or «realest»", ""], ["alpha_cap", "special", "", "common", 1, "S", "Кэп", "Отправил «cap» или «capping»", "Cap", "Sent «cap» or «capping»", ""], ["alpha_mf", "special", "", "common", 1, "S", "МФ", "Отправил «mf» или «this mf»", "MF", "Sent «mf» or «this mf»", ""], ["alpha_buss", "special", "", "rare", 1, "S", "Басс", "Отправил «buss» или «bussin bussin»", "Buss", "Sent «buss» or «bussin bussin»", ""], ["alpha_pmo", "special", "", "common", 1, "S", "PMO", "Отправил «pmo» или «pisses me off»", "PMO", "Sent «pmo» or «pisses me off»", ""], ["alpha_type_beat", "special", "", "rare", 1, "S", "Тайп Бит", "Отправил «type beat» (напр. «lofi type beat»)", "Type Beat", "Sent «type beat» (e.g. «lofi type beat»)", ""], ["alpha_understood_assignment", "special", "", "legendary", 5, "S", "Мастер Задания", "Отправил «understood the assignment» 5 раз", "Assignment Master", "Sent «understood the assignment» 5 times", ""], ["meme_ngl", "special", "", "common", 1, "S", "НГЛ", "Отправил «ngl» или «not gonna lie»", "NGL", "Sent «ngl» or «not gonna lie»", ""], ["meme_tbh", "special", "", "common", 1, "S", "Честно", "Отправил «tbh» или «to be honest»", "TBH", "Sent «tbh» or «to be honest»", ""], ["meme_imo", "special", "", "common", 1, "S", "ПМО", "Отправил «imo» или «in my opinion»", "IMO", "Sent «imo» or «in my opinion»", ""], ["meme_istg", "special", "", "common", 1, "S", "Клянусь", "Отправил «istg» или «i swear to god»", "ISTG", "Sent «istg» or «i swear to god»", ""], ["meme_ong", "special", "", "common", 1, "S", "ОНГ", "Отправил «ong» или «on god»", "ONG", "Sent «ong» or «on god»", ""], ["meme_say_less", "special", "", "common", 1, "S", "Больше Не Надо", "Отправил «say less»", "Say Less", "Sent «say less»", ""], ["meme_it_do_be", "special", "", "common", 1, "S", "Ну Бывает", "Отправил «it do be like that»", "It Do Be", "Sent «it do be like that»", ""], ["meme_ong_fr", "special", "", "rare", 1, "S", "Ong Fr", "Отправил «ong fr» или «on god for real»", "Ong Fr", "Sent «ong fr» or «on god for real»", ""], ["meme_bestie", "special", "", "common", 1, "S", "Бести", "Отправил «bestie»", "Bestie", "Sent a message containing «bestie»", ""], ["meme_periodt", "special", "", "common", 1, "S", "Период", "Отправил «periodt» или «period»", "Periodt", "Sent «periodt» or «period.»", ""], ["meme_no_printer", "special", "", "rare", 1, "S", "Только Факты", "Отправил «facts no printer»", "Facts No Printer", "Sent «facts no printer»", ""], ["meme_sending", "special", "", "common", 1, "S", "В Потоке", "Отправил «i'm sending» или «sending me»", "Sending Me", "Sent «i'm sending» or «sending me»", ""], ["meme_im_weak", "special", "", "common", 1, "S", "Без Сил", "Отправил «i'm weak» или «im dead»", "I'm Weak", "Sent «i'm weak» or «im dead»", ""], ["meme_dead", "special", "", "common", 1, "S", "Мёртвый", "Отправил «im dead» или «i'm dying»", "I'm Dead", "Sent «im dead» or «i'm dying»", ""], ["meme_whats_the_vibe", "special", "", "common", 1, "S", "Какой Вайб", "Отправил «what's the vibe» или «what's the energy»", "What's the Vibe", "Sent «what's the vibe» or «what's the energy»", ""], ["meme_hold_on", "special", "", "common", 1, "S", "Стоп", "Отправил «hold on step bro» или «hold on»", "Hold On", "Sent «hold on step» or «hold on»", ""], ["meme_not_me", "special", "", "common", 1, "S", "Не Я", "Отправил «not me» или «not me doing»", "Not Me", "Sent «not me» or «not me doing»", ""], ["meme_core", "special", "", "rare", 1, "S", "Кор", "Отправил «core» как часть эстетики (напр. «cottagecore»)", "Core", "Sent «core» as part of an aesthetic (e.g. «cottagecore»)", ""], ["meme_ate", "special", "", "common", 1, "S", "Съел", "Отправил «ate» или «she ate»", "Ate", "Sent «ate» or «she ate»", ""], ["meme_snatched", "special", "", "rare", 1, "S", "Снатчед", "Отправил «snatched» или «outfit snatched»", "Snatched", "Sent «snatched» or «outfit snatched»", ""], ["meme_slaps", "special", "", "common", 1, "S", "Слэпс", "Отправил «this slaps» или «song slaps»", "Slaps", "Sent «this slaps» or «song slaps»", ""], ["meme_no_thoughts", "special", "", "rare", 1, "S", "Пустая Голова", "Отправил «no thoughts head empty»", "No Thoughts", "Sent «no thoughts head empty»", ""], ["meme_rotting", "special", "", "rare", 1, "S", "Гнию", "Отправил «rotting in bed» или «bed rotting»", "Bed Rotting", "Sent «rotting in bed» or «bed rotting»", ""], ["meme_villain_arc", "special", "", "legendary", 1, "S", "Вилейн Эра", "Отправил «villain arc» или «entering villain arc»", "Villain Arc", "Sent «villain arc» or «entering villain arc»", ""], ["meme_main_char_energy", "special", "", "rare", 1, "S", "Энергия Главного", "Отправил «main character energy»", "Main Character Energy", "Sent «main character energy»", ""], ["meme_pookie", "special", "", "common", 1, "S", "Пуки", "Отправил «pookie»", "Pookie", "Sent a message containing «pookie»", ""], ["meme_beige_flag", "special", "", "rare", 1, "S", "Бежевый Флаг", "Отправил «beige flag»", "Beige Flag", "Sent «beige flag»", ""], ["meme_red_flag", "special", "", "common", 1, "S", "Красный Флаг", "Отправил «red flag» или «»", "Red Flag", "Sent «red flag» or «»", ""], ["meme_green_flag", "special", "", "common", 1, "S", "Зелёный Флаг", "Отправил «green flag»", "Green Flag", "Sent «green flag»", ""], ["meme_ratioed", "special", "", "rare", 1, "S", "Рейшоед", "Отправил «ratioed»", "Ratioed", "Sent «ratioed»", ""], ["meme_touch_grass_100", "special", "", "legendary", 10, "S", "Садовник", "Написал «touch grass» 10 раз. Выйди на улицу!", "Grass Toucher", "Sent «touch grass» 10 times. Go outside!", ""], ["meme_yap", "special", "", "common", 1, "S", "Яп", "Отправил «yapping» или «yap session»", "Yap", "Sent «yapping» or «yap session»", ""], ["meme_understood_x10", "special", "", "legendary", 10, "S", "Суперисполнитель", "Отправил «understood the assignment» 10 раз", "Assignment God", "Sent «understood the assignment» 10 times", ""], ["meme_lowk_unhinged", "special", "", "rare", 1, "S", "Немного Неуравновешен", "Отправил «lowkey unhinged» или «unhinged»", "Lowkey Unhinged", "Sent «lowkey unhinged» or «unhinged»", ""], ["meme_ate_that", "special", "", "rare", 1, "S", "Съел Это", "Отправил «ate that» или «absolutely ate»", "Ate That", "Sent «ate that» or «absolutely ate»", ""], ["meme_understood_assignment_2", "special", "", "legendary", 3, "S", "Троекратный Исполнитель", "Отправил «understood the assignment» 3 раза", "Triple Assignment", "Sent «understood the assignment» 3 times", ""], ["meme_zero_rizz", "special", "", "rare", 1, "S", "Ноль Ризза", "Отправил «zero rizz» или «negative rizz»", "Zero Rizz", "Sent «zero rizz» or «negative rizz»", ""], ["meme_W_rizz", "special", "", "legendary", 1, "S", "W Ризз", "Отправил «W rizz» или «ultimate rizz»", "W Rizz", "Sent «W rizz» or «ultimate rizz»", ""], ["meme_banger", "special", "", "common", 1, "S", "Банер", "Отправил «banger» или «absolute banger»", "Banger", "Sent «banger» or «absolute banger»", ""], ["meme_mid_song", "special", "", "common", 1, "S", "Мид Трек", "Отправил «mid song» или «that song is mid»", "Mid Song", "Sent «mid song» or «that song is mid»", ""], ["meme_frfr_ong", "special", "", "rare", 1, "S", "Fr Fr Ong", "Отправил «frfr ong» или «for real on god»", "Frfr Ong", "Sent «frfr ong» or «for real on god»", ""], ["meme_looksmaxx_grind", "special", "", "legendary", 1, "S", "Луксмакс Гринд", "Отправил «looksmaxxing grind» или «maxxing»", "Looksmaxx Grind", "Sent «looksmaxxing grind» or «maxxing»", ""], ["alpha_rizz_up", "special", "", "rare", 1, "S", "Ризз Ап", "Отправил «rizz up» или «rizzed her up»", "Rizz Up", "Sent «rizz up» or «rizzed her up»", ""], ["alpha_ohio_only", "special", "", "legendary", 3, "S", "Только В Огайо", "Отправил «only in ohio» 3 раза", "Only In Ohio", "Sent «only in ohio» 3 times", ""]];
 
   var ACHIEVEMENTS = [];
   var ACH_BY_ID = {};
@@ -157,7 +149,6 @@
     }
   }
 
-  // ── Protected Storage Initialization (Preserves all existing user achievements & stats)
   if (storage.unlocked === undefined) storage.unlocked = {};
   if (storage.soundEnabled === undefined) storage.soundEnabled = true;
   if (storage.toastsEnabled === undefined) storage.toastsEnabled = true;
@@ -215,13 +206,12 @@
     return isRussian() ? ach.desc_ru : ach.desc_en;
   }
 
-  // ── Toast Notification (Top toast matching Vendetta UI) ───────────────────
   function showUnlockToast(ach) {
     if (storage.toastsEnabled === false) return;
     try {
       var rInfo = RARITY_INFO[ach.rarity] || RARITY_INFO.common;
       var name = getAchName(ach);
-      var title = isRussian() ? "🏆 Достижение разблокировано!" : "🏆 Achievement Unlocked!";
+      var title = isRussian() ? "Достижение разблокировано!" : "Achievement Unlocked!";
       var msg = title + "\n" + ach.icon + " " + name + " " + rInfo.emoji;
 
       var icon = getAssetIDByName("ShieldUserIcon") ||
@@ -234,12 +224,11 @@
     } catch (e) {}
   }
 
-  // ── Bio Progress Sync with Bottom Trimming & Safe Restore ──────────────────
   var bioDebounceTimer = null;
 
   function stripAchievementsLine(bio) {
     if (!bio || typeof bio !== "string") return "";
-    return bio.replace(/(?:^|\r?\n)(?:🏆|\uD83C\uDFC6)\s*(?:Achievements|Достижения)[^\r\n]*/gi, "").trim();
+    return bio.replace(/(?:^|\r?\n)(?:|\uD83C\uDFC6)\s*(?:Achievements|Достижения)[^\r\n]*/gi, "").trim();
   }
 
   function fetchUserBio(callback) {
@@ -247,7 +236,6 @@
       var currentUser = UserStore && UserStore.getCurrentUser && UserStore.getCurrentUser();
       var userId = currentUser && currentUser.id;
 
-      // 1. Try UserProfileStore
       if (UserProfileStore && UserProfileStore.getUserProfile && userId) {
         var profile = UserProfileStore.getUserProfile(userId);
         if (profile && typeof profile.bio === "string" && profile.bio.length > 0) {
@@ -256,13 +244,11 @@
         }
       }
 
-      // 2. Try UserStore currentUser.bio
       if (currentUser && typeof currentUser.bio === "string" && currentUser.bio.length > 0) {
         callback(currentUser.bio);
         return;
       }
 
-      // 3. Try REST API GET /users/@me/profile
       var token = TokenModule && TokenModule.getToken && TokenModule.getToken();
       if (!token) {
         callback(storage.savedBaseBio || "");
@@ -304,12 +290,10 @@
         var totalCount = ACHIEVEMENTS.length;
         var pct = Math.round((unlockedCount / totalCount) * 100);
 
-        var achLine = (isRussian() ? "🏆 Достижения: " : "🏆 Achievements: ") + unlockedCount + "/" + totalCount + " (" + pct + "%)";
+        var achLine = (isRussian() ? "Достижения: " : "Achievements: ") + unlockedCount + "/" + totalCount + " (" + pct + "%)";
 
-        // Clean any previous achievements line from bio
         var cleanBio = stripAchievementsLine(rawBio);
 
-        // Save original base bio if cleanBio is found and not yet saved or longer
         if (cleanBio) {
           if (!storage.savedBaseBio || cleanBio.length >= storage.savedBaseBio.length) {
             storage.savedBaseBio = cleanBio;
@@ -318,13 +302,12 @@
 
         var baseToUse = cleanBio || storage.savedBaseBio || "";
 
-        // Discord bio character limit is 190
         var newBio = "";
         if (baseToUse) {
-          var neededLen = achLine.length + 1; // +1 for newline '\n'
+          var neededLen = achLine.length + 1;
           var maxBaseLength = 190 - neededLen;
           if (baseToUse.length > maxBaseLength) {
-            // Cut required space from bottom
+
             var trimmedBase = baseToUse.slice(0, Math.max(0, maxBaseLength)).replace(/\s+$/, "");
             newBio = trimmedBase ? (trimmedBase + "\n" + achLine) : achLine;
           } else {
@@ -368,7 +351,7 @@
       var currentUser = UserStore && UserStore.getCurrentUser && UserStore.getCurrentUser();
 
       fetchUserBio(function (rawBio) {
-        // Restore untrimmed savedBaseBio if available, otherwise strip from rawBio
+
         var restoreBio = "";
         if (storage.savedBaseBio !== undefined && storage.savedBaseBio !== "") {
           restoreBio = storage.savedBaseBio;
@@ -412,7 +395,7 @@
 
   function showBioWarning(onConfirm, onCancel) {
     var isRu = isRussian();
-    var title = isRu ? "⚠️ Предупреждение: Синхронизация «О себе»" : "⚠️ Warning: Bio Synchronization";
+    var title = isRu ? "Предупреждение: Синхронизация «О себе»" : "Warning: Bio Synchronization";
     var message = isRu
       ? "Включение этой опции добавит прогресс ваших достижений новой строкой внизу вашего профиля («О себе»).\n\nЕсли места недостаточно (лимит 190 символов), необходимая часть текста будет обрезана снизу, чтобы поместился счётчик.\n\nВаш исходный профиль сохраняется и будет восстановлен при отключении опции.\n\nВключить синхронизацию?"
       : "Enabling this will append your achievement progress on a new line at the bottom of your Discord bio.\n\nIf there is not enough space (Discord limit: 190 chars), the required space will be cut from the bottom of your bio to fit the counter.\n\nYour original bio is saved and will be restored when turned off.\n\nAre you sure you want to enable bio sync?";
@@ -454,7 +437,6 @@
     onConfirm();
   }
 
-  // ── Unlocking Achievements ────────────────────────────────────────────────
   function tryUnlock(achId) {
     if (!achId) return;
     if (storage.unlocked && storage.unlocked[achId]) return;
@@ -490,7 +472,6 @@
     }
   }
 
-  // ── Helper Sets in Memory ─────────────────────────────────────────────────
   var recentMessageTimestamps = [];
   var seenSignatures = {};
 
@@ -499,7 +480,6 @@
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
 
-  // ── Detect GIFs (Tenor links, Giphy links, .gif/.gifv URLs, files, embeds) ─
   function detectGifs(content, attachments, embeds) {
     var text = (typeof content === "string") ? content : "";
     if (/(?:https?:\/\/)?(?:[a-zA-Z0-9-]+\.)?(?:tenor\.com|giphy\.com)\/\S+/i.test(text) ||
@@ -530,7 +510,6 @@
     return false;
   }
 
-  // ── Text Pattern Analysis ─────────────────────────────────────────────────
   function analyzeText(text, now) {
     if (!text || typeof text !== "string") return;
     var ts = text.trim();
@@ -548,7 +527,6 @@
 
     var tl = text.toLowerCase();
 
-    // Emoji pattern matching (includes standard emojis & Discord custom server emojis)
     var unicodeEmojis = text.match(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu) || [];
     var customEmojis  = text.match(/<a?:[a-zA-Z0-9_]+:\d+>/g) || [];
     var totalEmojis   = unicodeEmojis.length + customEmojis.length;
@@ -557,33 +535,27 @@
     if (totalEmojis >= 20) tryUnlock("emoji_master");
     if (totalEmojis >= 5 && nonEmojiText.length === 0) tryUnlock("emoji_only");
 
-    // All caps
     var lettersOnly = text.replace(/[^a-zA-Zа-яА-ЯёЁ]/g, "");
     if (lettersOnly.length >= 10 && lettersOnly === lettersOnly.toUpperCase()) {
       tryUnlock("caps_lock");
     }
 
-    // Numbers only
     if (ts.length >= 5 && /^\d+$/.test(ts)) {
       tryUnlock("numbers_only");
     }
 
-    // Links
     if (/https?:\/\/\S+/.test(text)) {
       tryUnlock("link_sharer");
     }
 
-    // Hashtags
     var hashtags = text.match(/#[a-zA-Z0-9_]+/g) || [];
     if (hashtags.length >= 3) tryUnlock("multi_hashtag");
     if (hashtags.length >= 1) tryUnlock("hashtag");
 
-    // Mentions (@user, <@123>, <@!123>, <@&123>)
     var mentions = text.match(/@[a-zA-Z0-9_]+|<@!?\d+>|<@&\d+>/g) || [];
     if (mentions.length >= 5) tryUnlock("multi_mention");
     if (mentions.length >= 1) tryUnlock("mention");
 
-    // Punctuation
     if (text.indexOf("???") !== -1) tryUnlock("triple_question");
     if (text.indexOf("??") !== -1)  tryUnlock("double_question");
     if (text.indexOf("?") !== -1)   tryUnlock("question");
@@ -591,7 +563,6 @@
     if (text.indexOf("?!") !== -1 || text.indexOf("!?") !== -1) tryUnlock("interrobang");
     if (ts.endsWith("...") || ts.endsWith("…")) tryUnlock("lots_of_dots");
 
-    // Formats & Ciphers
     if (ts.length >= 8 && /^[01\s]+$/.test(ts) && ts.indexOf("0") !== -1 && ts.indexOf("1") !== -1) {
       tryUnlock("secret_binary");
     }
@@ -602,7 +573,6 @@
       tryUnlock("secret_morse");
     }
 
-    // Sequences (12345 or 54321)
     var seqMatch = text.match(/\d{5,}/);
     if (seqMatch) {
       var ds = seqMatch[0];
@@ -615,18 +585,15 @@
       if (isAsc || isDesc) tryUnlock("sequence_numbers");
     }
 
-    // Repeated identical emojis
     if (/([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}])\1{2,}/u.test(text)) {
       tryUnlock("triple_emoji_combo");
     }
 
-    // Emoticons
     var emoticons = [":3", ":p", ":d", ":)", ":(", ":-)", ":-(", ":o", ";)", "^_^", "x_x", "xd"];
     if (emoticons.indexOf(ts.toLowerCase()) !== -1) {
       tryUnlock("emoticon_only");
     }
 
-    // Same word 3 times
     var words = (tl.match(/[a-zA-Zа-яА-ЯёЁ0-9_]{3,}/g) || []);
     if (words.length >= 3) {
       var wCount = {};
@@ -639,14 +606,12 @@
       }
     }
 
-    // Word length
     var pureWords = text.match(/[a-zA-Zа-яА-ЯёЁ]+/g) || [];
     for (var pw = 0; pw < pureWords.length; pw++) {
       var pWord = pureWords[pw];
       if (pWord.length > 25) tryUnlock("mega_word");
       if (pWord.length > 15) tryUnlock("long_word");
 
-      // Vowels check
       var pwLow = pWord.toLowerCase();
       if (pwLow.length >= 4) {
         var hasVowel = /[aeiouаеёиоуыэюя]/.test(pwLow);
@@ -666,11 +631,9 @@
       }
     }
 
-    // Repeated characters
     if (/(.)\1{14,}/.test(text)) tryUnlock("mega_repeater");
     if (/(.)\1{4,}/.test(text))  tryUnlock("repeater");
 
-    // Multilingual scripts
     var scriptCount = 0;
     if (/[a-zA-Z]/.test(text)) scriptCount++;
     if (/[а-яА-ЯёЁ]/.test(text)) scriptCount++;
@@ -681,13 +644,11 @@
     if (scriptCount >= 3) tryUnlock("trilingual");
     if (scriptCount >= 2) tryUnlock("multilingual");
 
-    // Palindrome (5+ letters)
     var cleanLetters = tl.replace(/[^a-zA-Zа-яА-ЯёЁ]/g, "");
     if (cleanLetters.length >= 5 && cleanLetters === cleanLetters.split("").reverse().join("")) {
       tryUnlock("secret_palindrome");
     }
 
-    // Secret quotes & pop culture triggers
     var secrets = [
       [/\b42\b/, "secret_42"],
       [/hello[,]?\s*world/, "secret_hello_world"],
@@ -734,35 +695,32 @@
       }
     }
 
-    // Secret emojis
-    if (tl.indexOf("🤦") !== -1) tryUnlock("secret_facepalm");
-    if (tl.indexOf("🤔") !== -1) tryUnlock("secret_thinking");
-    if (tl.indexOf("🔥") !== -1) tryUnlock("secret_fire_emoji");
-    if (/[❤️❤♥️♥]/.test(tl))    tryUnlock("secret_heart");
+    if (tl.indexOf("") !== -1) tryUnlock("secret_facepalm");
+    if (tl.indexOf("") !== -1) tryUnlock("secret_thinking");
+    if (tl.indexOf("") !== -1) tryUnlock("secret_fire_emoji");
+    if (/[]/.test(tl))    tryUnlock("secret_heart");
 
-    // Luck games (interactive emoji rolls or roll commands)
-    if (tl.indexOf("🎲") !== -1 || tl.indexOf(":game_die:") !== -1 || /^[!/]roll\b|^[!/]dice\b/.test(tl)) {
+    if (tl.indexOf("") !== -1 || tl.indexOf(":game_die:") !== -1 || /^[!/]roll\b|^[!/]dice\b/.test(tl)) {
       s.dice_rolled = (s.dice_rolled || 0) + 1;
       checkThresholdAchievements("dice_rolled", s.dice_rolled);
       if (Math.random() < 0.16) tryUnlock("lucky_six");
     }
-    if (tl.indexOf("🎯") !== -1 || tl.indexOf(":dart:") !== -1) {
+    if (tl.indexOf("") !== -1 || tl.indexOf(":dart:") !== -1) {
       if (Math.random() < 0.2) tryUnlock("dart_bullseye");
     }
-    if (tl.indexOf("🎳") !== -1 || tl.indexOf(":bowling:") !== -1) {
+    if (tl.indexOf("") !== -1 || tl.indexOf(":bowling:") !== -1) {
       if (Math.random() < 0.2) tryUnlock("bowling_strike");
     }
-    if (tl.indexOf("🏀") !== -1 || tl.indexOf(":basketball:") !== -1) {
+    if (tl.indexOf("") !== -1 || tl.indexOf(":basketball:") !== -1) {
       if (Math.random() < 0.25) tryUnlock("basketball_score");
     }
-    if (tl.indexOf("⚽") !== -1 || tl.indexOf(":soccer:") !== -1) {
+    if (tl.indexOf("") !== -1 || tl.indexOf(":soccer:") !== -1) {
       if (Math.random() < 0.25) tryUnlock("football_goal");
     }
-    if (tl.indexOf("🎰") !== -1 || tl.indexOf(":slot_machine:") !== -1) {
+    if (tl.indexOf("") !== -1 || tl.indexOf(":slot_machine:") !== -1) {
       if (Math.random() < 0.05) tryUnlock("slot_jackpot");
     }
 
-    // Good morning & Good night
     var h = now.getHours();
     if (h >= 0 && h < 5 && (tl.indexOf("спокойной") !== -1 || tl.indexOf("goodnight") !== -1 || tl.indexOf("gn") !== -1)) {
       tryUnlock("secret_goodnight");
@@ -771,7 +729,6 @@
       tryUnlock("secret_goodmorning");
     }
 
-    // Social phrases
     var phraseAchs = [
       [["с днём рождения", "happy birthday", "с др"], "secret_birthday"],
       [["спасибо", "thank you", "thanks", "благодарю"], "secret_thanks"],
@@ -790,7 +747,6 @@
       }
     }
 
-    // ── Gen-Z / Gen-Alpha / TikTok / Instagram meme keywords ─────────────────
     var genzKws = [
       [["rizz"], "genz_rizz"],
       [["slay"], "genz_slay"],
@@ -866,7 +822,7 @@
       [["l +","l + ratio"], "twitter_ratio_l"],
       [["taking the w","got the w","the w goes to"], "twitter_w"],
       [["took an l","big l moment","taking an l"], "twitter_l"],
-      [["🧵 thread","a thread:","long thread"], "twitter_thread"],
+      [["thread","a thread:","long thread"], "twitter_thread"],
       [["quote tweet","quote this tweet"], "twitter_quote_tweet"],
       [["skibidi"], "alpha_skibidi"],
       [["only in ohio","ohio moment"], "alpha_sigma_ohio"],
@@ -930,7 +886,7 @@
       [["main character energy"], "meme_main_char_energy"],
       [["pookie"], "meme_pookie"],
       [["beige flag"], "meme_beige_flag"],
-      [["red flag","🚩🚩"], "meme_red_flag"],
+      [["red flag",""], "meme_red_flag"],
       [["green flag"], "meme_green_flag"],
       [["got ratioed","was ratioed"], "meme_ratioed"],
       [["yapping","yap session"], "meme_yap"],
@@ -944,7 +900,6 @@
       [["looksmaxxing grind","maxxing out"], "meme_looksmaxx_grind"]
     ];
 
-    // Multi-trigger counters (safe init)
     if (!s._genz_understood_count) s._genz_understood_count = 0;
     if (!s._genz_touch_grass_count) s._genz_touch_grass_count = 0;
     if (!s._genz_ohio_count) s._genz_ohio_count = 0;
@@ -976,7 +931,6 @@
     }
   }
 
-  // ── Time & Date Analysis ──────────────────────────────────────────────────
   function analyzeTime(now) {
     var h  = now.getHours();
     var m  = now.getMinutes();
@@ -984,20 +938,17 @@
     var mo = now.getMonth() + 1;
     var d  = now.getDate();
 
-    // Time ranges
     if (h >= 2 && h < 5)   tryUnlock("night_owl");
     if (h >= 5 && h < 6)   tryUnlock("early_bird");
     if (h >= 6 && h < 7)   tryUnlock("morning_person");
     if (h >= 12 && h < 13) tryUnlock("lunch_break");
     if (h >= 20 && h < 22) tryUnlock("evening_chatter");
 
-    // Weekdays
     if (wd === 1) tryUnlock("monday_blues");
     if (wd === 5) tryUnlock("friday_vibes");
     if (wd === 0 || wd === 6) tryUnlock("weekend_warrior");
     if (wd === 5 && d === 13) tryUnlock("friday_13");
 
-    // Exact times
     var exactMap = {
       "0:0":   "midnight",
       "3:0":   "three_am_club",
@@ -1018,7 +969,6 @@
       tryUnlock("triple_digits");
     }
 
-    // Holidays
     var holidays = {
       "1-1": "new_year", "1-7": "russian_christmas", "2-14": "valentine",
       "2-23": "defender", "2-29": "leap_day", "3-8": "womens_day",
@@ -1032,7 +982,6 @@
     if (holidays[hKey]) tryUnlock(holidays[hKey]);
   }
 
-  // ── Speed Achievements ────────────────────────────────────────────────────
   function analyzeSpeed() {
     var nowSec = Date.now() / 1000;
     recentMessageTimestamps.push(nowSec);
@@ -1054,7 +1003,6 @@
     if (msgs60s >= 50) tryUnlock("lightspeed");
   }
 
-  // ── Collector Achievements ────────────────────────────────────────────────
   function analyzeCollector() {
     var s = storage.stats;
     var hp  = s.photos_sent > 0;
@@ -1093,7 +1041,6 @@
     }
   }
 
-  // ── Streaks & Partner Handling ────────────────────────────────────────────
   function updateStreaks(channelId, isDM, partnerName) {
     if (!isDM || !channelId) return;
     var s = storage.stats;
@@ -1141,7 +1088,6 @@
     checkThresholdAchievements("_active_streaks", activeCount);
   }
 
-  // ── Core Message Processing ───────────────────────────────────────────────
   function processMessage(msgData) {
     if (!msgData) return;
     var s = storage.stats;
@@ -1150,18 +1096,15 @@
     var now = new Date();
     var today = todayStr();
 
-    // 1. Messages count
     s.messages_sent = (s.messages_sent || 0) + 1;
     checkThresholdAchievements("messages_sent", s.messages_sent);
 
-    // 2. Days active
     if (!Array.isArray(s.days_active)) s.days_active = [];
     if (s.days_active.indexOf(today) === -1) {
       s.days_active.push(today);
     }
     checkThresholdAchievements("days_active", s.days_active.length);
 
-    // 3. Chat tracking
     var chId = msgData.channelId || msgData.channel_id;
     if (chId) {
       if (!Array.isArray(s.unique_chats)) s.unique_chats = [];
@@ -1172,7 +1115,7 @@
 
       var chan = ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(chId);
       if (chan) {
-        if (chan.type === 1) { // DM
+        if (chan.type === 1) {
           tryUnlock("private_talk");
           if (!Array.isArray(s.private_chats)) s.private_chats = [];
           if (s.private_chats.indexOf(chId) === -1) s.private_chats.push(chId);
@@ -1188,12 +1131,12 @@
           } else {
             updateStreaks(chId, true, partnerUser ? (partnerUser.globalName || partnerUser.username) : "Friend");
           }
-        } else if (chan.type === 3) { // Group DM
+        } else if (chan.type === 3) {
           tryUnlock("group_member");
           if (!Array.isArray(s.group_chats)) s.group_chats = [];
           if (s.group_chats.indexOf(chId) === -1) s.group_chats.push(chId);
           checkThresholdAchievements("group_chats_count", s.group_chats.length);
-        } else { // Server Channel
+        } else {
           tryUnlock("channel_writer");
           if (!Array.isArray(s.channel_chats)) s.channel_chats = [];
           if (s.channel_chats.indexOf(chId) === -1) s.channel_chats.push(chId);
@@ -1202,19 +1145,16 @@
       }
     }
 
-    // 4. Replies
     if (msgData.isReply || msgData.message_reference) {
       s.replies_made = (s.replies_made || 0) + 1;
       checkThresholdAchievements("replies_made", s.replies_made);
     }
 
-    // 5. GIF Detection (Accurately handles GIF picker Tenor/Giphy links, .gif/.gifv URLs, files, embeds)
     if (detectGifs(msgData.content, msgData.attachments, msgData.embeds)) {
       s.gifs_sent = (s.gifs_sent || 0) + 1;
       checkThresholdAchievements("gifs_sent", s.gifs_sent);
     }
 
-    // 6. Spoilers (text ||spoiler|| or attachment SPOILER_*)
     var hasSpoiler = false;
     if (msgData.content && /\|\|.+?\|\|/.test(msgData.content)) {
       hasSpoiler = true;
@@ -1233,7 +1173,6 @@
       checkThresholdAchievements("spoilers_sent", s.spoilers_sent);
     }
 
-    // 7. Attachments
     var atts = msgData.attachments;
     if (Array.isArray(atts) && atts.length > 0) {
       for (var a = 0; a < atts.length; a++) {
@@ -1242,7 +1181,7 @@
         var fn = (att.filename || att.name || "").toLowerCase();
 
         if (ct.startsWith("image/gif") || fn.endsWith(".gif")) {
-          // Handled in GIF detection
+
         } else if (ct.startsWith("image/") || /\.(png|jpe?g|webp)$/i.test(fn)) {
           s.photos_sent = (s.photos_sent || 0) + 1;
           checkThresholdAchievements("photos_sent", s.photos_sent);
@@ -1259,19 +1198,16 @@
       }
     }
 
-    // 8. Stickers
     if ((msgData.sticker_items && msgData.sticker_items.length > 0) || (msgData.stickerIds && msgData.stickerIds.length > 0)) {
       s.stickers_sent = (s.stickers_sent || 0) + 1;
       checkThresholdAchievements("stickers_sent", s.stickers_sent);
     }
 
-    // 9. Polls
     if (msgData.poll) {
       s.polls_created = (s.polls_created || 0) + 1;
       checkThresholdAchievements("polls_created", s.polls_created);
     }
 
-    // 10. Voice Messages
     var isVoice = Boolean((msgData.flags && (msgData.flags & 8192)) ||
       (Array.isArray(msgData.attachments) && msgData.attachments.some(function (va) {
         return va.waveform || va.duration_secs || (va.filename && va.filename.indexOf("voice-message") !== -1);
@@ -1282,18 +1218,15 @@
       checkThresholdAchievements("voice_sent", s.voice_sent);
     }
 
-    // 11. Text patterns
     if (msgData.content) {
       analyzeText(msgData.content, now);
     }
 
-    // 12. Time, Speed & Collector
     analyzeTime(now);
     analyzeSpeed();
     analyzeCollector();
   }
 
-  // ── Stats Card (minimal dark card) ──────────────────────────────────────────
   var isStatsModalOpen = false;
   var statsModalListeners = [];
 
@@ -1322,7 +1255,6 @@
       var pct      = total > 0 ? Math.round((unlocked / total) * 100) : 0;
       var barPct   = Math.max(pct, 2);
 
-      // Count mythic and secret
       var mythicCount = 0;
       var secretCount = 0;
       var unlockedMap = storage.unlocked || {};
@@ -1334,7 +1266,6 @@
         if (a.rarity === "secret")  secretCount++;
       }
 
-      // Accent colour shifts with progress
       var accent = pct >= 75 ? "#f1c40f" : pct >= 50 ? "#9b59b6" : pct >= 25 ? "#3498db" : "#5865f2";
 
       return React.createElement(
@@ -1351,11 +1282,10 @@
           }
         },
 
-        // ─── Row: avatar + name ───
         React.createElement(
           RN.View,
           { style: { flexDirection: "row", alignItems: "center", marginBottom: 14 } },
-          // Avatar circle (only render Image if we have a URL)
+
           React.createElement(
             RN.View,
             {
@@ -1379,10 +1309,10 @@
               : React.createElement(
                   RN.Text,
                   { style: { fontSize: 22 } },
-                  "👤"
+                  ""
                 )
           ),
-          // Name + subtitle
+
           React.createElement(
             RN.View,
             { style: { marginLeft: 12, flex: 1 } },
@@ -1394,19 +1324,18 @@
             React.createElement(
               RN.Text,
               { style: { color: "#5c6068", fontSize: 11, marginTop: 2 } },
-              "🏆 Achievement Stats"
+              "Achievement Stats"
             )
           )
         ),
 
-        // ─── Progress label row ───
         React.createElement(
           RN.View,
           { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 } },
           React.createElement(
             RN.Text,
             { style: { color: "#949ba4", fontSize: 11, fontWeight: "600" } },
-            isRussian() ? "🏆 Прогресс" : "🏆 Progress"
+            isRussian() ? "Прогресс" : "Progress"
           ),
           React.createElement(
             RN.View,
@@ -1433,7 +1362,6 @@
           )
         ),
 
-        // ─── Progress bar ───
         React.createElement(
           RN.View,
           { style: { height: 6, backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden", marginBottom: 14 } },
@@ -1443,17 +1371,15 @@
           )
         ),
 
-        // ─── Divider ───
         React.createElement(
           RN.View,
           { style: { height: 1, backgroundColor: "rgba(255,255,255,0.05)", marginBottom: 12 } }
         ),
 
-        // ─── Bottom badges: Secret + Mythic ───
         React.createElement(
           RN.View,
           { style: { flexDirection: "row" } },
-          // Secret badge
+
           React.createElement(
             RN.View,
             {
@@ -1473,7 +1399,7 @@
             React.createElement(
               RN.Text,
               { style: { fontSize: 16, marginRight: 6 } },
-              "🔮"
+              ""
             ),
             React.createElement(
               RN.View,
@@ -1490,7 +1416,7 @@
               )
             )
           ),
-          // Mythic badge
+
           React.createElement(
             RN.View,
             {
@@ -1509,7 +1435,7 @@
             React.createElement(
               RN.Text,
               { style: { fontSize: 16, marginRight: 6 } },
-              "🔴"
+              ""
             ),
             React.createElement(
               RN.View,
@@ -1551,24 +1477,24 @@
       React.createElement(
         RN.View,
         { style: { flex: 1, backgroundColor: "rgba(0,0,0,0.8)", justifyContent: "center", alignItems: "center" } },
-        // tap-away closes
+
         React.createElement(Btn, {
           style: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
           onPress: props.onClose,
           activeOpacity: 1
         }),
-        // card container
+
         React.createElement(
           RN.View,
           { style: { width: "88%", zIndex: 10 } },
-          // header row
+
           React.createElement(
             RN.View,
             { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } },
             React.createElement(
               RN.Text,
               { style: { color: "#f2f3f5", fontSize: 14, fontWeight: "700" } },
-              isRussian() ? "📊 Моя статистика" : "📊 My Stats"
+              isRussian() ? "Моя статистика" : "My Stats"
             ),
             React.createElement(
               Btn,
@@ -1587,7 +1513,7 @@
               React.createElement(
                 RN.Text,
                 { style: { color: "#949ba4", fontSize: 14, fontWeight: "700" } },
-                "✕"
+                ""
               )
             )
           ),
@@ -1597,7 +1523,6 @@
     );
   }
 
-  // /stats command — shows safe Alert in chat, full card modal on profile
   function registerStatsCommand() {
     try {
       var commands = vendetta.commands;
@@ -1628,17 +1553,17 @@
             }
             var s = storage.stats || {};
             var msg = [
-              "🏆 " + (isRussian() ? "Достижения: " : "Achievements: ") + unlocked + "/" + total + " (" + pct + "%)",
-              "🔮 " + (isRussian() ? "Секретные: " : "Secret: ") + secretC + "   🔴 " + (isRussian() ? "Мифические: " : "Mythic: ") + mythicC,
-              "💬 " + (isRussian() ? "Сообщения: " : "Messages: ") + (s.messages_sent || 0),
-              "🔥 " + (isRussian() ? "Стрик: " : "Streak: ") + (s.fire_streak || 0) + (isRussian() ? " дн." : " days")
+              "" + (isRussian() ? "Достижения: " : "Achievements: ") + unlocked + "/" + total + " (" + pct + "%)",
+              "" + (isRussian() ? "Секретные: " : "Secret: ") + secretC + "   " + (isRussian() ? "Мифические: " : "Mythic: ") + mythicC,
+              "" + (isRussian() ? "Сообщения: " : "Messages: ") + (s.messages_sent || 0),
+              "" + (isRussian() ? "Стрик: " : "Streak: ") + (s.fire_streak || 0) + (isRussian() ? " дн." : " days")
             ].join("\n");
 
             var RN = vendetta.metro.common && vendetta.metro.common.ReactNative;
             var Alert = RN && RN.Alert;
             if (Alert && typeof Alert.alert === "function") {
               Alert.alert(
-                "📊 " + (isRussian() ? "Статистика" : "Achievement Stats"),
+                "" + (isRussian() ? "Статистика" : "Achievement Stats"),
                 msg,
                 [
                   {
@@ -1651,7 +1576,7 @@
                 ]
               );
             } else if (showToast) {
-              showToast("🏆 " + unlocked + "/" + total + " (" + pct + "%)", null);
+              showToast("" + unlocked + "/" + total + " (" + pct + "%)", null);
             }
           } catch (e) {}
           return { shouldntSend: true };
@@ -1660,9 +1585,6 @@
       if (typeof unreg === "function") patches.push(unreg);
     } catch (e) {}
   }
-
-
-  // ── Profile Shortcut & Modal System ───────────────────────────────────────
 
   var isAchievementsModalOpen = false;
   var modalListeners = [];
@@ -1693,7 +1615,7 @@
       React.createElement(
         RN.SafeAreaView,
         { style: { flex: 1 } },
-        // Top navigation bar
+
         React.createElement(
           RN.View,
           {
@@ -1710,7 +1632,7 @@
           React.createElement(
             RN.Text,
             { style: { fontSize: 18, fontWeight: "700" } },
-            "🏆 " + (isRussian() ? "Достижения" : "Achievements")
+            "" + (isRussian() ? "Достижения" : "Achievements")
           ),
           React.createElement(
             Btn,
@@ -1726,11 +1648,11 @@
             React.createElement(
               RN.Text,
               { style: { fontSize: 15, fontWeight: "bold" } },
-              "✕"
+              ""
             )
           )
         ),
-        // Embedded settings and achievements explorer
+
         React.createElement(Settings, { isModal: true })
       )
     );
@@ -1767,7 +1689,6 @@
 
     var Btn = RN.TouchableOpacity || RN.Pressable || RN.View;
 
-    // Discord Orb-styled shortcut pill
     var pill = React.createElement(
       Btn,
       {
@@ -1793,7 +1714,7 @@
       React.createElement(
         RN.Text,
         { style: { fontSize: 14, marginRight: 5 } },
-        "🏆"
+        ""
       ),
       React.createElement(
         RN.Text,
@@ -1823,7 +1744,6 @@
     );
   }
 
-  // ── Hooking Profile Shortcut Pill ─────────────────────────────────────────
   function setupProfileShortcut() {
     var targets = [
       { name: "UserProfileBadges", mod: findByProps("UserProfileBadges") },
@@ -1857,18 +1777,16 @@
             });
           });
           patches.push(un);
-          break; // Hook the top available component
+          break;
         } catch (e) {}
       }
     }
   }
 
-  // ── Hooking Discord Actions ───────────────────────────────────────────────
   function setupHooks() {
     setupProfileShortcut();
     registerStatsCommand();
 
-    // 1. Hook Messages.sendMessage (optimistic local send for instant feedback)
     if (Messages && typeof Messages.sendMessage === "function") {
       patches.push(
         before("sendMessage", Messages, function (args) {
@@ -1894,7 +1812,6 @@
       );
     }
 
-    // 2. Hook Messages.editMessage
     if (Messages && typeof Messages.editMessage === "function") {
       patches.push(
         before("editMessage", Messages, function (args) {
@@ -1910,7 +1827,6 @@
       );
     }
 
-    // 3. Hook Upload.uploadLocalFiles
     if (Upload && typeof Upload.uploadLocalFiles === "function") {
       patches.push(
         before("uploadLocalFiles", Upload, function (args) {
@@ -1945,7 +1861,6 @@
       );
     }
 
-    // 4. Hook Reactions
     if (MessageReactions && typeof MessageReactions.addReaction === "function") {
       patches.push(
         before("addReaction", MessageReactions, function (args) {
@@ -1961,7 +1876,6 @@
       );
     }
 
-    // 5. Hook FluxDispatcher for Gateway Confirmed MESSAGE_CREATE & REACTIONS (with deduplication)
     if (FluxDispatcher && typeof FluxDispatcher.dispatch === "function") {
       patches.push(
         before("dispatch", FluxDispatcher, function (args) {
@@ -1976,7 +1890,7 @@
               if (msg && msg.author && msg.author.id === myId) {
                 var sig = msg.channel_id + ":" + (msg.content || "").slice(0, 50);
                 var lastSeen = seenSignatures[sig];
-                // If recently processed in sendMessage/uploadLocalFiles within 5 seconds, skip duplicate counting
+
                 if (lastSeen && (Date.now() - lastSeen < 5000)) {
                   return args;
                 }
@@ -2009,7 +1923,6 @@
     }
   }
 
-  // ── Settings UI ───────────────────────────────────────────────────────────
   function Settings(props) {
     var React = vendetta.metro.common.React;
     var RN    = vendetta.metro.common.ReactNative;
@@ -2036,23 +1949,22 @@
     var pct = Math.round((unlockedCount / totalCount) * 100);
 
     var categories = [
-      { id: "all",         label: isRussian() ? "Все" : "All",               icon: "🏆" },
-      { id: "messages",    label: isRussian() ? "Сообщения" : "Messages",    icon: "💬" },
-      { id: "media",       label: isRussian() ? "Медиа" : "Media",           icon: "🖼️" },
-      { id: "social",      label: isRussian() ? "Общение" : "Social",        icon: "👥" },
-      { id: "time",        label: isRussian() ? "Время" : "Time",            icon: "⏱️" },
-      { id: "streaks",     label: isRussian() ? "Огоньки" : "Streaks",       icon: "🔥" },
-      { id: "special",     label: isRussian() ? "Особые" : "Special",        icon: "⭐" },
-      { id: "secret",      label: isRussian() ? "Секретные" : "Secret",      icon: "🔮" },
-      { id: "reactions",   label: isRussian() ? "Реакции" : "Reactions",     icon: "❤️" },
-      { id: "collector",   label: isRussian() ? "Коллекционер" : "Collector",icon: "📦" },
-      { id: "explorer",    label: isRussian() ? "Исследователь" : "Explorer",icon: "🧭" },
-      { id: "interactive", label: isRussian() ? "Интерактив" : "Interactive",icon: "📊" },
-      { id: "luck",        label: isRussian() ? "Удача" : "Luck",            icon: "🎲" },
-      { id: "veteran",     label: isRussian() ? "Ветеран" : "Veteran",        icon: "📅" }
+      { id: "all",         label: isRussian() ? "Все" : "All",               icon: "" },
+      { id: "messages",    label: isRussian() ? "Сообщения" : "Messages",    icon: "" },
+      { id: "media",       label: isRussian() ? "Медиа" : "Media",           icon: "" },
+      { id: "social",      label: isRussian() ? "Общение" : "Social",        icon: "" },
+      { id: "time",        label: isRussian() ? "Время" : "Time",            icon: "" },
+      { id: "streaks",     label: isRussian() ? "Огоньки" : "Streaks",       icon: "" },
+      { id: "special",     label: isRussian() ? "Особые" : "Special",        icon: "" },
+      { id: "secret",      label: isRussian() ? "Секретные" : "Secret",      icon: "" },
+      { id: "reactions",   label: isRussian() ? "Реакции" : "Reactions",     icon: "" },
+      { id: "collector",   label: isRussian() ? "Коллекционер" : "Collector",icon: "" },
+      { id: "explorer",    label: isRussian() ? "Исследователь" : "Explorer",icon: "" },
+      { id: "interactive", label: isRussian() ? "Интерактив" : "Interactive",icon: "" },
+      { id: "luck",        label: isRussian() ? "Удача" : "Luck",            icon: "" },
+      { id: "veteran",     label: isRussian() ? "Ветеран" : "Veteran",        icon: "" }
     ];
 
-    // Filter achievements
     var filtered = ACHIEVEMENTS.filter(function (a) {
       if (selectedCat !== "all" && a.category !== selectedCat) return false;
       if (searchQuery) {
@@ -2071,19 +1983,17 @@
         contentContainerStyle: { paddingBottom: 40 }
       },
 
-      // Minimal Dark Stats Card
       React.createElement(
         RN.View,
         { style: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 } },
         React.createElement(StatsCardView, {})
       ),
 
-      // Progress & Stats Section
       React.createElement(
         FormSection,
         { title: isRussian() ? "ПРОГРЕСС" : "PROGRESS" },
         React.createElement(FormRow, {
-          label: (isRussian() ? "🏆 Разблокировано: " : "🏆 Unlocked: ") + unlockedCount + " / " + totalCount + " (" + pct + "%)",
+          label: (isRussian() ? "Разблокировано: " : "Unlocked: ") + unlockedCount + " / " + totalCount + " (" + pct + "%)",
           subLabel: isRussian() ? "Ваш личный прогресс в сборе достижений" : "Your overall achievement progress"
         }),
         React.createElement(
@@ -2114,15 +2024,14 @@
         )
       ),
 
-      // Settings section
       React.createElement(
         FormSection,
         { title: isRussian() ? "НАСТРОЙКИ" : "SETTINGS" },
         React.createElement(FormRow, {
           label: isRussian() ? "Показывать прогресс в «О себе» (Bio)" : "Show Progress on Bio",
           subLabel: isRussian()
-            ? "⚠️ Добавляет прогресс в конец bio. Если нет места, текст снизу обрезается."
-            : "⚠️ Appends progress to bio. If space is tight, cuts from the bottom.",
+            ? "Добавляет прогресс в конец bio. Если нет места, текст снизу обрезается."
+            : "Appends progress to bio. If space is tight, cuts from the bottom.",
           trailing: React.createElement(FormSwitch, {
             value: storage.showProgressOnBio === true,
             onValueChange: function (val) {
@@ -2169,24 +2078,23 @@
           })
         }),
         React.createElement(FormRow, {
-          label: "⚪ " + (isRussian() ? "Тест Обычного Звука" : "Test Common Sound"),
+          label: "" + (isRussian() ? "Тест Обычного Звука" : "Test Common Sound"),
           subLabel: "default.ogg",
           onPress: function () {
             playSound(false);
-            if (showToast) showToast("⚪ Common Sound (default.ogg)");
+            if (showToast) showToast("Common Sound (default.ogg)");
           }
         }),
         React.createElement(FormRow, {
-          label: "🔔 " + (isRussian() ? "Тест Редкого Звука" : "Test Rare Sound"),
+          label: "" + (isRussian() ? "Тест Редкого Звука" : "Test Rare Sound"),
           subLabel: "rare.ogg",
           onPress: function () {
             playSound(true);
-            if (showToast) showToast("🔵 Rare Sound (rare.ogg)");
+            if (showToast) showToast("Rare Sound (rare.ogg)");
           }
         })
       ),
 
-      // Categories filter
       React.createElement(
         FormSection,
         { title: isRussian() ? "КАТЕГОРИИ" : "CATEGORIES" },
@@ -2224,7 +2132,6 @@
         )
       ),
 
-      // Achievements list
       React.createElement(
         FormSection,
         { title: (isRussian() ? "СПИСОК ДОСТИЖЕНИЙ (" : "ACHIEVEMENTS (") + filtered.length + ")" },
@@ -2233,14 +2140,14 @@
           var rInfo = RARITY_INFO[a.rarity] || RARITY_INFO.common;
           var achName = getAchName(a);
           var achDesc = (a.is_secret && !isUnlocked)
-            ? (isRussian() ? "🔮 Секретное достижение. Разблокируйте его!" : "🔮 Secret achievement. Unlock it to reveal description.")
+            ? (isRussian() ? "Секретное достижение. Разблокируйте его!" : "Secret achievement. Unlock it to reveal description.")
             : getAchDesc(a);
 
           return React.createElement(
             FormRow,
             {
               key: a.id,
-              label: (isUnlocked ? "✓ " : "🔒 ") + a.icon + "  " + achName,
+              label: (isUnlocked ? "" : "") + a.icon + "  " + achName,
               subLabel: achDesc + (isUnlocked && unlockedMap[a.id].date ? ("\n" + (isRussian() ? "Разблокировано: " : "Unlocked: ") + unlockedMap[a.id].date.substring(0, 10)) : ""),
               trailing: React.createElement(
                 RN.View,

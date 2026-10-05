@@ -2,387 +2,324 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>Revenge Plugins Library</title>
-  <meta name="description" content="Browse, search, and instantly copy plugin URLs for Revenge and Vendetta mobile Discord mods." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>" />
+  <meta name="description" content="Browse and copy plugin URLs for Revenge and Vendetta mobile Discord mods." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%220%22%20%2224%22%20%2224%22%20fill=%22%235865F2%22><path d=%22M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5%22/></svg>" />
   <style>
     :root {
-      --bg-primary: #1e1f22;
-      --bg-secondary: #2b2d31;
-      --bg-tertiary: #313338;
-      --bg-accent: #383a40;
+      --bg-amoled: #000000;
+      --card-bg: #090a0c;
+      --card-bg-hover: #101114;
+      --card-border: #1a1b1f;
+      --input-bg: #090a0c;
+      --input-border: #22242a;
       --blurple: #5865f2;
       --blurple-hover: #4752c4;
       --green: #23a55a;
-      --green-hover: #1f9450;
-      --text-normal: #dbdee1;
-      --text-muted: #949ba4;
-      --text-header: #f2f3f5;
-      --border-color: rgba(255, 255, 255, 0.08);
-      --card-radius: 12px;
-      --transition: all 0.2s ease;
-      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --red: #da373c;
+      --text-main: #ffffff;
+      --text-sub: #9ba1a9;
+      --text-muted: #5e636e;
+      --border-radius: 8px;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      background-color: var(--bg-primary);
-      color: var(--text-normal);
-      font-family: var(--font-family);
-      line-height: 1.5;
+      background-color: var(--bg-amoled);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.45;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
 
-    /* Header & Hero */
     header {
-      background: linear-gradient(180deg, #18191c 0%, var(--bg-primary) 100%);
-      border-bottom: 1px solid var(--border-color);
-      padding: 48px 20px 32px;
-      text-align: center;
-      position: relative;
+      background-color: var(--bg-amoled);
+      border-bottom: 1px solid var(--card-border);
+      padding: 24px 16px 20px;
     }
 
-    .header-content {
-      max-width: 860px;
+    .header-inner {
+      max-width: 960px;
       margin: 0 auto;
-    }
-
-    .badge-bar {
       display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    .badge {
+    .top-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .brand-link {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 12px;
-      border-radius: 20px;
+      color: var(--blurple);
       font-size: 13px;
       font-weight: 600;
       text-decoration: none;
-      transition: var(--transition);
     }
 
-    .badge-blurple {
-      background-color: rgba(88, 101, 242, 0.18);
-      color: #7983f5;
-      border: 1px solid rgba(88, 101, 242, 0.35);
+    .brand-link:hover {
+      text-decoration: underline;
     }
 
-    .badge-blurple:hover {
-      background-color: var(--blurple);
-      color: #fff;
-    }
-
-    .badge-count {
-      background-color: rgba(255, 255, 255, 0.08);
+    .count-badge {
+      font-size: 12px;
       color: var(--text-muted);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--card-border);
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: #050506;
     }
 
     h1 {
-      font-size: clamp(2rem, 5vw, 2.75rem);
-      font-weight: 800;
-      color: var(--text-header);
-      letter-spacing: -0.5px;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-    }
-
-    h1 .icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      background: var(--blurple);
-      color: #fff;
-      border-radius: 12px;
-      font-size: 24px;
-      box-shadow: 0 4px 16px rgba(88, 101, 242, 0.4);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
     }
 
     p.subtitle {
-      font-size: clamp(1rem, 2.5vw, 1.15rem);
-      color: var(--text-muted);
-      max-width: 600px;
-      margin: 0 auto 24px;
+      font-size: 13.5px;
+      color: var(--text-sub);
     }
 
-    .hero-actions {
+    .top-actions {
       display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
     }
 
-    .btn {
+    .btn-link {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
+      gap: 6px;
+      padding: 8px 12px;
+      background-color: #0d0e11;
+      border: 1px solid var(--card-border);
+      color: var(--text-sub);
       text-decoration: none;
-      border: none;
-      transition: var(--transition);
-      user-select: none;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--border-radius);
+      transition: background-color 0.15s ease;
     }
 
-    .btn-primary {
-      background-color: var(--blurple);
-      color: #ffffff;
+    .btn-link:hover {
+      background-color: var(--card-bg-hover);
+      color: var(--text-main);
     }
 
-    .btn-primary:hover {
-      background-color: var(--blurple-hover);
-    }
-
-    .btn-secondary {
-      background-color: var(--bg-tertiary);
-      color: var(--text-normal);
-      border: 1px solid var(--border-color);
-    }
-
-    .btn-secondary:hover {
-      background-color: var(--bg-accent);
-      color: var(--text-header);
-    }
-
-    /* Container */
     main {
       flex: 1;
-      max-width: 1100px;
+      max-width: 960px;
       width: 100%;
       margin: 0 auto;
-      padding: 32px 20px 60px;
+      padding: 20px 16px 40px;
     }
 
-    /* Controls Bar: Search & Category Filter */
-    .controls-panel {
-      margin-bottom: 28px;
+    .toolbar {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
-    .search-wrapper {
+    .search-box {
       position: relative;
       width: 100%;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+      pointer-events: none;
     }
 
     .search-input {
       width: 100%;
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 14px 18px 14px 44px;
-      font-size: 15px;
-      color: var(--text-header);
+      height: 44px;
+      background-color: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--border-radius);
+      padding: 0 36px 0 36px;
+      font-size: 16px;
+      color: var(--text-main);
       outline: none;
-      transition: var(--transition);
+      transition: border-color 0.15s ease;
     }
 
     .search-input:focus {
       border-color: var(--blurple);
-      box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.25);
-      background-color: #26282c;
     }
 
     .search-input::placeholder {
       color: var(--text-muted);
     }
 
-    .search-icon {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 18px;
-      height: 18px;
-      color: var(--text-muted);
-      pointer-events: none;
-    }
-
     .clear-btn {
       position: absolute;
-      right: 14px;
+      right: 10px;
       top: 50%;
       transform: translateY(-50%);
       background: none;
       border: none;
       color: var(--text-muted);
+      padding: 6px;
       cursor: pointer;
-      padding: 4px;
-      border-radius: 50%;
       display: none;
     }
 
     .clear-btn:hover {
-      color: var(--text-header);
+      color: var(--text-main);
     }
 
-    .categories-bar {
+    .filter-tabs {
       display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+
+    .filter-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-btn {
+      background-color: #08090a;
+      border: 1px solid var(--card-border);
+      color: var(--text-sub);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+      min-height: 38px;
+    }
+
+    .tab-btn.active {
+      background-color: var(--blurple);
+      border-color: var(--blurple);
+      color: #ffffff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 680px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--border-radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .card:hover {
+      background-color: var(--card-bg-hover);
+      border-color: #26272e;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: center;
       gap: 8px;
       flex-wrap: wrap;
     }
 
-    .cat-btn {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      color: var(--text-muted);
-      padding: 7px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-
-    .cat-btn:hover {
-      color: var(--text-header);
-      border-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .cat-btn.active {
-      background-color: var(--blurple);
-      color: #fff;
-      border-color: var(--blurple);
-    }
-
-    /* Plugin Grid */
-    .plugins-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 20px;
-    }
-
-    .plugin-card {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--card-radius);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: var(--transition);
-      position: relative;
-    }
-
-    .plugin-card:hover {
-      border-color: rgba(88, 101, 242, 0.4);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    }
-
-    .card-top {
-      margin-bottom: 16px;
-    }
-
-    .card-header {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .plugin-emoji {
-      font-size: 28px;
-      line-height: 1;
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: var(--bg-tertiary);
-      border-radius: 10px;
-      flex-shrink: 0;
-    }
-
-    .header-text {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .plugin-title {
-      font-size: 1.15rem;
+    .card-title {
+      font-size: 15px;
       font-weight: 700;
-      color: var(--text-header);
-      line-height: 1.25;
-      margin-bottom: 4px;
+      color: var(--text-main);
     }
 
-    .plugin-badge {
-      display: inline-block;
+    .pill {
       font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 2px 7px;
+      font-weight: 600;
+      padding: 2px 6px;
       border-radius: 4px;
-      background-color: rgba(88, 101, 242, 0.15);
-      color: #949ff7;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
 
-    .badge-broken {
-      background-color: rgba(237, 66, 69, 0.2) !important;
-      color: #ff7b7d !important;
-      border: 1px solid rgba(237, 66, 69, 0.4);
+    .pill-category {
+      background: #14151b;
+      color: #8b929c;
+      border: 1px solid #1f2029;
     }
 
-    .plugin-desc {
-      font-size: 13.5px;
-      color: var(--text-normal);
-      line-height: 1.45;
-      margin-top: 8px;
+    .pill-broken {
+      background: rgba(218, 55, 60, 0.15);
+      color: #ff7b7d;
+      border: 1px solid rgba(218, 55, 60, 0.4);
     }
 
-    /* URL Box & Actions */
-    .card-bottom {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: auto;
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.4;
+      margin-top: 6px;
     }
 
-    .url-box {
+    .url-row {
       display: flex;
       align-items: center;
-      background-color: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 4px 6px 4px 10px;
-      gap: 8px;
-      transition: var(--transition);
+      background-color: var(--bg-amoled);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 6px 10px;
       cursor: pointer;
+      gap: 6px;
     }
 
-    .url-box:hover {
-      border-color: rgba(88, 101, 242, 0.5);
+    .url-row:hover {
+      border-color: #2e3038;
     }
 
-    .url-text {
+    .url-code {
       font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--text-muted);
       overflow: hidden;
       text-overflow: ellipsis;
@@ -395,13 +332,13 @@
       gap: 8px;
     }
 
-    .copy-btn {
+    .btn-copy {
       flex: 1;
+      height: 42px;
       background-color: var(--blurple);
       color: #ffffff;
       border: none;
-      border-radius: 8px;
-      padding: 9px 12px;
+      border-radius: 6px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
@@ -409,647 +346,457 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: var(--transition);
+      transition: background-color 0.15s ease;
     }
 
-    .copy-btn:hover {
+    .btn-copy:hover {
       background-color: var(--blurple-hover);
     }
 
-    .copy-btn.copied {
+    .btn-copy.copied {
       background-color: var(--green) !important;
-      color: #fff;
     }
 
-    .details-btn {
-      background-color: var(--bg-tertiary);
-      color: var(--text-muted);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 9px 12px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
+    .btn-gh {
+      width: 42px;
+      height: 42px;
+      background-color: #0d0e11;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: var(--transition);
+      color: var(--text-sub);
+      text-decoration: none;
+      flex-shrink: 0;
     }
 
-    .details-btn:hover {
-      background-color: var(--bg-accent);
-      color: var(--text-header);
+    .btn-gh:hover {
+      background-color: var(--card-bg-hover);
+      color: var(--text-main);
     }
 
-    /* Installation Guide Card */
-    .install-guide {
-      margin-top: 48px;
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--card-radius);
-      padding: 28px;
+    .empty-state {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--text-muted);
+      font-size: 14px;
+      display: none;
+    }
+
+    .guide {
+      margin-top: 36px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--border-radius);
+      padding: 16px;
     }
 
     .guide-title {
-      font-size: 1.3rem;
+      font-size: 14px;
       font-weight: 700;
-      color: var(--text-header);
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      color: var(--text-main);
+      margin-bottom: 12px;
     }
 
-    .steps-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-top: 16px;
-    }
-
-    .step-item {
-      background-color: var(--bg-tertiary);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 16px;
+    .guide-steps {
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
 
-    .step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background-color: var(--blurple);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
+    .guide-step {
       font-size: 13px;
+      color: var(--text-sub);
+      display: flex;
+      gap: 8px;
     }
 
-    .step-text {
-      font-size: 14px;
-      color: var(--text-normal);
-    }
-
-    .step-text strong {
-      color: var(--text-header);
-    }
-
-    /* Empty state */
-    .no-results {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 48px 20px;
-      background-color: var(--bg-secondary);
-      border-radius: var(--card-radius);
-      border: 1px dashed var(--border-color);
-      display: none;
-    }
-
-    .no-results p {
+    .step-index {
       color: var(--text-muted);
-      font-size: 15px;
-      margin-top: 8px;
+      font-weight: 600;
+      min-width: 16px;
     }
 
-    /* Toast Notification */
     .toast {
       position: fixed;
-      bottom: 24px;
+      bottom: 20px;
       left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background-color: #111214;
+      transform: translateX(-50%) translateY(80px);
+      background-color: #0c0d10;
+      border: 1px solid var(--green);
       color: #ffffff;
-      padding: 12px 22px;
-      border-radius: 10px;
-      font-size: 14px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
       font-weight: 600;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(35, 165, 90, 0.4);
-      display: flex;
-      align-items: center;
-      gap: 10px;
       opacity: 0;
       pointer-events: none;
-      transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-      z-index: 1000;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      z-index: 999;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
     }
 
-    .toast.show {
+    .toast.visible {
       transform: translateX(-50%) translateY(0);
       opacity: 1;
     }
 
-    .toast-icon {
-      color: var(--green);
-      display: inline-flex;
-    }
-
-    /* Footer */
     footer {
-      border-top: 1px solid var(--border-color);
-      padding: 24px 20px;
+      border-top: 1px solid var(--card-border);
+      padding: 20px 16px;
       text-align: center;
+      font-size: 12px;
       color: var(--text-muted);
-      font-size: 13px;
-      background-color: #18191c;
+      background-color: var(--bg-amoled);
     }
 
     footer a {
-      color: var(--blurple);
+      color: var(--text-sub);
       text-decoration: none;
     }
 
     footer a:hover {
       text-decoration: underline;
     }
-
-    @media (max-width: 600px) {
-      .plugins-grid {
-        grid-template-columns: 1fr;
-      }
-      header {
-        padding: 36px 16px 24px;
-      }
-      .install-guide {
-        padding: 20px 16px;
-      }
-    }
   </style>
 </head>
 <body>
 
-  <!-- Toast Notification -->
-  <div id="toast" class="toast">
-    <span class="toast-icon">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-    </span>
-    <span id="toast-message">Copied plugin URL to clipboard!</span>
-  </div>
+  <div id="toast" class="toast">Copied URL to clipboard</div>
 
-  <!-- Header -->
   <header>
-    <div class="header-content">
-      <div class="badge-bar">
-        <a href="https://github.com/revenge-mod/revenge-bundle" target="_blank" class="badge badge-blurple">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
-          </svg>
-          Revenge Client Mod
-        </a>
-        <span class="badge badge-count" id="plugin-count-badge">15 Plugins &amp; Fonts</span>
+    <div class="header-inner">
+      <div class="top-meta">
+        <a href="https://github.com/revenge-mod/revenge-bundle" target="_blank" class="brand-link">Revenge</a>
+        <span class="count-badge" id="count-badge">15 items</span>
       </div>
-
-      <h1>
-        <span class="icon">⚡</span>
-        Revenge Plugins Library
-      </h1>
-      <p class="subtitle">
-        Browse, search, and instantly copy plugin URLs into your Revenge / Vendetta client with 1-click.
-      </p>
-
-      <div class="hero-actions">
-        <a href="https://github.com/ilickft/revenge-plugins" target="_blank" class="btn btn-secondary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <h1>Revenge Plugins Library</h1>
+      <p class="subtitle">Search, inspect, and copy plugin URLs with one click.</p>
+      <div class="top-actions">
+        <a href="https://github.com/ilickft/revenge-plugins" target="_blank" class="btn-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
           </svg>
-          View on GitHub
-        </a>
-        <a href="#guide" class="btn btn-secondary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-          How to Install
+          Repository
         </a>
       </div>
     </div>
   </header>
 
-  <!-- Main Content -->
   <main>
-    <!-- Controls: Search & Categories -->
-    <div class="controls-panel">
-      <div class="search-wrapper">
+    <div class="toolbar">
+      <div class="search-box">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" id="search-input" class="search-input" placeholder="Search plugins by name, keyword, or description..." autocomplete="off" />
-        <button id="clear-search" class="clear-btn" title="Clear search">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <input type="text" id="search-input" class="search-input" placeholder="Search plugins..." autocomplete="off" />
+        <button id="clear-search" class="clear-btn" aria-label="Clear">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
       </div>
 
-      <div class="categories-bar" id="categories-bar">
-        <button class="cat-btn active" data-category="all">All</button>
-        <button class="cat-btn" data-category="chat">Chat &amp; Messaging</button>
-        <button class="cat-btn" data-category="nitro">Nitro &amp; Media</button>
-        <button class="cat-btn" data-category="ui">Customization &amp; UI</button>
-        <button class="cat-btn" data-category="privacy">Privacy &amp; Utils</button>
-        <button class="cat-btn" data-category="fonts">Fonts</button>
+      <div class="filter-tabs" id="filter-tabs">
+        <button class="tab-btn active" data-cat="all">All</button>
+        <button class="tab-btn" data-cat="chat">Chat</button>
+        <button class="tab-btn" data-cat="nitro">Nitro</button>
+        <button class="tab-btn" data-cat="ui">UI</button>
+        <button class="tab-btn" data-cat="privacy">Privacy</button>
+        <button class="tab-btn" data-cat="fonts">Fonts</button>
       </div>
     </div>
 
-    <!-- Plugins Grid -->
-    <div class="plugins-grid" id="plugins-grid">
-      <!-- Cards rendered dynamically or statically -->
-    </div>
+    <div class="grid" id="plugins-grid"></div>
+    <div id="empty-state" class="empty-state">No matching plugins found.</div>
 
-    <!-- Empty State -->
-    <div id="no-results" class="no-results">
-      <h3>No plugins found</h3>
-      <p id="no-results-text">No plugins matched your current search criteria.</p>
-    </div>
-
-    <!-- Installation Guide -->
-    <div class="install-guide" id="guide">
-      <h2 class="guide-title">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        How to Install Any Plugin
-      </h2>
-      <p style="color: var(--text-muted); font-size: 14.5px;">
-        Follow these quick steps to install any plugin directly into your Revenge client:
-      </p>
-
-      <div class="steps-list">
-        <div class="step-item">
-          <div class="step-num">1</div>
-          <div class="step-text">
-            Click <strong>Copy Link</strong> on any plugin card above to copy its exact install URL.
-          </div>
+    <div class="guide">
+      <div class="guide-title">Installation</div>
+      <div class="guide-steps">
+        <div class="guide-step">
+          <span class="step-index">1.</span>
+          <span>Copy the plugin URL below.</span>
         </div>
-        <div class="step-item">
-          <div class="step-num">2</div>
-          <div class="step-text">
-            In Discord, go to <strong>Settings → Plugins</strong> (under the Revenge section).
-          </div>
+        <div class="guide-step">
+          <span class="step-index">2.</span>
+          <span>In Discord, go to Settings &gt; Plugins &gt; +.</span>
         </div>
-        <div class="step-item">
-          <div class="step-num">3</div>
-          <div class="step-text">
-            Tap the <strong>+</strong> button in the top-right corner of the plugins screen.
-          </div>
-        </div>
-        <div class="step-item">
-          <div class="step-num">4</div>
-          <div class="step-text">
-            Paste the copied URL into the box and tap <strong>Install</strong> to activate!
-          </div>
+        <div class="guide-step">
+          <span class="step-index">3.</span>
+          <span>Paste the URL and install.</span>
         </div>
       </div>
     </div>
   </main>
 
-  <!-- Footer -->
   <footer>
-    <p>
-      Revenge Plugins &bull; Maintained by <a href="https://github.com/ilickft" target="_blank">ilickft</a> &bull;
-      Client mods violate Discord's Terms of Service. Use at your own risk.
-    </p>
+    Revenge Plugins &bull; Maintained by <a href="https://github.com/ilickft" target="_blank">ilickft</a>
   </footer>
 
   <script>
     const PLUGINS = [
       {
         id: "no-embeds",
-        name: "No Embeds",
-        emoji: "🔕",
+        name: "no-embeds",
         category: "chat",
-        categoryLabel: "Chat & Messaging",
-        desc: "Automatically suppresses link preview cards on every message you send by enclosing URLs in angle brackets. Skips code blocks.",
+        categoryLabel: "Chat",
+        desc: "Suppresses link preview cards on sent messages by wrapping URLs in angle brackets. Skips code blocks.",
         url: "https://ilickft.github.io/revenge-plugins/no-embeds/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/no-embeds"
       },
       {
         id: "emoji-anywhere",
-        name: "Emoji Anywhere",
-        emoji: "🎭",
+        name: "emoji-anywhere",
         category: "nitro",
-        categoryLabel: "Nitro & Media",
-        desc: "Send custom, animated, and cross-server emojis anywhere without Nitro by converting them into markdown embeds with customizable labels.",
+        categoryLabel: "Nitro",
+        desc: "Send custom and animated emojis from any server without Nitro as markdown embeds. Preserves standard server emojis.",
         url: "https://ilickft.github.io/revenge-plugins/emoji-anywhere/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/emoji-anywhere"
       },
       {
         id: "soundboard-anywhere",
-        name: "Soundboard Anywhere",
-        emoji: "🔊",
+        name: "soundboard-anywhere",
         category: "nitro",
-        categoryLabel: "Nitro & Media",
-        desc: "Play soundboard sounds from any server, bypassing Discord's Nitro requirement and server membership gating.",
+        categoryLabel: "Nitro",
+        desc: "Play soundboard sounds from any server without Nitro restrictions or server membership gating.",
         url: "https://ilickft.github.io/revenge-plugins/soundboard-anywhere/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/soundboard-anywhere"
       },
       {
         id: "message-logger",
-        name: "Message Logger",
-        emoji: "🕵️",
+        name: "message-logger",
         category: "chat",
-        categoryLabel: "Chat & Messaging",
-        desc: "Preserves deleted messages & attachments with dimmed opacity, and renders original message text faded above new edits.",
+        categoryLabel: "Chat",
+        desc: "Retains deleted messages with dimmed opacity and displays original message text above edits.",
         url: "https://ilickft.github.io/revenge-plugins/message-logger/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/message-logger"
       },
       {
         id: "message-saver",
-        name: "Message Saver",
-        emoji: "💾",
+        name: "message-saver",
         category: "chat",
-        categoryLabel: "Chat & Messaging",
-        desc: "Save any message with all text and attachments via /save or menu, and resend it to any channel anytime with /resend.",
+        categoryLabel: "Chat",
+        desc: "Save messages with text and attachments via /save or context menu, and resend them with /resend.",
         url: "https://ilickft.github.io/revenge-plugins/message-saver/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/message-saver"
       },
       {
         id: "message-quote",
-        name: "Message Quote",
-        emoji: "💬",
+        name: "message-quote",
         category: "chat",
-        categoryLabel: "Chat & Messaging",
-        desc: "Generates an authentic Discord message PNG quote card complete with avatar, username, role color, and timestamp via /quote.",
+        categoryLabel: "Chat",
+        desc: "Generate Discord message PNG quote cards with avatar, username, role color, and timestamp via /quote.",
         url: "https://ilickft.github.io/revenge-plugins/message-quote/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/message-quote"
       },
       {
         id: "pet-pet",
-        name: "Pet Pet",
-        emoji: "🐾",
+        name: "pet-pet",
         category: "chat",
-        categoryLabel: "Chat & Messaging",
-        desc: "Create an animated pet-pet petting hand GIF of any user directly in chat via the /petpet slash command or message reply.",
+        categoryLabel: "Chat",
+        desc: "Generates an animated petting hand GIF of any user via /petpet or reply.",
         url: "https://ilickft.github.io/revenge-plugins/pet-pet/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/pet-pet"
       },
       {
         id: "stream-1080p",
-        name: "Stream 1080p",
-        emoji: "📺",
+        name: "stream-1080p",
         category: "nitro",
-        categoryLabel: "Nitro & Media",
-        desc: "Unlocks 1080p resolution, 60 FPS, and Source stream quality for Discord screen sharing without Nitro or Server Boost locks.",
+        categoryLabel: "Nitro",
+        desc: "Unlocks 1080p resolution, 60 FPS, and Source stream quality for screen sharing without Nitro.",
         url: "https://ilickft.github.io/revenge-plugins/stream-1080p/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/stream-1080p"
       },
       {
         id: "discordo",
-        name: "Discordo",
-        emoji: "🔊",
+        name: "discordo",
         category: "ui",
-        categoryLabel: "Customization & UI",
-        desc: "Plays Discord's iconic Japanese 'DISCORDO!' startup audio chime whenever the app launches. Includes an in-app test sound button.",
+        categoryLabel: "UI",
+        desc: "Plays the classic Japanese DISCORDO startup chime when Discord launches. Includes test button in settings.",
         url: "https://ilickft.github.io/revenge-plugins/discordo/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/discordo"
       },
       {
         id: "shadow-ban",
-        name: "Shadow Ban",
-        emoji: "🛡️",
+        name: "shadow-ban",
         category: "privacy",
-        categoryLabel: "Privacy & Utils",
-        desc: "Completely disappear any user from your client: hides DMs, blocks messages, mutes incoming voice to 0%, and cleans channel lists.",
+        categoryLabel: "Privacy",
+        desc: "Hides target users across the client: blocks messages, hides DMs, mutes incoming voice, and removes from channel lists.",
         url: "https://ilickft.github.io/revenge-plugins/shadow-ban/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/shadow-ban"
       },
       {
         id: "achievements",
-        name: "Achievements",
-        emoji: "🏆",
+        name: "achievements",
         category: "ui",
-        categoryLabel: "Customization & UI",
-        desc: "Unlock 430+ achievements with toast banners, authentic sounds, profile Orb shortcut, bio progress sync, and streak counting.",
+        categoryLabel: "UI",
+        desc: "Milestone tracker with toasts, audio chimes, profile badge, settings dashboard, and optional bio progress sync.",
         url: "https://ilickft.github.io/revenge-plugins/achievements/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/achievements"
       },
       {
         id: "clean-context-menu",
-        name: "Clean Context Menu",
-        emoji: "🛡️",
+        name: "clean-context-menu",
         category: "ui",
-        categoryLabel: "Customization & UI",
+        categoryLabel: "UI",
         broken: true,
-        desc: "⚠️ [Currently Broken] Clean up message long-press menus by hiding unwanted items (Reactions bar, Reply, Edit, Pin, Apps, TTS) with individual toggles.",
+        desc: "Declutters message long-press menu by hiding unwanted actions with custom keyword toggles.",
         url: "https://ilickft.github.io/revenge-plugins/clean-context-menu/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/clean-context-menu"
       },
       {
         id: "app-icons",
-        name: "App Icons",
-        emoji: "🎨",
+        name: "app-icons",
         category: "ui",
-        categoryLabel: "Customization & UI",
-        desc: "Unlocks all Discord premium app icons without Nitro. Freely choose any official icon under Settings → Appearance → App Icon.",
+        categoryLabel: "UI",
+        desc: "Unlocks official alternate app icons under Settings -> Appearance -> App Icon without Nitro.",
         url: "https://ilickft.github.io/revenge-plugins/app-icons/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/app-icons"
       },
       {
         id: "no-orb-ads",
-        name: "No Orb Ads",
-        emoji: "🚫",
+        name: "no-orb-ads",
         category: "privacy",
-        categoryLabel: "Privacy & Utils",
+        categoryLabel: "Privacy",
         broken: true,
-        desc: "⚠️ [Currently Broken] Blocks or mutes Discord Quest and Orb video ads with 5 layered strategies to save mobile data and bandwidth while farming Orbs.",
+        desc: "Blocks or mutes Quest video ads to reduce data and bandwidth usage while completing quests.",
         url: "https://ilickft.github.io/revenge-plugins/no-orb-ads/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/no-orb-ads"
       },
       {
-        id: "gauge-font",
-        name: "Gauge Font Pack",
-        emoji: "🔤",
+        id: "fonts",
+        name: "gauge-font",
         category: "fonts",
-        categoryLabel: "Fonts",
-        desc: "Custom font pack replacing Discord's default ggsans font family with the clean, bold Gauge Heavy typeface across the client.",
+        categoryLabel: "Font",
+        desc: "Custom font pack replacing default ggsans with Gauge Heavy across the client.",
         url: "https://ilickft.github.io/revenge-plugins/fonts/Gauge.json",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/fonts"
       }
     ];
 
-    let currentCategory = "all";
+    let currentCat = "all";
     let searchQuery = "";
     let toastTimeout = null;
 
     const grid = document.getElementById("plugins-grid");
     const searchInput = document.getElementById("search-input");
     const clearBtn = document.getElementById("clear-search");
-    const categoriesBar = document.getElementById("categories-bar");
-    const noResults = document.getElementById("no-results");
-    const noResultsText = document.getElementById("no-results-text");
+    const filterTabs = document.getElementById("filter-tabs");
+    const emptyState = document.getElementById("empty-state");
     const toast = document.getElementById("toast");
-    const toastMessage = document.getElementById("toast-message");
 
-    function renderPlugins() {
+    function render() {
       grid.innerHTML = "";
-      const query = searchQuery.trim().toLowerCase();
+      const q = searchQuery.trim().toLowerCase();
 
-      const filtered = PLUGINS.filter(p => {
-        const matchesCat = currentCategory === "all" || p.category === currentCategory;
-        const matchesSearch = !query || 
-          p.name.toLowerCase().includes(query) ||
-          p.desc.toLowerCase().includes(query) ||
-          p.id.toLowerCase().includes(query) ||
-          p.categoryLabel.toLowerCase().includes(query);
-        return matchesCat && matchesSearch;
+      const items = PLUGINS.filter(p => {
+        const matchCat = currentCat === "all" || p.category === currentCat;
+        const matchQuery = !q || p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.categoryLabel.toLowerCase().includes(q);
+        return matchCat && matchQuery;
       });
 
-      if (filtered.length === 0) {
-        noResults.style.display = "block";
-        noResultsText.textContent = query 
-          ? `No plugins matching "${searchQuery}" in ${currentCategory === 'all' ? 'any category' : currentCategory}.`
-          : "No plugins found in this category.";
-      } else {
-        noResults.style.display = "none";
-      }
+      emptyState.style.display = items.length === 0 ? "block" : "none";
 
-      filtered.forEach(plugin => {
+      items.forEach(p => {
         const card = document.createElement("div");
-        card.className = "plugin-card";
-        card.dataset.id = plugin.id;
+        card.className = "card";
+
+        const brokenBadge = p.broken ? '<span class="pill pill-broken">Broken</span>' : '';
+        const catBadge = '<span class="pill pill-category">' + p.categoryLabel + '</span>';
 
         card.innerHTML = `
-          <div class="card-top">
-            <div class="card-header">
-              <div class="plugin-emoji">${plugin.emoji}</div>
-              <div class="header-text">
-                <h3 class="plugin-title">${plugin.name}</h3>
-                <span class="plugin-badge">${plugin.categoryLabel}</span>
-                ${plugin.broken ? '<span class="plugin-badge badge-broken">⚠️ Broken</span>' : ''}
+          <div>
+            <div class="card-head">
+              <div class="card-title-row">
+                <span class="card-title">${p.name}</span>
+                ${catBadge}
+                ${brokenBadge}
               </div>
             </div>
-            <p class="plugin-desc">${plugin.desc}</p>
+            <p class="card-desc">${p.desc}</p>
           </div>
-          <div class="card-bottom">
-            <div class="url-box" title="Click to copy URL" onclick="copyPluginUrl('${plugin.url}', '${plugin.name}', this)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); flex-shrink: 0;">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-              </svg>
-              <span class="url-text">${plugin.url}</span>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="url-row" onclick="copyUrl('${p.url}', this)">
+              <span class="url-code">${p.url}</span>
             </div>
             <div class="card-actions">
-              <button class="copy-btn" onclick="copyPluginUrl('${plugin.url}', '${plugin.name}', this)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span class="btn-label">Copy Link</span>
-              </button>
-              <a href="${plugin.github}" target="_blank" class="details-btn" title="View Source on GitHub">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
+              <button class="btn-copy" onclick="copyUrl('${p.url}', this)">Copy Link</button>
+              <a href="${p.github}" target="_blank" class="btn-gh" aria-label="GitHub">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
                 </svg>
               </a>
             </div>
           </div>
         `;
-
         grid.appendChild(card);
       });
     }
 
-    // Copy to clipboard with fallback
-    function copyPluginUrl(url, name, triggerEl) {
+    function copyUrl(text, triggerEl) {
       if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(url).then(() => {
-          handleCopySuccess(name, triggerEl);
+        navigator.clipboard.writeText(text).then(() => {
+          showCopySuccess(triggerEl);
         }).catch(() => {
-          fallbackCopyText(url, name, triggerEl);
+          fallbackCopy(text, triggerEl);
         });
       } else {
-        fallbackCopyText(url, name, triggerEl);
+        fallbackCopy(text, triggerEl);
       }
     }
 
-    function fallbackCopyText(text, name, triggerEl) {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      textarea.style.top = "0";
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
+    function fallbackCopy(text, triggerEl) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
       try {
         document.execCommand("copy");
-        handleCopySuccess(name, triggerEl);
-      } catch (err) {
-        showToast("Failed to copy link.", false);
-      }
-      document.body.removeChild(textarea);
+        showCopySuccess(triggerEl);
+      } catch (e) {}
+      document.body.removeChild(ta);
     }
 
-    function handleCopySuccess(name, triggerEl) {
-      showToast(`Copied URL for ${name}!`);
+    function showCopySuccess(triggerEl) {
+      toast.classList.add("visible");
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove("visible");
+      }, 2000);
 
-      // Find the card container
-      const card = triggerEl.closest(".plugin-card");
+      const card = triggerEl.closest(".card");
       if (card) {
-        const copyBtn = card.querySelector(".copy-btn");
-        if (copyBtn) {
-          copyBtn.classList.add("copied");
-          copyBtn.innerHTML = `
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <span>Copied!</span>
-          `;
+        const btn = card.querySelector(".btn-copy");
+        if (btn) {
+          btn.classList.add("copied");
+          btn.textContent = "Copied";
           setTimeout(() => {
-            copyBtn.classList.remove("copied");
-            copyBtn.innerHTML = `
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              <span>Copy Link</span>
-            `;
-          }, 2000);
+            btn.classList.remove("copied");
+            btn.textContent = "Copy Link";
+          }, 1800);
         }
       }
     }
 
-    function showToast(message) {
-      toastMessage.textContent = message;
-      toast.classList.add("show");
-
-      if (toastTimeout) clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => {
-        toast.classList.remove("show");
-      }, 2600);
-    }
-
-    // Category button filters
-    categoriesBar.addEventListener("click", e => {
-      const btn = e.target.closest(".cat-btn");
+    filterTabs.addEventListener("click", e => {
+      const btn = e.target.closest(".tab-btn");
       if (!btn) return;
-
-      document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      currentCategory = btn.dataset.category;
-      renderPlugins();
+      currentCat = btn.dataset.cat;
+      render();
     });
 
-    // Search input
     searchInput.addEventListener("input", e => {
       searchQuery = e.target.value;
       clearBtn.style.display = searchQuery ? "block" : "none";
-      renderPlugins();
+      render();
     });
 
     clearBtn.addEventListener("click", () => {
@@ -1057,20 +804,17 @@
       searchQuery = "";
       clearBtn.style.display = "none";
       searchInput.focus();
-      renderPlugins();
+      render();
     });
 
-    // Keyboard shortcut '/' to search
     window.addEventListener("keydown", e => {
       if (e.key === "/" && document.activeElement !== searchInput) {
         e.preventDefault();
         searchInput.focus();
-        searchInput.select();
       }
     });
 
-    // Initial render
-    renderPlugins();
+    render();
   </script>
 </body>
 </html>

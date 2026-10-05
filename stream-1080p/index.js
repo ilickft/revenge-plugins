@@ -39,8 +39,7 @@
 
   return {
     onLoad: function () {
-      // ── 1. Unlock stream quality & framerate capabilities ──────────────────
-      // Bypasses Discord client-side Nitro restrictions on stream quality & fps
+
       var trueProps = [
         "canUseHighVideoUploadQuality",
         "canStreamQuality",
@@ -56,9 +55,6 @@
         patchAllByProp(trueProps[i], true);
       }
 
-      // ── 2. Bypass Discord Mobile stream quality requirement checks ─────────
-      // Discord Mobile's StreamQualityUtils checks these to display locks on
-      // 1080p, 60 FPS, and Source options. Returning false marks them as free.
       var falseProps = [
         "isPremiumResolution",
         "isPremiumFPS",
@@ -69,7 +65,6 @@
         patchAllByProp(falseProps[j], false);
       }
 
-      // ── 3. Strip Nitro & server boost requirements from stream presets ─────
       try {
         var reqModule = findByProps("ApplicationStreamSettingRequirements");
         if (reqModule && Array.isArray(reqModule.ApplicationStreamSettingRequirements)) {

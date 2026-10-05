@@ -11,7 +11,6 @@
   function playDiscordo() {
     var played = false;
 
-    // Method 1: React Native DCDSoundManager (primary audio module on Discord Mobile)
     try {
       var RN = vendetta.metro.common.ReactNative;
       var DCDSoundManager = RN && RN.NativeModules && RN.NativeModules.DCDSoundManager;
@@ -33,7 +32,6 @@
       }
     } catch (e) {}
 
-    // Method 2: Discord Mobile internal SoundUtils
     if (!played) {
       try {
         var SoundUtils = vendetta.metro.findByProps("createSound", "playSound");
@@ -48,7 +46,6 @@
       } catch (e) {}
     }
 
-    // Method 3: Standard Audio API (Web / Electron fallback)
     if (!played) {
       try {
         if (typeof Audio !== "undefined") {
@@ -77,7 +74,7 @@
         FormSection,
         { title: "DISCORDO STARTUP SOUND" },
         React.createElement(FormRow, {
-          label: "🔊 Play Discordo!",
+          label: "Play Discordo!",
           subLabel: "Tap to play the classic Japanese \"DISCORDO!\" easter egg chime",
           onPress: function () {
             playDiscordo();
@@ -93,7 +90,7 @@
 
   return {
     onLoad: function () {
-      // Play when Discord loads the plugin on app launch
+
       setTimeout(function () {
         playDiscordo();
       }, 500);

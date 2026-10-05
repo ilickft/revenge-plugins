@@ -1,29 +1,17 @@
-<div align="center">
-
 # revenge plugins
 
-a collection of plugins for [Revenge](https://github.com/revenge-mod/revenge-bundle) — the mobile Discord client mod
+A collection of plugins and fonts for [Revenge](https://github.com/revenge-mod/revenge-bundle).
 
-[![Browse & Copy Plugins](https://img.shields.io/badge/🌐_Browse_%26_Copy_Plugins-Web_Library-5865F2?style=for-the-badge&logo=compass&logoColor=white)](https://ilickft.github.io/revenge-plugins/)
+[Browse Web Library](https://ilickft.github.io/revenge-plugins/) &bull; [GitHub Repository](https://github.com/ilickft/revenge-plugins)
 
-[![platform](https://img.shields.io/badge/platform-Revenge-5865F2?style=flat-square&logo=discord&logoColor=white)](https://github.com/revenge-mod/revenge-bundle)
-[![last commit](https://img.shields.io/github/last-commit/ilickft/revenge-plugins?style=flat-square&color=5865F2)](https://github.com/ilickft/revenge-plugins/commits/main)
-
-> ⚡ **Web Library:** You can browse, search, and 1-click copy any plugin link at **[ilickft.github.io/revenge-plugins](https://ilickft.github.io/revenge-plugins/)**
-
-</div>
+> **Notice:** `clean-context-menu` and `no-orb-ads` are currently broken.
 
 ---
 
 ## plugins
 
-> ⚠️ **Notice:** **clean-context-menu** and **no-orb-ads** are currently broken.
-
-### 🔕 no-embeds
-
-> suppress link previews on every message you send
-
-wraps every `http(s)` url in `<angle brackets>` before it leaves your client — discord's own syntax for hiding embed previews. recipients still see a normal clickable link, just no preview card. skips links inside code blocks and ones already wrapped.
+### no-embeds
+Suppresses link previews on sent and edited messages by enclosing URLs in angle brackets. Ignores URLs within code blocks.
 
 ```
 https://ilickft.github.io/revenge-plugins/no-embeds/
@@ -31,11 +19,8 @@ https://ilickft.github.io/revenge-plugins/no-embeds/
 
 ---
 
-### 🎭 emoji anywhere
-
-> use emojis from any server, even without nitro
-
-patches discord's emoji picker to remove the nitro lock, letting you click any custom emoji. server emojis available without nitro stay as normal emojis, while external or animated emojis get formatted as `[text](cdn_url)` to embed them. open the plugin settings to customize the link text to anything you want (e.g. `:)`, `{{name}}`, invisible characters, or any string).
+### emoji-anywhere
+Sends external and animated emojis without Nitro by embedding them as markdown links. Server emojis available without Nitro remain standard emojis. Configure link labels in plugin settings.
 
 ```
 https://ilickft.github.io/revenge-plugins/emoji-anywhere/
@@ -43,11 +28,8 @@ https://ilickft.github.io/revenge-plugins/emoji-anywhere/
 
 ---
 
-### 🔊 soundboard anywhere
-
-> use soundboard sounds from any server, even without nitro
-
-patches every discord function that gates soundboard sounds behind nitro or server membership — same approach as emoji anywhere. open the soundboard, pick any sound, it plays.
+### soundboard-anywhere
+Unlocks soundboard sounds across all servers by bypassing Nitro and server membership checks.
 
 ```
 https://ilickft.github.io/revenge-plugins/soundboard-anywhere/
@@ -55,11 +37,8 @@ https://ilickft.github.io/revenge-plugins/soundboard-anywhere/
 
 ---
 
-### 🕵️ message logger
-
-> ghost deleted messages and see original text on edits
-
-keeps deleted messages and attachments visible directly in chat with decreased opacity (no extra tags or trash bins added). when someone edits a message, the original text is displayed faded with reduced opacity while the new edited message stays bright right below it. works for your own messages too.
+### message-logger
+Keeps deleted messages and attachments visible with decreased opacity. Shows the original text above message edits.
 
 ```
 https://ilickft.github.io/revenge-plugins/message-logger/
@@ -67,11 +46,8 @@ https://ilickft.github.io/revenge-plugins/message-logger/
 
 ---
 
-### 💾 message saver
-
-> save any message with text & attachments, resend it back anytime
-
-save any message sent by anyone (text, images, videos, audio, or files) directly from the long-press menu or via `/save`. resend it back to any channel exactly as it was using `/resend` or from the plugin's settings manager.
+### message-saver
+Save any message and attachments via `/save` or the message context menu. Resend saved messages anytime using `/resend` or from settings.
 
 ```
 https://ilickft.github.io/revenge-plugins/message-saver/
@@ -79,11 +55,8 @@ https://ilickft.github.io/revenge-plugins/message-saver/
 
 ---
 
-### 💬 message quote
-
-> make a PNG quote card of any message or text, styled like Discord
-
-reply to any message and type `/quote` to turn it into an authentic Discord message PNG card — complete with the author's avatar, display name, role color, local timestamp, and text — and send it directly to the same chat. You can also quote custom text using `/quote text:...`, or long-press any message and tap "Quote as PNG".
+### message-quote
+Generates a Discord-styled PNG quote card with author avatar, username, role color, timestamp, and text via `/quote [text]` or the message menu.
 
 ```
 https://ilickft.github.io/revenge-plugins/message-quote/
@@ -91,11 +64,8 @@ https://ilickft.github.io/revenge-plugins/message-quote/
 
 ---
 
-### 🐾 pet pet
-
-> pet-pet gif of anyone, right in chat
-
-adds a `/petpet` slash command. reply to someone and run `/petpet`, or do `/petpet @user` to pet them directly. falls back to petting yourself if no target is given. generates an animated pet-pet gif via nekobot and sends it as a discord image embed.
+### pet-pet
+Generates an animated pet-pet petting hand GIF of any user via `/petpet`, mentioning a user, or replying to a message.
 
 ```
 https://ilickft.github.io/revenge-plugins/pet-pet/
@@ -103,11 +73,8 @@ https://ilickft.github.io/revenge-plugins/pet-pet/
 
 ---
 
-### 📺 stream 1080p
-
-> unlock 1080p, 60 fps, and source quality screen sharing
-
-removes nitro restrictions and server boost locks from stream quality settings. unlocks 1080p, 60 fps, and source resolution options in the stream quality selector when screen sharing.
+### stream-1080p
+Removes Nitro and server boost restrictions from screen sharing, unlocking 1080p, 60 FPS, and source quality options.
 
 ```
 https://ilickft.github.io/revenge-plugins/stream-1080p/
@@ -115,11 +82,8 @@ https://ilickft.github.io/revenge-plugins/stream-1080p/
 
 ---
 
-### 🔊 discordo
-
-> classic japanese "DISCORDO!" startup sound
-
-plays the famous official japanese "DISCORDO!" chime whenever discord launches. includes a test button in the plugin settings to replay the sound anytime.
+### discordo
+Plays Discord's classic Japanese "DISCORDO!" startup sound when the app launches. Includes a sound test button in plugin settings.
 
 ```
 https://ilickft.github.io/revenge-plugins/discordo/
@@ -127,11 +91,8 @@ https://ilickft.github.io/revenge-plugins/discordo/
 
 ---
 
-### 🛡️ shadow-ban
-
-> disappear any user from DMs, chats, voice channels, and everywhere
-
-shadow ban users so they completely vanish from your client. blocks messages and edits, wipes them from voice channel lists, mutes their incoming voice audio to 0%, hides 1-on-1 direct messages, and strips them from server member sidebars and typing indicators. manage shadow-banned users via `/sban`, `/unsban`, message long-press menu, or the built-in plugin settings dashboard.
+### shadow-ban
+Hides designated users across the client. Blocks messages, hides DMs, mutes incoming voice to 0%, and hides them from voice and member lists. Manage users via `/sban`, `/unsban`, or plugin settings.
 
 ```
 https://ilickft.github.io/revenge-plugins/shadow-ban/
@@ -139,11 +100,8 @@ https://ilickft.github.io/revenge-plugins/shadow-ban/
 
 ---
 
-### 🏆 achievements
-
-> unlock 430+ achievements with top toast banners, authentic sounds, and streaks
-
-ports all achievements into Discord with 100+ new Gen-Z, Gen Alpha, and TikTok/Instagram meme achievements (430 total), live progress tracking, streak counting, profile Orb shortcut, bio progress sync, top toast notifications, and authentic chimes (default.ogg & rare.ogg). includes a comprehensive dashboard in plugin settings with category filters, sound tests, and secret hints.
+### achievements
+Tracks client milestones with notification toasts, authentic audio chimes, streak tracking, a profile badge, and an optional bio sync feature.
 
 ```
 https://ilickft.github.io/revenge-plugins/achievements/
@@ -151,13 +109,10 @@ https://ilickft.github.io/revenge-plugins/achievements/
 
 ---
 
-### 🛡️ clean-context-menu `[⚠️ BROKEN]`
+### clean-context-menu (Broken)
+> **Status: Currently Broken** on recent Discord versions.
 
-> ⚠️ **Status: Currently Broken**
->
-> hide unwanted items on message long-press context menu
-
-clean up and declutter your message long-press action menu by hiding unwanted default actions (Quick Reactions bar, Reply, Edit, Pin, Copy Link, Apps, TTS, etc.) or custom actions added by other plugins. features presets, custom keywords, and dynamic item discovery with individual toggle switches.
+Customizes the message long-press menu by hiding unwanted actions using presets and custom keywords.
 
 ```
 https://ilickft.github.io/revenge-plugins/clean-context-menu/
@@ -165,11 +120,8 @@ https://ilickft.github.io/revenge-plugins/clean-context-menu/
 
 ---
 
-### 🎨 app-icons
-
-> unlock all premium discord app icons without nitro
-
-patches discord's nitro-gate checks for the app icon selector, letting you freely choose any premium icon from **Settings → Appearance → App Icon** without a subscription.
+### app-icons
+Unlocks all official alternate Discord app icons without Nitro. Select any icon under **Settings → Appearance → App Icon**.
 
 ```
 https://ilickft.github.io/revenge-plugins/app-icons/
@@ -177,13 +129,10 @@ https://ilickft.github.io/revenge-plugins/app-icons/
 
 ---
 
-### 🚫 no-orb-ads `[⚠️ BROKEN]`
+### no-orb-ads (Broken)
+> **Status: Currently Broken** on recent Discord versions.
 
-> ⚠️ **Status: Currently Broken**
->
-> block or mute discord quest/orb video ads to save bandwidth
-
-stops quest video ads from eating your bandwidth while you farm Orbs. uses 5 layered strategies: flag patching, component hiding, video collapse, REST API interception, and experiment store gating. optional "Mute Only" mode keeps the video but silences it.
+Blocks or mutes Quest video ads to save data and bandwidth while farming Orbs. Supports full block or mute-only mode in settings.
 
 ```
 https://ilickft.github.io/revenge-plugins/no-orb-ads/
@@ -191,11 +140,8 @@ https://ilickft.github.io/revenge-plugins/no-orb-ads/
 
 ---
 
-### 🔤 gauge font
-
-> custom font pack replacing Discord's default ggsans font family
-
-replaces Discord's default ggsans font family with the clean, bold Gauge Heavy typeface across the client.
+### gauge font
+Custom font configuration replacing Discord's default ggsans font family with Gauge Heavy.
 
 ```
 https://ilickft.github.io/revenge-plugins/fonts/Gauge.json
@@ -205,19 +151,16 @@ https://ilickft.github.io/revenge-plugins/fonts/Gauge.json
 
 ## installation
 
-### 🌐 web library (instant 1-click copy)
+### web library
+Open [ilickft.github.io/revenge-plugins](https://ilickft.github.io/revenge-plugins/) to browse all plugins and copy install links with 1-click.
 
-Open the [**Revenge Plugins Web Library**](https://ilickft.github.io/revenge-plugins/) to browse all plugins with search & filters and copy any install URL directly with one click.
-
-### 📲 manual install
-
-1. Copy any plugin URL above.
+### manual
+1. Copy the plugin URL.
 2. In Discord, navigate to **Settings → Plugins → `+`**.
-3. Paste the plugin URL and tap **Install**.
+3. Paste the URL and tap **Install**.
 
 ---
 
 ## disclaimer
 
-> client mods violate Discord's Terms of Service. use at your own risk.
-
+> Client mods violate Discord's Terms of Service. Use at your own risk.

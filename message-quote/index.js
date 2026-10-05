@@ -9,7 +9,6 @@
   var RN                   = vendetta.metro.common.ReactNative;
   var storage              = vendetta.plugin.storage;
 
-  // ── Metro Stores & Modules ───────────────────────────────────────────────
   var MessageStore         = findByProps("getMessage", "getMessages");
   var UserStore            = findByStoreName("UserStore");
   var SelectedChannelStore = findByStoreName("SelectedChannelStore") || findByProps("getChannelId");
@@ -21,7 +20,6 @@
   var ActionSheet          = findByProps("openLazy", "hideActionSheet");
   var Messages             = findByProps("sendMessage", "editMessage");
 
-  // UI components & helpers
   var Forms                = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
   var FormRow              = Forms && (Forms.FormRow || Forms.TableRow);
   var FormSection          = Forms && (Forms.FormSection || Forms.TableSection);
@@ -31,7 +29,6 @@
   var getAssetIDByName     = (vendetta.ui && vendetta.ui.assets && vendetta.ui.assets.getAssetIDByName) || (findByProps("getAssetIDByName") && findByProps("getAssetIDByName").getAssetIDByName);
   var showToast            = (vendetta.ui && vendetta.ui.toasts && vendetta.ui.toasts.showToast) || (findByProps("showToast") && findByProps("showToast").showToast);
 
-  // ── Defaults & Storage ───────────────────────────────────────────────────
   if (storage.enableContextMenu === undefined) {
     storage.enableContextMenu = true;
   }
@@ -44,8 +41,6 @@
 
   var patches            = [];
   var unregisterCommands = [];
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
 
   function toast(msg, isError) {
     try {
@@ -285,8 +280,6 @@
     return null;
   }
 
-  // ── PNG Quote Generation ──────────────────────────────────────────────────
-
   function generateQuotePng(data) {
     var base = "https://api.popcat.xyz/v2/discord-message";
     var params = [];
@@ -327,8 +320,6 @@
       });
     });
   }
-
-  // ── Discord Attachment Upload & Message Sending ───────────────────────────
 
   function uploadBlobToDiscord(channelId, blob, filename, token) {
     var idStr = "0";
@@ -463,7 +454,6 @@
         });
       }
 
-      // Fallback if no auth token: send direct URL embed via sendMessage
       if (Messages && typeof Messages.sendMessage === "function") {
         return Messages.sendMessage(channelId, { content: genResult.directUrl });
       }
@@ -475,8 +465,6 @@
       toast("Quote failed: " + err.message, true);
     });
   }
-
-  // ── Long-press ActionSheet patch: "Quote as PNG" button ───────────────────
 
   function patchActionSheet() {
     if (!ActionSheet || typeof ActionSheet.openLazy !== "function") return;
@@ -560,8 +548,6 @@
     );
   }
 
-  // ── Slash Command Registration ────────────────────────────────────────────
-
   function removeQuoteCommand() {
     try {
       if (vendetta.commands && Array.isArray(vendetta.commands.commands)) {
@@ -594,7 +580,7 @@
               displayName: "text",
               description: "Custom text to quote (overrides replied message, or quotes yourself)",
               displayDescription: "Custom text to quote",
-              type: 3, // STRING
+              type: 3,
               required: false,
             },
             {
@@ -602,7 +588,7 @@
               displayName: "user",
               description: "User to attribute the quote to (defaults to replied user or yourself)",
               displayDescription: "User to quote",
-              type: 6, // USER
+              type: 6,
               required: false,
             },
             {
@@ -610,7 +596,7 @@
               displayName: "color",
               description: "Username hex color (e.g. #5865f2)",
               displayDescription: "Username color",
-              type: 3, // STRING
+              type: 3,
               required: false,
             },
           ],
@@ -647,8 +633,6 @@
       );
     }
   }
-
-  // ── Settings UI ───────────────────────────────────────────────────────────
 
   function Settings() {
     var forceUpdate = React.useReducer(function (x) { return x + 1; }, 0)[1];
@@ -780,8 +764,6 @@
       )
     );
   }
-
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   return {
     onLoad: function () {

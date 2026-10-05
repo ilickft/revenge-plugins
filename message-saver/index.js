@@ -120,7 +120,6 @@
 
     var msg = (rawMsg && typeof rawMsg.toJS === "function") ? rawMsg.toJS() : rawMsg;
 
-    // 1. Standard message attachments
     var rawAtts = msg.attachments || msg._attachments || msg.attachments_;
     if (rawAtts && typeof rawAtts.toJS === "function") {
       try { rawAtts = rawAtts.toJS(); } catch (e) {}
@@ -177,7 +176,6 @@
       }
     }
 
-    // 2. Audio embeds / songs / music bot embeds
     var rawEmbeds = msg.embeds;
     if (rawEmbeds && typeof rawEmbeds.toJS === "function") {
       try { rawEmbeds = rawEmbeds.toJS(); } catch (e) {}
@@ -222,7 +220,6 @@
       }
     }
 
-    // 3. Direct audio links in message text
     if (typeof msg.content === "string" && msg.content) {
       var audioUrlRegex = /(https?:\/\/[^\s<>]+\.(?:mp3|wav|ogg|opus|m4a|flac|aac)(?:\?[^\s<>]*)?)/gi;
       var match;
@@ -243,7 +240,6 @@
       }
     }
 
-    // 4. Stickers
     var rawStickers = msg.sticker_items || msg.stickers;
     if (rawStickers && typeof rawStickers.toJS === "function") {
       try { rawStickers = rawStickers.toJS(); } catch (e) {}
@@ -307,7 +303,6 @@
 
     var attachments = extractAttachments(msg);
 
-    // If attachments is empty, try looking up in MessageStore or _channelMessages
     if (attachments.length === 0 && id) {
       try {
         var stored = null;
@@ -565,7 +560,6 @@
     var item = (typeof itemOrContent === "object") ? itemOrContent : null;
     var rawText = (typeof itemOrContent === "string") ? itemOrContent : (item ? (item.content || "") : "");
 
-    // If it's a plain string, or an item without attachments:
     if (!item || !Array.isArray(item.attachments) || item.attachments.length === 0) {
       var contentToSend = rawText || (item ? formatMessageToSend(item) : "");
       if (!contentToSend) return Promise.reject(new Error("No content to send"));
@@ -589,7 +583,6 @@
         });
       }
 
-      // Fallback: Discord internal Messages.sendMessage
       try {
         var Messages = findByProps("sendMessage", "editMessage");
         if (Messages && typeof Messages.sendMessage === "function") {
@@ -603,7 +596,6 @@
       return Promise.reject(new Error("No auth token available"));
     }
 
-    // Now handling item with attachments!
     if (!token) {
       return sendMessageToChannel(channelId, formatMessageToSend(item));
     }
@@ -648,7 +640,6 @@
       });
     }
 
-    // Normal attachments (audio files, songs, images, docs, etc.)
     var uploadPromises = [];
     for (var i = 0; i < Math.min(item.attachments.length, 10); i++) {
       (function (att, idx) {
@@ -834,7 +825,6 @@
     return null;
   }
 
-  // ── Long-press ActionSheet patch: "Save Message" button ───────────────────
   function patchActionSheet() {
     if (!ActionSheet || typeof ActionSheet.openLazy !== "function") return;
 
@@ -924,7 +914,6 @@
     );
   }
 
-  // ── Slash Commands ────────────────────────────────────────────────────────
   function registerSlashCommands() {
     if (!vendetta.commands || typeof vendetta.commands.registerCommand !== "function") return;
 
@@ -941,7 +930,6 @@
 
     cleanCommands(["save", "resend", "saved-list"]);
 
-    // 1. /save [name]
     unregisterCommands.push(
       vendetta.commands.registerCommand({
         name: "save",
@@ -989,7 +977,6 @@
       })
     );
 
-    // 2. /resend [name]
     unregisterCommands.push(
       vendetta.commands.registerCommand({
         name: "resend",
@@ -1027,17 +1014,17 @@
 
           if (query && query.trim()) {
             var q = query.trim().toLowerCase();
-            // 1. Exact match
+
             targetItem = list.find(function (x) {
               return x && x.name && x.name.toLowerCase() === q;
             });
-            // 2. Starts-with match
+
             if (!targetItem) {
               targetItem = list.find(function (x) {
                 return x && x.name && x.name.toLowerCase().startsWith(q);
               });
             }
-            // 3. Substring match
+
             if (!targetItem) {
               targetItem = list.find(function (x) {
                 return x && x.name && x.name.toLowerCase().indexOf(q) !== -1;
@@ -1049,7 +1036,7 @@
               return;
             }
           } else {
-            // Default to newest message
+
             targetItem = list[0];
           }
 
@@ -1062,7 +1049,6 @@
       })
     );
 
-    // 3. /saved-list
     unregisterCommands.push(
       vendetta.commands.registerCommand({
         name: "saved-list",
@@ -1086,7 +1072,7 @@
             var attCount = (item.attachments && item.attachments.length) || 0;
             var voice = isVoiceItem(item);
             var audio = isAudioItem(item);
-            var attBadge = voice ? " [🎤 Voice]" : (audio ? " [🎵 Audio/Song]" : (attCount ? " [" + attCount + " attachment" + (attCount > 1 ? "s" : "") + "]" : ""));
+            var attBadge = voice ? " [Voice]" : (audio ? " [Audio/Song]" : (attCount ? " [" + attCount + " attachment" + (attCount > 1 ? "s" : "") + "]" : ""));
             lines.push((i + 1) + ". **" + item.name + "**" + attBadge + " *(by " + item.authorName + ")*");
           }
           if (list.length > 10) {
@@ -1099,7 +1085,6 @@
     );
   }
 
-  // ── Settings UI ───────────────────────────────────────────────────────────
   function Settings() {
     var forceUpdate = React.useReducer(function (x) { return x + 1; }, 0)[1];
     var list = storage.saved || [];
@@ -1164,9 +1149,9 @@
               var voice = isVoiceItem(item);
               var audio = isAudioItem(item);
               var details = "By " + item.authorName + " • " + new Date(item.savedAt).toLocaleDateString();
-              if (voice) details += " • 🎤 Voice Msg";
-              else if (audio) details += " • 🎵 Audio Track";
-              else if (attCount > 0) details += " • 📎 " + attCount + " file(s)";
+              if (voice) details += " • Voice Msg";
+              else if (audio) details += " • Audio Track";
+              else if (attCount > 0) details += " • " + attCount + " file(s)";
 
               return React.createElement(
                 FormRow,

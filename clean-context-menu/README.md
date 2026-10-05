@@ -1,30 +1,15 @@
 # Clean Context Menu
 
-> ⚠️ **Status: Currently Broken** — This plugin is currently broken and may not function properly on recent Discord / Revenge versions.
+> **Status: Currently Broken** on recent Discord versions.
 
-Customize and declutter your Discord mobile experience by hiding unwanted items when long-pressing messages.
+Customizes and declutters the Discord mobile message long-press menu by hiding unwanted actions.
 
 ## Features
 
-- **Toggle Standard Actions:** Hide or show any of the default Discord message actions:
-  - ⚡ Quick Reactions Bar (top emoji picker)
-  - 💬 Reply
-  - ✏️ Edit Message
-  - 📋 Copy Text
-  - 🔗 Copy Message Link
-  - 📌 Pin / Unpin Message
-  - ↗️ Forward Message
-  - 👁️ Mark Unread
-  - 🧵 Create Thread
-  - 🤖 Apps / Commands
-  - 🔊 Speak Message (TTS)
-  - 🗑️ Delete Message
-  - ⚠️ Report Message
-  - ➕ Add Reaction Button
-- **Custom Keywords:** Type any word or phrase (e.g. actions added by other plugins like "Quote as PNG", "Petpet") to hide them automatically.
-- **Dynamic Discovery:** Automatically discovers and lists any context menu items present on your client with individual toggle switches.
-- **Non-Destructive & Smooth:** Filters the React tree seamlessly with zero layout gaps or broken touch handlers.
-- **Master Switch:** Quickly toggle the entire hiding engine on or off anytime.
+- **Toggle Standard Actions:** Hide or show default message actions (Quick Reactions Bar, Reply, Edit Message, Copy Text, Copy Message Link, Pin/Unpin, Forward, Mark Unread, Create Thread, Apps, Speak/TTS, Delete, Report, Add Reaction).
+- **Custom Keywords:** Hide actions by keyword match (e.g. actions added by other plugins).
+- **Dynamic Discovery:** Lists context menu items discovered on the client with individual toggles.
+- **Master Switch:** Toggle the entire filtering engine on or off anytime.
 
 ## Installation
 

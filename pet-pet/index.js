@@ -6,13 +6,10 @@
   var showToast       = vendetta.ui.toasts.showToast;
   var getAssetIDByName = vendetta.ui.assets.getAssetIDByName;
 
-  // ── Stores ────────────────────────────────────────────────────────────────
   var UserStore        = findByStoreName("UserStore");
   var MessageStore     = findByProps("getMessage", "getMessages");
   var PendingReplyStore = findByProps("getPendingReply");
   var TokenModule      = findByProps("getToken");
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
 
   function toast(msg, isError) {
     try {
@@ -34,11 +31,9 @@
                    (PendingReplyStore && PendingReplyStore.getPendingReply());
       if (!pending) return null;
 
-      // Normalise across different Revenge versions
       var msg = pending.message || pending.reply || pending;
       if (msg && msg.author && msg.author.id) return msg.author.id;
 
-      // Fall back to looking up via messageId
       var msgId  = pending.messageId  || pending.message_id  || (msg && msg.id);
       var chanId = pending.channelId  || pending.channel_id  || channelId;
       if (msgId && chanId && MessageStore) {
@@ -55,17 +50,10 @@
       var ext = user.avatar.startsWith("a_") ? "gif" : "png";
       return "https://cdn.discordapp.com/avatars/" + user.id + "/" + user.avatar + "." + ext + "?size=128";
     }
-    // Default avatar (safe approximation for both legacy discriminator & new system)
+
     var idx = Math.abs(parseInt(user.id.slice(-2), 10)) % 5;
     return "https://cdn.discordapp.com/embed/avatars/" + idx + ".png";
   }
-
-  // ── Pet-pet GIF generation ────────────────────────────────────────────────
-  //
-  // Uses nekobot.xyz — returns JSON with a direct .gif URL.
-  // API: GET https://nekobot.xyz/api/imagegen?type=petpet&image=<avatar_url>
-  // The returned URL is a .gif file hosted on Cloudflare — Discord will
-  // auto-embed it as an animated image in chat.
 
   async function petpet(channelId, targetUserId) {
     var user = UserStore && UserStore.getUser(targetUserId);
@@ -84,10 +72,9 @@
       if (!apiRes.ok) throw new Error("API " + apiRes.status);
 
       var data   = await apiRes.json();
-      var gifUrl = data.message; // direct .gif link on nekobot CDN
+      var gifUrl = data.message;
       if (!gifUrl) throw new Error("No GIF URL in response");
 
-      // Send the .gif URL — Discord auto-embeds it as an animated image.
       var token = TokenModule && TokenModule.getToken && TokenModule.getToken();
       if (!token) throw new Error("No auth token");
 
@@ -109,8 +96,6 @@
       toast("Pet-pet failed: " + e.message, true);
     }
   }
-
-  // ── Command registration ──────────────────────────────────────────────────
 
   var unregisterCmd = null;
 
@@ -146,7 +131,7 @@
               displayName:        "user",
               description:        "User to pet (defaults to replied user or yourself)",
               displayDescription: "User to pet (defaults to replied user or yourself)",
-              type:               6,       // ApplicationCommandOptionType.USER
+              type:               6,
               required:           false,
             },
           ],
@@ -155,20 +140,20 @@
             if (!channelId) return null;
 
             var targetId =
-              // 1. Explicit user option
+
               optionValue(args, "user") ||
-              // 2. Whoever the user is currently replying to
+
               resolvePendingReplyAuthorId(channelId) ||
-              // 3. Pet yourself
+
               (UserStore && UserStore.getCurrentUser() && UserStore.getCurrentUser().id);
 
             if (targetId) {
-              petpet(channelId, targetId); // fire-and-forget (async)
+              petpet(channelId, targetId);
             } else {
               toast("Couldn't figure out who to pet!", true);
             }
 
-            return null; // don't send an extra text message
+            return null;
           },
         });
       }

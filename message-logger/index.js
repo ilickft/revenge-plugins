@@ -15,13 +15,12 @@
 
   var patches = [];
 
-  // Map of message ID -> clean original text content before any edits
   var firstOriginalText = new Map();
-  // Set of message IDs that have been edited
+
   var editedIds = new Set();
-  // Map of message ID -> { payload: args, stage: 1 | 2 }
+
   var deletedMessages = new Map();
-  // Local cache of recently seen messages
+
   var messageCache = new Map();
 
   function cacheMessage(msg) {
@@ -36,7 +35,6 @@
   function getOriginalMessage(channelId, messageId) {
     if (!messageId) return null;
 
-    // 1. Check MessageStore
     try {
       if (MessageStore && typeof MessageStore.getMessage === "function") {
         var m = (channelId && MessageStore.getMessage(channelId, messageId)) || MessageStore.getMessage(messageId);
@@ -44,7 +42,6 @@
       }
     } catch (e) {}
 
-    // 2. Check ChannelMessages
     try {
       if (ChannelMessages && channelId) {
         var chan = ChannelMessages.get ? ChannelMessages.get(channelId) : (ChannelMessages._channelMessages && ChannelMessages._channelMessages[channelId]);
@@ -53,7 +50,6 @@
       }
     } catch (e) {}
 
-    // 3. Check local messageCache
     if (messageCache.has(messageId)) {
       return messageCache.get(messageId);
     }
@@ -61,7 +57,6 @@
     return null;
   }
 
-  // Ensure author object is always populated and sanitized so avatar rendering never crashes on "???"
   function getSanitizedAuthor(authorA, authorB) {
     var raw = authorA || authorB;
     var currentUser = null;
@@ -76,7 +71,6 @@
     var discriminator = (raw && raw.discriminator) || (currentUser && currentUser.discriminator) || "0";
     var avatar = (raw && raw.avatar !== undefined) ? raw.avatar : (currentUser ? currentUser.avatar : null);
 
-    // If discriminator is missing, "???", or not a numeric string, default to "0" (modern pomelo/default avatar)
     if (!discriminator || discriminator === "???" || isNaN(Number(discriminator))) {
       discriminator = "0";
     }
@@ -106,7 +100,6 @@
     return authorObj;
   }
 
-  // Defensive patch: guard against "???" or invalid discriminator in avatar URL generators
   try {
     if (AvatarUtils) {
       if (typeof AvatarUtils.getDefaultAvatarURL === "function") {
@@ -159,7 +152,6 @@
     }
   } catch (e) {}
 
-  // Discord subtext markdown syntax (-# ) natively renders text dimmed with lower opacity / muted color
   function makeDimmed(text) {
     if (typeof text !== "string" || !text) return "";
     return text.split("\n").map(function (line) {
@@ -197,7 +189,6 @@
     return clean;
   }
 
-  // When editing an edited message, strip the [Original Message] headers so the user only edits their latest text
   try {
     if (MessageActions && typeof MessageActions.startEditMessage === "function") {
       patches.push(
@@ -214,9 +205,6 @@
     }
   } catch (e) {}
 
-  // ── Core Flux Dispatch patch ──────────────────────────────────────────────
-  // Uses a pure before hook on FluxDispatcher to safely transform actions in-place
-  // without dropping dispatches, throwing unhandled exceptions, or crashing React Native/WebRTC.
   patches.push(
     before("dispatch", FluxDispatcher, function (args) {
       try {
@@ -225,7 +213,6 @@
 
         var type = event.type;
 
-        // ── Cache messages on arrival ────────────────────────────────────────
         if (type === "MESSAGE_CREATE" || type === "LOCAL_MESSAGE_CREATE") {
           if (event.message) cacheMessage(event.message);
         }
@@ -236,7 +223,6 @@
           }
         }
 
-        // ── Handle message edits (MESSAGE_UPDATE) ────────────────────────────
         if (type === "MESSAGE_UPDATE") {
           if (event.otherPluginBypass) return args;
 
@@ -252,7 +238,6 @@
           var origContent = typeof original.content === "string" ? original.content : "";
           if (!origContent || updateMsg.content === origContent) return args;
 
-          // Check if this update is just an embed expanding (not a real text edit)
           var embeds = updateMsg.embeds || event.embeds;
           if (Array.isArray(embeds)) {
             var isEmbedOnly = embeds.some(function (emb) {
@@ -281,8 +266,6 @@
             var guildId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(updateChanId) && ChannelStore.getChannel(updateChanId).guild_id) || original.guild_id || updateMsg.guild_id || null;
             var authorObj = getSanitizedAuthor(updateMsg.author, original.author);
 
-            // Pure partial update: ONLY update content, timestamp, author, and essential metadata!
-            // Never pass an attachments array or clone records, ensuring Discord keeps existing attachments untouched.
             args[0] = {
               type: "MESSAGE_UPDATE",
               channelId: updateChanId,
@@ -314,7 +297,6 @@
           return args;
         }
 
-        // ── Handle single delete (MESSAGE_DELETE) ────────────────────────────
         if (type === "MESSAGE_DELETE") {
           if (event.otherPluginBypass) return args;
 
@@ -323,7 +305,6 @@
 
           if (!id) return args;
 
-          // Stage 2: Gateway confirmation of a delete we already ghosted locally
           if (deletedMessages.has(id)) {
             var entry = deletedMessages.get(id);
             if (entry && entry.stage === 1) {
@@ -332,7 +313,7 @@
               return args;
             }
             if (entry && entry.stage === 2) {
-              // Both local and gateway phases complete; return safe update payload
+
               args[0] = entry.payload;
               return args;
             }
@@ -384,22 +365,12 @@
             (originalMessage.stickers && originalMessage.stickers.length > 0)
           );
 
-          // If the message has no text caption but has media/embeds/stickers,
-          // show dimmed '(deleted)' indicator so chat clearly shows it was deleted while keeping attachments fully intact
           if (!contentToSend && (hasAttachments || hasEmbeds || hasStickers)) {
             contentToSend = "-# *(deleted)*";
           }
 
           var authorObj = getSanitizedAuthor(originalMessage.author);
 
-          // CRITICAL ARCHITECTURAL FIX:
-          // Never include an `attachments` or `embeds` array in the MESSAGE_UPDATE payload!
-          // Standard Discord Gateway MESSAGE_UPDATE events are partial updates containing only { id, channel_id, content }.
-          // When `attachments` is omitted from MESSAGE_UPDATE, Discord's MessageStore automatically merges the new content
-          // while leaving existing AttachmentRecord instances in MessageStore 100% untouched and intact.
-          // Passing an attachments array (even an array of AttachmentRecords) causes MessageStore to attempt re-instantiation
-          // where getters (like proxyUrl) are stripped or undefined, resulting in a fatal FastImage / React Native render crash
-          // that tears down the native WebRTC voice connection on whichever device receives the update.
           var ghostAction = {
             type: "MESSAGE_UPDATE",
             channelId: chId,
@@ -443,7 +414,6 @@
           return args;
         }
 
-        // ── Handle bulk delete (MESSAGE_DELETE_BULK) ─────────────────────────
         if (type === "MESSAGE_DELETE_BULK") {
           var ids = event.ids || [];
           var bChannelId = event.channelId || event.channel_id;

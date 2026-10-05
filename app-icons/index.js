@@ -10,7 +10,6 @@
   var patches = [];
   var restoredIdMods = [];
 
-  // Helper to safely strip isPremium from an icon object (handles Object.freeze safely)
   function makeIconFree(icon) {
     if (!icon || typeof icon !== "object") return icon;
     try {
@@ -54,9 +53,7 @@
 
   return {
     onLoad: function () {
-      // ── 1. The Core: Unlock all official icons and freemium IDs ─────────────
-      // Discord mobile uses `getOfficialAlternateIcons`, `getIcons`, `getIconById`
-      // and checks if selected icons are in `FreemiumAppIconIds`.
+
       try {
         var iconMods = [];
         try {
@@ -115,7 +112,6 @@
         }
       } catch (e) {}
 
-      // ── 2. Allow selecting all icons (FreemiumAppIconIds = MasterAppIconIds) ──
       try {
         var idMods = [];
         try {
@@ -155,7 +151,6 @@
         }
       } catch (e) {}
 
-      // ── 3. Fallback for builds with getAppIcons / getAlternateIcons ─────────
       try {
         var fallbackIconMods = [];
         try {
@@ -193,7 +188,6 @@
         }
       } catch (e) {}
 
-      // ── 4. Premium / Nitro capability checks & React hooks ──────────────────
       var trueProps = [
         "canUseAppIcons",
         "hasPremiumAppIcons",
@@ -225,7 +219,6 @@
         patchAllByProp(falseProps[q], false);
       }
 
-      // ── 5. AppIconStore patches ─────────────────────────────────────────────
       try {
         var appIconStore = findByStoreName("AppIconStore");
         if (appIconStore) {
@@ -244,7 +237,6 @@
         }
       } catch (e) {}
 
-      // ── 6. Hide the bottom Nitro Upsell Card on App Icon screen ─────────────
       var upsellNames = [
         "AppIconUpsell",
         "AppIconsUpsell",
@@ -269,13 +261,12 @@
     },
 
     onUnload: function () {
-      // 1. Unpatch all function hooks
+
       for (var i = 0; i < patches.length; i++) {
         try { patches[i](); } catch (e) {}
       }
       patches = [];
 
-      // 2. Restore original Freemium & Premium ID arrays
       for (var r = 0; r < restoredIdMods.length; r++) {
         try {
           var item = restoredIdMods[r];

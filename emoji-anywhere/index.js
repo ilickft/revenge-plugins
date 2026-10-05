@@ -7,7 +7,6 @@
   var before          = vendetta.patcher.before;
   var storage         = vendetta.plugin.storage;
 
-  // ── Stores ────────────────────────────────────────────────────────────────
   var EmojiStore           = findByStoreName("EmojiStore") || findByProps("getCustomEmojiById");
   var SelectedGuildStore   = findByStoreName("SelectedGuildStore") || findByProps("getGuildId");
   var SelectedChannelStore = findByStoreName("SelectedChannelStore") || findByProps("getChannelId");
@@ -125,12 +124,11 @@
     }
 
     var isAnimated = (isAnimatedTag === "a") || Boolean(emoji.animated);
-    // In Discord, animated custom emojis always require Nitro, even in the same server.
+
     if (isAnimated && !userHasNitro()) {
       return false;
     }
 
-    // If emoji is disabled in server (e.g. lost boost level)
     if (emoji.available === false || emoji.disabled === true) {
       return false;
     }
@@ -146,14 +144,12 @@
     return custom.replace(/\{\{name\}\}/gi, originalName).replace(/\{name\}/gi, originalName);
   }
 
-  // Matches <:name:id> (static) and <a:name:id> (animated)
   var EMOJI_RE = /<(a?):([a-zA-Z0-9_]+):(\d{17,20})>/g;
-  // Split on code fences / inline code so we never touch code blocks
+
   var CODE_RE  = new RegExp("(```[\\s\\S]*?```|`[^`\\n]*`)");
 
   function emojiToUrl(fullMatch, animated, name, id, guildId) {
-    // If the emoji belongs to the current server and is available without Nitro,
-    // leave it as a normal <:name:id> emoji!
+
     if (isEmojiUsableWithoutNitro(id, animated, guildId)) {
       return fullMatch;
     }
@@ -274,7 +270,7 @@
 
   return {
     onLoad: function () {
-      // ── 1. Unlock emoji picker & remove server lock icons ──────────────────
+
       safePatch("canUseEmojisEverywhere",       true);
       safePatch("canUseAnimatedEmojis",         true);
       safePatch("canUseCustomEmojisEverywhere", true);
@@ -282,7 +278,6 @@
       safePatch("isEmojiDisabled",              false);
       safePatch("getEmojiUnavailableReason",    null);
 
-      // ── 2. Hook sendMessage, editMessage, and uploadLocalFiles ─────────────
       var Messages = findByProps("sendMessage", "editMessage");
       if (Messages) {
         patches.push(before("sendMessage", Messages, function (args) { handle(args[1], args[0]); }));
