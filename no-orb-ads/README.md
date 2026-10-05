@@ -1,5 +1,7 @@
 # No Orb Ads
 
+> ⚠️ **Status: Currently Broken** — This plugin is currently broken and may not function properly on recent Discord / Revenge versions.
+
 Block or mute Discord Quest and Orb video ads to save data, battery, and bandwidth while farming Orbs.
 
 ## Features

@@ -343,6 +343,12 @@
       color: #949ff7;
     }
 
+    .badge-broken {
+      background-color: rgba(237, 66, 69, 0.2) !important;
+      color: #ff7b7d !important;
+      border: 1px solid rgba(237, 66, 69, 0.4);
+    }
+
     .plugin-desc {
       font-size: 13.5px;
       color: var(--text-normal);
@@ -836,7 +842,8 @@
         emoji: "🛡️",
         category: "ui",
         categoryLabel: "Customization & UI",
-        desc: "Clean up message long-press menus by hiding unwanted items (Reactions bar, Reply, Edit, Pin, Apps, TTS) with individual toggles.",
+        broken: true,
+        desc: "⚠️ [Currently Broken] Clean up message long-press menus by hiding unwanted items (Reactions bar, Reply, Edit, Pin, Apps, TTS) with individual toggles.",
         url: "https://ilickft.github.io/revenge-plugins/clean-context-menu/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/clean-context-menu"
       },
@@ -856,7 +863,8 @@
         emoji: "🚫",
         category: "privacy",
         categoryLabel: "Privacy & Utils",
-        desc: "Blocks or mutes Discord Quest and Orb video ads with 5 layered strategies to save mobile data and bandwidth while farming Orbs.",
+        broken: true,
+        desc: "⚠️ [Currently Broken] Blocks or mutes Discord Quest and Orb video ads with 5 layered strategies to save mobile data and bandwidth while farming Orbs.",
         url: "https://ilickft.github.io/revenge-plugins/no-orb-ads/",
         github: "https://github.com/ilickft/revenge-plugins/tree/main/no-orb-ads"
       },
@@ -920,6 +928,7 @@
               <div class="header-text">
                 <h3 class="plugin-title">${plugin.name}</h3>
                 <span class="plugin-badge">${plugin.categoryLabel}</span>
+                ${plugin.broken ? '<span class="plugin-badge badge-broken">⚠️ Broken</span>' : ''}
               </div>
             </div>
             <p class="plugin-desc">${plugin.desc}</p>

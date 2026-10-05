@@ -17,6 +17,8 @@ a collection of plugins for [Revenge](https://github.com/revenge-mod/revenge-bun
 
 ## plugins
 
+> ⚠️ **Notice:** **clean-context-menu** and **no-orb-ads** are currently broken.
+
 ### 🔕 no-embeds
 
 > suppress link previews on every message you send
@@ -149,8 +151,10 @@ https://ilickft.github.io/revenge-plugins/achievements/
 
 ---
 
-### 🛡️ clean-context-menu
+### 🛡️ clean-context-menu `[⚠️ BROKEN]`
 
+> ⚠️ **Status: Currently Broken**
+>
 > hide unwanted items on message long-press context menu
 
 clean up and declutter your message long-press action menu by hiding unwanted default actions (Quick Reactions bar, Reply, Edit, Pin, Copy Link, Apps, TTS, etc.) or custom actions added by other plugins. features presets, custom keywords, and dynamic item discovery with individual toggle switches.
@@ -173,8 +177,10 @@ https://ilickft.github.io/revenge-plugins/app-icons/
 
 ---
 
-### 🚫 no-orb-ads
+### 🚫 no-orb-ads `[⚠️ BROKEN]`
 
+> ⚠️ **Status: Currently Broken**
+>
 > block or mute discord quest/orb video ads to save bandwidth
 
 stops quest video ads from eating your bandwidth while you farm Orbs. uses 5 layered strategies: flag patching, component hiding, video collapse, REST API interception, and experiment store gating. optional "Mute Only" mode keeps the video but silences it.

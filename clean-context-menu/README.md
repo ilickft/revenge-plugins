@@ -1,5 +1,7 @@
 # Clean Context Menu
 
+> ⚠️ **Status: Currently Broken** — This plugin is currently broken and may not function properly on recent Discord / Revenge versions.
+
 Customize and declutter your Discord mobile experience by hiding unwanted items when long-pressing messages.
 
 ## Features
