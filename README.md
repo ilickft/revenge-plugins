@@ -178,6 +178,17 @@ https://ilickft.github.io/revenge-plugins/fonts/Gauge.json
 
 ---
 
+## themes
+
+### amoled clean
+Pure black, flat and lightweight theme for Revenge/Vendetta. No images, no effects.
+
+```
+https://raw.githubusercontent.com/ilickft/revenge-plugins/main/themes/amoled-clean.json
+```
+
+---
+
 ## installation
 
 ### web library
