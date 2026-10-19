@@ -15,7 +15,7 @@
   const SelectedGuildStore   = findByStoreName("SelectedGuildStore") || findByProps("getGuildId");
   const PendingReplyStore    = findByProps("getPendingReply");
   const ChannelMessages      = findByProps("_channelMessages");
-  const MediaEngine          = findByProps("setLocalMute", "setLocalVolume");
+  const MediaEngineStore     = findByStoreName("MediaEngineStore") || findByProps("getLocalVolume", "isLocalMute");
   const ActionSheet          = findByProps("openLazy", "hideActionSheet");
   const TokenModule          = findByProps("getToken");
   const MemberSearch         = findByProps("queryMembers") || findByProps("searchMembers");
@@ -248,22 +248,124 @@
     } catch (e) {}
   }
 
-  function muteUserAudio(userId) {
+  function getMediaEngineModules() {
+    const mods = [];
     try {
-      if (MediaEngine) {
-        if (typeof MediaEngine.setLocalMute === "function") MediaEngine.setLocalMute(userId, true);
-        if (typeof MediaEngine.setLocalVolume === "function") MediaEngine.setLocalVolume(userId, 0);
+      if (typeof vendetta.metro.findByPropsAll === "function") {
+        const m1 = vendetta.metro.findByPropsAll("setLocalMute") || [];
+        const m2 = vendetta.metro.findByPropsAll("setLocalVolume") || [];
+        for (let i = 0; i < m1.length; i++) if (!mods.includes(m1[i])) mods.push(m1[i]);
+        for (let j = 0; j < m2.length; j++) if (!mods.includes(m2[j])) mods.push(m2[j]);
+      }
+    } catch (e) {}
+    if (mods.length === 0) {
+      const single = findByProps("setLocalMute") || findByProps("setLocalVolume");
+      if (single) mods.push(single);
+    }
+    return mods;
+  }
+
+  function muteUserAudio(userId) {
+    if (!userId) return;
+    const uidStr = String(userId);
+    try {
+      const mods = getMediaEngineModules();
+      for (let i = 0; i < mods.length; i++) {
+        const m = mods[i];
+        if (m) {
+          if (typeof m.setLocalMute === "function") {
+            try { m.setLocalMute(uidStr, true); } catch (e) {}
+          }
+          if (typeof m.setLocalVolume === "function") {
+            try { m.setLocalVolume(uidStr, 0); } catch (e) {}
+          }
+        }
+      }
+
+      if (FluxDispatcher && typeof FluxDispatcher.dispatch === "function") {
+        try {
+          FluxDispatcher.dispatch({
+            type: "AUDIO_SET_LOCAL_MUTE",
+            context: "default",
+            userId: uidStr,
+            mute: true,
+          });
+          FluxDispatcher.dispatch({
+            type: "AUDIO_SET_LOCAL_VOLUME",
+            context: "default",
+            userId: uidStr,
+            volume: 0,
+          });
+          FluxDispatcher.dispatch({
+            type: "AUDIO_SET_LOCAL_MUTE",
+            userId: uidStr,
+            mute: true,
+          });
+          FluxDispatcher.dispatch({
+            type: "AUDIO_SET_LOCAL_VOLUME",
+            userId: uidStr,
+            volume: 0,
+          });
+        } catch (e) {}
       }
     } catch (e) {}
   }
 
   function unmuteUserAudio(userId) {
+    if (!userId) return;
+    const uidStr = String(userId);
     try {
-      if (MediaEngine) {
-        if (typeof MediaEngine.setLocalMute === "function") MediaEngine.setLocalMute(userId, false);
-        if (typeof MediaEngine.setLocalVolume === "function") MediaEngine.setLocalVolume(userId, 100);
+      const mods = getMediaEngineModules();
+      for (let i = 0; i < mods.length; i++) {
+        const m = mods[i];
+        if (m) {
+          if (typeof m.setLocalMute === "function") {
+            try { m.setLocalMute(uidStr, false); } catch (e) {}
+          }
+          if (typeof m.setLocalVolume === "function") {
+            try { m.setLocalVolume(uidStr, 100); } catch (e) {}
+          }
+        }
+      }
+
+      if (FluxDispatcher && typeof FluxDispatcher.dispatch === "function") {
+        try {
+          FluxDispatcher.dispatch({
+            type: "AUDIO_SET_LOCAL_MUTE",
+            context: "default",
+            userId: uidStr,
+            mute: false,
+          });
+          FluxDispatcher.dispatch({
+            type: "AUDIO_SET_LOCAL_VOLUME",
+            context: "default",
+            userId: uidStr,
+            volume: 100,
+          });
+          FluxDispatcher.dispatch({
+            type: "AUDIO_SET_LOCAL_MUTE",
+            userId: uidStr,
+            mute: false,
+          });
+          FluxDispatcher.dispatch({
+            type: "AUDIO_SET_LOCAL_VOLUME",
+            userId: uidStr,
+            volume: 100,
+          });
+        } catch (e) {}
       }
     } catch (e) {}
+  }
+
+  function muteAllBannedUsers() {
+    if (Array.isArray(storage.bannedUsers)) {
+      for (let i = 0; i < storage.bannedUsers.length; i++) {
+        const u = storage.bannedUsers[i];
+        if (u && u.id) {
+          muteUserAudio(u.id);
+        }
+      }
+    }
   }
 
   function purgeMessagesForUser(targetId) {
@@ -478,11 +580,11 @@
           }
 
           if (type === "VOICE_STATE_UPDATES" && Array.isArray(event.voiceStates)) {
-            if (storage.hideVoice !== false) {
-              for (let v = 0; v < event.voiceStates.length; v++) {
-                const vs = event.voiceStates[v];
-                if (vs && vs.userId && isShadowBanned(vs.userId)) {
-
+            for (let v = 0; v < event.voiceStates.length; v++) {
+              const vs = event.voiceStates[v];
+              if (vs && vs.userId && isShadowBanned(vs.userId)) {
+                muteUserAudio(vs.userId);
+                if (storage.hideVoice !== false) {
                   vs.channelId = null;
                 }
               }
@@ -490,12 +592,28 @@
           }
 
           if (type === "AUDIO_SPEAKING" || type === "VOICE_SPEAKING" || type === "SPEAKING") {
-            if (storage.hideVoice !== false) {
-              const spkId = event.userId || event.speakerUserId;
-              if (spkId && isShadowBanned(spkId)) {
-                args[0] = { type: "__SBAN_BLOCKED__" };
-                return args;
-              }
+            const spkId = event.userId || event.speakerUserId;
+            if (spkId && isShadowBanned(spkId)) {
+              muteUserAudio(spkId);
+              args[0] = { type: "__SBAN_BLOCKED__" };
+              return args;
+            }
+          }
+
+          if (type === "RTC_CONNECTION_STATE" && (event.state === "RTC_CONNECTED" || event.state === "CONNECTED")) {
+            muteAllBannedUsers();
+          }
+
+          if (type === "VOICE_CHANNEL_SELECT" && event.channelId) {
+            muteAllBannedUsers();
+          }
+
+          if ((type === "AUDIO_SET_LOCAL_MUTE" || type === "AUDIO_SET_LOCAL_VOLUME") && event.userId && isShadowBanned(event.userId)) {
+            if (type === "AUDIO_SET_LOCAL_MUTE") {
+              event.mute = true;
+            }
+            if (type === "AUDIO_SET_LOCAL_VOLUME") {
+              event.volume = 0;
             }
           }
 
@@ -674,6 +792,53 @@
           });
         })
       );
+    }
+
+    if (MediaEngineStore) {
+      if (typeof MediaEngineStore.getLocalVolume === "function") {
+        patches.push(
+          after("getLocalVolume", MediaEngineStore, (args, res) => {
+            const uid = args && args[0];
+            if (uid && isShadowBanned(uid)) {
+              return 0;
+            }
+            return res;
+          })
+        );
+      }
+      if (typeof MediaEngineStore.isLocalMute === "function") {
+        patches.push(
+          after("isLocalMute", MediaEngineStore, (args, res) => {
+            const uid = args && args[0];
+            if (uid && isShadowBanned(uid)) {
+              return true;
+            }
+            return res;
+          })
+        );
+      }
+      if (typeof MediaEngineStore.isMute === "function") {
+        patches.push(
+          after("isMute", MediaEngineStore, (args, res) => {
+            const uid = args && args[0];
+            if (uid && isShadowBanned(uid)) {
+              return true;
+            }
+            return res;
+          })
+        );
+      }
+      if (typeof MediaEngineStore.isLocalVideoDisabled === "function") {
+        patches.push(
+          after("isLocalVideoDisabled", MediaEngineStore, (args, res) => {
+            const uid = args && args[0];
+            if (uid && isShadowBanned(uid)) {
+              return true;
+            }
+            return res;
+          })
+        );
+      }
     }
   }
 
@@ -1081,12 +1246,15 @@
           })
         }),
         React.createElement(FormRow, {
-          label: "Hide from Voice Channels (VC)",
-          subLabel: "Hides avatar from VC list and mutes incoming audio",
+          label: "Mute & Hide from Voice Channels (VC)",
+          subLabel: "Mutes incoming voice (sets volume to 0) and hides avatar from VC",
           trailing: React.createElement(FormSwitch, {
             value: storage.hideVoice !== false,
             onValueChange: (val) => {
               storage.hideVoice = val;
+              if (val) {
+                muteAllBannedUsers();
+              }
               forceUpdate();
             },
             trackColor: { false: "#4e5058", true: "#5865f2" }
@@ -1161,6 +1329,7 @@
       patchStores();
       patchActionSheet();
       registerSlashCommands();
+      muteAllBannedUsers();
     },
     onUnload: function () {
       for (let i = 0; i < patches.length; i++) {
