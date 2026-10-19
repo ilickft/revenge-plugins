@@ -111,8 +111,8 @@
   function showFirstRunNotice() {
     if (storage.firstRunNoticeSeen) return;
     storage.firstRunNoticeSeen = true;
-    const title = "🚫 Shadow Ban Notice";
-    const msg = "Shadow-banning operates entirely on your local client (mutes voice audio locally, hides messages).\n\n• User profile lookups are cached locally and query Discord's native client API.\n• Your auth token is never touched or read.";
+    const title = "🚫 Shadow Ban";
+    const msg = "Welcome to Shadow Ban!\n\n• Hides designated users locally across chats, voice channels, and DMs.\n• Mutes incoming voice audio locally to 0%.\n• Manage banned users anytime with /sban, /unsban, or in plugin settings.";
     const alerts = vendetta.ui && vendetta.ui.alerts;
     if (alerts && typeof alerts.showConfirmationAlert === "function") {
       try {
@@ -279,7 +279,7 @@
       return;
     }
 
-    // 4. Native RestAPI GET /users/:id (no auth token touched)
+    // 4. Native RestAPI GET /users/:id
     restRequest("get", `/users/${idStr}`)
       .then((data) => {
         if (data && data.id) {

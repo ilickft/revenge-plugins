@@ -31,8 +31,8 @@
   function showFirstRunNotice() {
     if (storage.firstRunNoticeSeen) return;
     storage.firstRunNoticeSeen = true;
-    var title = "🐾 Pet-Pet Notice";
-    var msg = "The /petpet command generates animations using external image generation and posts the result to the current channel using Discord's native client API.\n\n• Your token is never touched or read.\n• A 5-second cooldown is enforced to prevent spam.";
+    var title = "🐾 Pet-Pet";
+    var msg = "Welcome to Pet-Pet!\n\n• Use /petpet to generate a petting GIF of yourself, a replied user, or a mentioned user.\n• Posts the generated GIF directly into the current chat.\n• A 5-second cooldown is enforced to prevent spam.";
     var alerts = vendetta.ui && vendetta.ui.alerts;
     if (alerts && typeof alerts.showConfirmationAlert === "function") {
       try {

@@ -60,8 +60,8 @@
   function showFirstRunNotice() {
     if (storage.firstRunNoticeSeen) return;
     storage.firstRunNoticeSeen = true;
-    var title = "💬 Message Quote Notice";
-    var msg = "Message Quote renders quote cards and sends them to your active chat using Discord's native client API.\n\n• Your token is never touched or read.\n• A 5-second cooldown protects channels from spam.";
+    var title = "💬 Message Quote";
+    var msg = "Welcome to Message Quote!\n\n• Turn any message into a Discord-styled PNG quote card via /quote or the message context menu.\n• Posts the generated quote image into the current chat.\n• A 5-second cooldown protects channels from spam.";
     var alerts = vendetta.ui && vendetta.ui.alerts;
     if (alerts && typeof alerts.showConfirmationAlert === "function") {
       try {

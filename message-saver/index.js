@@ -48,8 +48,8 @@
   function showFirstRunNotice() {
     if (storage.firstRunNoticeSeen) return;
     storage.firstRunNoticeSeen = true;
-    var title = "💾 Message Saver Notice";
-    var msg = "Message Saver logs deleted and edited messages locally on your device.\n\n• Resending messages uses Discord's native client API with zero token access.\n• A cooldown prevents accidental message spam.";
+    var title = "💾 Message Saver";
+    var msg = "Welcome to Message Saver!\n\n• Save any message with text and attachments to view or resend later.\n• Use /resend or the settings menu to resend saved messages.\n• A cooldown is enabled to prevent accidental message spam.";
     var alerts = vendetta.ui && vendetta.ui.alerts;
     if (alerts && typeof alerts.showConfirmationAlert === "function") {
       try {

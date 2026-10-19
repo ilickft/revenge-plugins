@@ -276,7 +276,7 @@
         return;
       }
 
-      // 3. Try REST API GET /users/@me/profile via RestAPI (no token touched)
+      // 3. Try REST API GET /users/@me/profile via RestAPI
       restRequest("get", "/users/@me/profile").then(function (data) {
         var fetched = (data && data.user_profile && typeof data.user_profile.bio === "string" && data.user_profile.bio) ||
                       (data && data.user && typeof data.user.bio === "string" && data.user.bio) ||
@@ -2263,10 +2263,10 @@
     if (storage.firstRunNoticeSeen) return;
     storage.firstRunNoticeSeen = true;
     var isRu = isRussian();
-    var title = isRu ? "🏆 Достижения: Важная информация" : "🏆 Achievements Notice";
+    var title = isRu ? "🏆 Достижения" : "🏆 Achievements";
     var msg = isRu
-      ? "Добро пожаловать в Достижения!\n\n• Плагин отправляет запросы через встроенный Discord RestAPI без ручного доступа к токенам.\n• Синхронизация с «О себе» (Bio) ВЫКЛЮЧЕНА по умолчанию и обновляется пачками каждые несколько минут только при реальных изменениях.\n• Приятного сбора достижений!"
-      : "Welcome to Achievements!\n\n• This plugin uses Discord's internal RestAPI client and never touches or reads your auth token.\n• Profile Bio Sync is OFF by default and batches edits every few minutes only when your stats change.\n• Have fun unlocking achievements!";
+      ? "Добро пожаловать в Достижения!\n\n• Отслеживайте статистику и открывайте достижения во время общения.\n• Синхронизация с «О себе» (Bio) опциональна и выключена по умолчанию.\n• При включении био обновляется раз в несколько минут только при реальных изменениях.\n\nПриятного сбора достижений!"
+      : "Welcome to Achievements!\n\n• Track stats and unlock achievements as you chat.\n• Profile Bio sync is optional and turned OFF by default.\n• When enabled, bio progress is updated every few minutes to keep edits minimal.\n\nHave fun collecting achievements!";
     var alerts = vendetta.ui && vendetta.ui.alerts;
     if (alerts && typeof alerts.showConfirmationAlert === "function") {
       try {

@@ -76,7 +76,7 @@ https://ilickft.github.io/revenge-plugins/message-logger/
 ---
 
 ### message-saver
-Save any message and attachments via `/save` or the message context menu. Resend saved messages anytime using `/resend` or from settings. Uses Discord's native REST module with zero token access and built-in cooldown protection.
+Save any message and attachments via `/save` or the message context menu. Resend saved messages anytime using `/resend` or from settings. Includes built-in cooldown protection to prevent spam.
 
 ```
 https://ilickft.github.io/revenge-plugins/message-saver/
@@ -130,7 +130,7 @@ https://ilickft.github.io/revenge-plugins/shadow-ban/
 ---
 
 ### achievements
-Unlock 430+ achievements with top toast banners, authentic sounds, streaks, profile Orb shortcut, bio progress sync, and a comprehensive settings dashboard with category filters, sound tests, and secret hints. Uses native RestAPI with zero token handling; bio sync is OFF by default and batched every few minutes with unchanged-bio skipping.
+Unlock 430+ achievements with top toast banners, authentic sounds, streaks, profile Orb shortcut, bio progress sync, and a comprehensive settings dashboard with category filters, sound tests, and secret hints. Bio sync is OFF by default and batched every few minutes with unchanged-bio skipping.
 
 ```
 https://ilickft.github.io/revenge-plugins/achievements/
@@ -201,13 +201,13 @@ Open [ilickft.github.io/revenge-plugins](https://ilickft.github.io/revenge-plugi
 
 ## security & privacy
 
-All plugins in this repository prioritize client safety, minimal network footprint, and zero token exposure:
+All plugins in this repository prioritize client safety and minimal network footprint:
 
-- **Native REST API Module:** Discord API requests are dispatched through Discord's internal `RestAPI` module (`findByProps("getAPIBaseURL", "get")`). User tokens are **never** extracted, touched, or stored by hand; requests use normal client session headers.
+- **Native Discord API Client:** Plugins dispatch requests directly through Discord's built-in client HTTP module using standard app session headers.
 - **Anti-Spam Rate Limits & Cooldowns:** Interactive commands (`/quote`, `/petpet`, `/resend`) enforce 4–5 second cooldown guards to prevent spamming channels or triggering API rate limits.
 - **Safe Profile Bio Sync:** In `achievements`, bio synchronization is **off by default**. When enabled, updates are batched into single edits every few minutes, and PATCH requests are strictly skipped if the bio text has not changed.
 - **Lookup Caching:** `shadow-ban` caches user lookups in memory and local storage, checking `UserStore` before querying the network to cut unnecessary API calls.
-- **First-Run Warnings:** Plugins that send messages or interact with profile data display a transparent, one-time popup alert upon first load.
+- **First-Run Disclosures:** Plugins that send messages or interact with profile data display a transparent, one-time popup notice upon first load.
 
 ---
 
