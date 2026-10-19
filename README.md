@@ -76,7 +76,7 @@ https://ilickft.github.io/revenge-plugins/message-logger/
 ---
 
 ### message-saver
-Save any message and attachments via `/save` or the message context menu. Resend saved messages anytime using `/resend` or from settings.
+Save any message and attachments via `/save` or the message context menu. Resend saved messages anytime using `/resend` or from settings. Uses Discord's native REST module with zero token access and built-in cooldown protection.
 
 ```
 https://ilickft.github.io/revenge-plugins/message-saver/
@@ -85,7 +85,7 @@ https://ilickft.github.io/revenge-plugins/message-saver/
 ---
 
 ### message-quote
-Generates a Discord-styled PNG quote card with author avatar, username, role color, timestamp, and text via `/quote [text]` or the message menu.
+Generates a Discord-styled PNG quote card with author avatar, username, role color, timestamp, and text via `/quote [text]` or the message menu. Dispatched via native Discord client API with a 5-second anti-spam cooldown.
 
 ```
 https://ilickft.github.io/revenge-plugins/message-quote/
@@ -94,7 +94,7 @@ https://ilickft.github.io/revenge-plugins/message-quote/
 ---
 
 ### pet-pet
-Generates an animated pet-pet petting hand GIF of any user via `/petpet`, mentioning a user, or replying to a message.
+Generates an animated pet-pet petting hand GIF of any user via `/petpet`, mentioning a user, or replying to a message. Includes a 5-second cooldown and native message sending.
 
 ```
 https://ilickft.github.io/revenge-plugins/pet-pet/
@@ -121,7 +121,7 @@ https://ilickft.github.io/revenge-plugins/discordo/
 ---
 
 ### shadow-ban
-Hides designated users across the client. Blocks messages, hides DMs, mutes incoming voice to 0%, and hides them from voice and member lists. Manage users via `/sban`, `/unsban`, or plugin settings.
+Hides designated users across the client. Blocks messages, hides DMs, mutes incoming voice to 0%, and hides them from voice and member lists. Caches user lookups locally to eliminate unnecessary network queries. Manage users via `/sban`, `/unsban`, or plugin settings.
 
 ```
 https://ilickft.github.io/revenge-plugins/shadow-ban/
@@ -130,7 +130,7 @@ https://ilickft.github.io/revenge-plugins/shadow-ban/
 ---
 
 ### achievements
-Unlock 430+ achievements with top toast banners, authentic sounds, streaks, profile Orb shortcut, bio progress sync, and a comprehensive settings dashboard with category filters, sound tests, and secret hints.
+Unlock 430+ achievements with top toast banners, authentic sounds, streaks, profile Orb shortcut, bio progress sync, and a comprehensive settings dashboard with category filters, sound tests, and secret hints. Uses native RestAPI with zero token handling; bio sync is OFF by default and batched every few minutes with unchanged-bio skipping.
 
 ```
 https://ilickft.github.io/revenge-plugins/achievements/
@@ -199,8 +199,19 @@ Open [ilickft.github.io/revenge-plugins](https://ilickft.github.io/revenge-plugi
 2. In Discord, navigate to **Settings → Plugins → `+`**.
 3. Paste the URL and tap **Install**.
 
+## security & privacy
+
+All plugins in this repository prioritize client safety, minimal network footprint, and zero token exposure:
+
+- **Native REST API Module:** Discord API requests are dispatched through Discord's internal `RestAPI` module (`findByProps("getAPIBaseURL", "get")`). User tokens are **never** extracted, touched, or stored by hand; requests use normal client session headers.
+- **Anti-Spam Rate Limits & Cooldowns:** Interactive commands (`/quote`, `/petpet`, `/resend`) enforce 4–5 second cooldown guards to prevent spamming channels or triggering API rate limits.
+- **Safe Profile Bio Sync:** In `achievements`, bio synchronization is **off by default**. When enabled, updates are batched into single edits every few minutes, and PATCH requests are strictly skipped if the bio text has not changed.
+- **Lookup Caching:** `shadow-ban` caches user lookups in memory and local storage, checking `UserStore` before querying the network to cut unnecessary API calls.
+- **First-Run Warnings:** Plugins that send messages or interact with profile data display a transparent, one-time popup alert upon first load.
+
 ---
 
 ## disclaimer
 
 > Client mods violate Discord's Terms of Service. Use at your own risk.
+

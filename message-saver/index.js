@@ -12,7 +12,7 @@
   var MessageStore         = findByProps("getMessage", "getMessages");
   var SelectedChannelStore = findByStoreName("SelectedChannelStore") || findByProps("getChannelId");
   var PendingReplyStore    = findByProps("getPendingReply");
-  var TokenModule          = findByProps("getToken");
+  var RestAPI              = findByProps("getAPIBaseURL", "get") || findByProps("get", "post", "put", "patch");
   var ActionSheet          = findByProps("openLazy", "hideActionSheet");
   var Forms                = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
   var FormRow              = Forms && (Forms.FormRow || Forms.TableRow);
@@ -25,9 +25,51 @@
 
   var patches              = [];
   var unregisterCommands   = [];
+  var lastResendTime       = 0;
 
   if (!Array.isArray(storage.saved)) {
     storage.saved = [];
+  }
+
+  function restRequest(method, endpoint, body) {
+    if (!RestAPI) return Promise.reject(new Error("RestAPI not found"));
+    var path = endpoint.replace(/^https?:\/\/discord(?:app)?\.com\/api(?:\/v\d+)?/, "");
+    if (!path.startsWith("/")) path = "/" + path;
+    var m = method.toLowerCase();
+    var fn = RestAPI[m];
+    if (typeof fn !== "function") return Promise.reject(new Error("RestAPI method " + method + " not supported"));
+    var opts = { url: path };
+    if (body !== undefined) opts.body = body;
+    return fn.call(RestAPI, opts).then(function (res) {
+      return (res && res.body !== undefined) ? res.body : res;
+    });
+  }
+
+  function showFirstRunNotice() {
+    if (storage.firstRunNoticeSeen) return;
+    storage.firstRunNoticeSeen = true;
+    var title = "💾 Message Saver Notice";
+    var msg = "Message Saver logs deleted and edited messages locally on your device.\n\n• Resending messages uses Discord's native client API with zero token access.\n• A cooldown prevents accidental message spam.";
+    var alerts = vendetta.ui && vendetta.ui.alerts;
+    if (alerts && typeof alerts.showConfirmationAlert === "function") {
+      try {
+        alerts.showConfirmationAlert({
+          title: title,
+          content: msg,
+          confirmText: "Got it",
+          cancelText: "Close",
+          onConfirm: function () {}
+        });
+        return;
+      } catch (e) {}
+    }
+    var RN = vendetta.metro.common && vendetta.metro.common.ReactNative;
+    var Alert = (RN && RN.Alert) || findByProps("alert");
+    if (Alert && typeof Alert.alert === "function") {
+      try {
+        Alert.alert(title, msg, [{ text: "Got it" }]);
+      } catch (e) {}
+    }
   }
 
   function toast(msg, isError) {
@@ -37,30 +79,6 @@
         showToast(msg, icon);
       }
     } catch (e) {}
-  }
-
-  function getAuthToken() {
-    try {
-      if (TokenModule && typeof TokenModule.getToken === "function") {
-        var t = TokenModule.getToken();
-        if (t) return t;
-      }
-    } catch (e) {}
-    try {
-      var auth = findByProps("getToken", "getFingerprint");
-      if (auth && typeof auth.getToken === "function") {
-        var t2 = auth.getToken();
-        if (t2) return t2;
-      }
-    } catch (e) {}
-    try {
-      var rawStore = findByStoreName("AuthenticationStore");
-      if (rawStore && typeof rawStore.getToken === "function") {
-        var t3 = rawStore.getToken();
-        if (t3) return t3;
-      }
-    } catch (e) {}
-    return null;
   }
 
   function findInReactTree(tree, filter) {
@@ -432,30 +450,20 @@
     return parts.join("\n");
   }
 
-  function refreshAttachmentUrl(url, token) {
-    if (!token || !url) return Promise.resolve(url);
+  function refreshAttachmentUrl(url) {
+    if (!url) return Promise.resolve(url);
     if (url.indexOf("cdn.discordapp.com") === -1 && url.indexOf("media.discordapp.net") === -1) {
       return Promise.resolve(url);
     }
-    return fetch("https://discord.com/api/v9/attachments/refresh-urls", {
-      method: "POST",
-      headers: {
-        "Authorization": token,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ attachment_urls: [url] })
-    }).then(function (res) {
-      if (!res.ok) return url;
-      return res.json().then(function (data) {
-        if (data && Array.isArray(data.refreshed_urls) && data.refreshed_urls[0] && data.refreshed_urls[0].refreshed) {
-          return data.refreshed_urls[0].refreshed;
-        }
-        return url;
-      }).catch(function () { return url; });
+    return restRequest("post", "/attachments/refresh-urls", { attachment_urls: [url] }).then(function (data) {
+      if (data && Array.isArray(data.refreshed_urls) && data.refreshed_urls[0] && data.refreshed_urls[0].refreshed) {
+        return data.refreshed_urls[0].refreshed;
+      }
+      return url;
     }).catch(function () { return url; });
   }
 
-  function fetchAttachmentBlob(att, token) {
+  function fetchAttachmentBlob(att) {
     var rawUrl = typeof att === "string" ? att : (att && att.url);
     if (!rawUrl) return Promise.reject(new Error("Attachment has no URL"));
 
@@ -486,7 +494,7 @@
     }
 
     return tryFetch(rawUrl).catch(function (err) {
-      return refreshAttachmentUrl(rawUrl, token).then(function (refreshed) {
+      return refreshAttachmentUrl(rawUrl).then(function (refreshed) {
         if (refreshed && refreshed !== rawUrl) {
           return tryFetch(refreshed);
         }
@@ -495,36 +503,21 @@
     });
   }
 
-  function uploadAttachmentToDiscord(channelId, att, token, slotId) {
+  function uploadAttachmentToDiscord(channelId, att, slotId) {
     var idStr = String(slotId || 0);
-    return fetchAttachmentBlob(att, token).then(function (blob) {
+    return fetchAttachmentBlob(att).then(function (blob) {
       var filename = (att && att.filename) || (att && att.url && att.url.split("/").pop().split("?")[0]) || ("file_" + idStr);
       var fileSize = (blob && blob.size) || (att && att.size) || 1024;
       var mimeType = (blob && blob.type) || (att && att.content_type) || inferMimeType(filename) || "application/octet-stream";
 
-      return fetch("https://discord.com/api/v9/channels/" + channelId + "/attachments", {
-        method: "POST",
-        headers: {
-          "Authorization": token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          files: [
-            {
-              id: idStr,
-              filename: filename,
-              file_size: fileSize
-            }
-          ]
-        })
-      }).then(function (res) {
-        if (!res.ok) {
-          return res.json().catch(function () { return {}; }).then(function (errData) {
-            var msg = (errData && errData.message) || ("HTTP " + res.status + " requesting upload URL");
-            throw new Error(msg);
-          });
-        }
-        return res.json();
+      return restRequest("post", "/channels/" + channelId + "/attachments", {
+        files: [
+          {
+            id: idStr,
+            filename: filename,
+            file_size: fileSize
+          }
+        ]
       }).then(function (data) {
         var uploadItem = data && data.attachments && data.attachments[0];
         if (!uploadItem || !uploadItem.upload_url || !uploadItem.upload_filename) {
@@ -556,7 +549,14 @@
   function sendMessageToChannel(channelId, itemOrContent) {
     if (!channelId || !itemOrContent) return Promise.reject(new Error("Missing channel or content"));
 
-    var token = getAuthToken();
+    var now = Date.now();
+    if (now - lastResendTime < 4000) {
+      var waitSec = Math.ceil((4000 - (now - lastResendTime)) / 1000);
+      toast("⏳ Please wait " + waitSec + "s before sending again!", true);
+      return Promise.reject(new Error("Cooldown active"));
+    }
+    lastResendTime = now;
+
     var item = (typeof itemOrContent === "object") ? itemOrContent : null;
     var rawText = (typeof itemOrContent === "string") ? itemOrContent : (item ? (item.content || "") : "");
 
@@ -564,47 +564,14 @@
       var contentToSend = rawText || (item ? formatMessageToSend(item) : "");
       if (!contentToSend) return Promise.reject(new Error("No content to send"));
 
-      if (token) {
-        return fetch("https://discord.com/api/v9/channels/" + channelId + "/messages", {
-          method: "POST",
-          headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ content: contentToSend })
-        }).then(function (res) {
-          if (!res.ok) {
-            return res.json().catch(function () { return {}; }).then(function (data) {
-              var errMsg = (data && (data.message || (data.content && data.content[0]))) || ("Discord HTTP " + res.status);
-              throw new Error(errMsg);
-            });
-          }
-          return res.json().catch(function () { return {}; });
-        });
-      }
-
-      try {
-        var Messages = findByProps("sendMessage", "editMessage");
-        if (Messages && typeof Messages.sendMessage === "function") {
-          var res2 = Messages.sendMessage(channelId, { content: contentToSend });
-          if (res2 && typeof res2.then === "function") return res2;
-          return Promise.resolve();
-        }
-      } catch (e) {
-        return Promise.reject(e);
-      }
-      return Promise.reject(new Error("No auth token available"));
-    }
-
-    if (!token) {
-      return sendMessageToChannel(channelId, formatMessageToSend(item));
+      return restRequest("post", "/channels/" + channelId + "/messages", { content: contentToSend });
     }
 
     var isVoice = isVoiceItem(item);
 
     if (isVoice) {
       var voiceAtt = item.attachments[0];
-      return uploadAttachmentToDiscord(channelId, voiceAtt, token, 0).then(function (uploaded) {
+      return uploadAttachmentToDiscord(channelId, voiceAtt, 0).then(function (uploaded) {
         var payload = {
           flags: 8192,
           attachments: [
@@ -618,22 +585,7 @@
           ]
         };
 
-        return fetch("https://discord.com/api/v9/channels/" + channelId + "/messages", {
-          method: "POST",
-          headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        }).then(function (res) {
-          if (!res.ok) {
-            return res.json().catch(function () { return {}; }).then(function (data) {
-              var errMsg = (data && (data.message || (data.content && data.content[0]))) || ("Discord HTTP " + res.status);
-              throw new Error(errMsg);
-            });
-          }
-          return res.json().catch(function () { return {}; });
-        });
+        return restRequest("post", "/channels/" + channelId + "/messages", payload);
       }).catch(function (uploadErr) {
         console.warn("[MessageSaver] Voice upload failed, falling back to text:", uploadErr);
         return sendMessageToChannel(channelId, formatMessageToSend(item));
@@ -644,7 +596,7 @@
     for (var i = 0; i < Math.min(item.attachments.length, 10); i++) {
       (function (att, idx) {
         uploadPromises.push(
-          uploadAttachmentToDiscord(channelId, att, token, idx).catch(function (e) {
+          uploadAttachmentToDiscord(channelId, att, idx).catch(function (e) {
             console.warn("[MessageSaver] Attachment " + idx + " upload failed:", e);
             return null;
           })
@@ -683,22 +635,7 @@
         attachments: successfulUploads
       };
 
-      return fetch("https://discord.com/api/v9/channels/" + channelId + "/messages", {
-        method: "POST",
-        headers: {
-          "Authorization": token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      }).then(function (res) {
-        if (!res.ok) {
-          return res.json().catch(function () { return {}; }).then(function (data) {
-            var errMsg = (data && (data.message || (data.content && data.content[0]))) || ("Discord HTTP " + res.status);
-            throw new Error(errMsg);
-          });
-        }
-        return res.json().catch(function () { return {}; });
-      });
+      return restRequest("post", "/channels/" + channelId + "/messages", payload);
     });
   }
 
@@ -1209,6 +1146,7 @@
 
   return {
     onLoad: function () {
+      showFirstRunNotice();
       patchActionSheet();
       registerSlashCommands();
     },

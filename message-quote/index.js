@@ -16,7 +16,7 @@
   var GuildMemberStore     = findByStoreName("GuildMemberStore") || findByProps("getMember");
   var ChannelStore         = findByStoreName("ChannelStore") || findByProps("getChannel");
   var PendingReplyStore    = findByProps("getPendingReply");
-  var TokenModule          = findByProps("getToken");
+  var RestAPI              = findByProps("getAPIBaseURL", "get") || findByProps("get", "post", "put", "patch");
   var ActionSheet          = findByProps("openLazy", "hideActionSheet");
   var Messages             = findByProps("sendMessage", "editMessage");
 
@@ -41,6 +41,48 @@
 
   var patches            = [];
   var unregisterCommands = [];
+  var lastQuoteTime      = 0;
+
+  function restRequest(method, endpoint, body) {
+    if (!RestAPI) return Promise.reject(new Error("RestAPI not found"));
+    var path = endpoint.replace(/^https?:\/\/discord(?:app)?\.com\/api(?:\/v\d+)?/, "");
+    if (!path.startsWith("/")) path = "/" + path;
+    var m = method.toLowerCase();
+    var fn = RestAPI[m];
+    if (typeof fn !== "function") return Promise.reject(new Error("RestAPI method " + method + " not supported"));
+    var opts = { url: path };
+    if (body !== undefined) opts.body = body;
+    return fn.call(RestAPI, opts).then(function (res) {
+      return (res && res.body !== undefined) ? res.body : res;
+    });
+  }
+
+  function showFirstRunNotice() {
+    if (storage.firstRunNoticeSeen) return;
+    storage.firstRunNoticeSeen = true;
+    var title = "💬 Message Quote Notice";
+    var msg = "Message Quote renders quote cards and sends them to your active chat using Discord's native client API.\n\n• Your token is never touched or read.\n• A 5-second cooldown protects channels from spam.";
+    var alerts = vendetta.ui && vendetta.ui.alerts;
+    if (alerts && typeof alerts.showConfirmationAlert === "function") {
+      try {
+        alerts.showConfirmationAlert({
+          title: title,
+          content: msg,
+          confirmText: "Got it",
+          cancelText: "Close",
+          onConfirm: function () {}
+        });
+        return;
+      } catch (e) {}
+    }
+    var RN = vendetta.metro.common && vendetta.metro.common.ReactNative;
+    var Alert = (RN && RN.Alert) || findByProps("alert");
+    if (Alert && typeof Alert.alert === "function") {
+      try {
+        Alert.alert(title, msg, [{ text: "Got it" }]);
+      } catch (e) {}
+    }
+  }
 
   function toast(msg, isError) {
     try {
@@ -55,30 +97,6 @@
     if (!Array.isArray(args)) return undefined;
     var found = args.find(function (a) { return a && a.name === name; });
     return found && found.value !== undefined && found.value !== null ? found.value : undefined;
-  }
-
-  function getAuthToken() {
-    try {
-      if (TokenModule && typeof TokenModule.getToken === "function") {
-        var t = TokenModule.getToken();
-        if (t) return t;
-      }
-    } catch (e) {}
-    try {
-      var auth = findByProps("getToken", "getFingerprint");
-      if (auth && typeof auth.getToken === "function") {
-        var t2 = auth.getToken();
-        if (t2) return t2;
-      }
-    } catch (e) {}
-    try {
-      var authStore = findByStoreName("AuthenticationStore");
-      if (authStore && typeof authStore.getToken === "function") {
-        var t3 = authStore.getToken();
-        if (t3) return t3;
-      }
-    } catch (e) {}
-    return null;
   }
 
   function getActiveChannelId() {
@@ -321,35 +339,20 @@
     });
   }
 
-  function uploadBlobToDiscord(channelId, blob, filename, token) {
+  function uploadBlobToDiscord(channelId, blob, filename) {
     var idStr = "0";
     var fileName = filename || "quote.png";
     var fileSize = (blob && blob.size) || 32768;
     var mimeType = "image/png";
 
-    return fetch("https://discord.com/api/v9/channels/" + channelId + "/attachments", {
-      method: "POST",
-      headers: {
-        "Authorization": token,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        files: [
-          {
-            id: idStr,
-            filename: fileName,
-            file_size: fileSize
-          }
-        ]
-      })
-    }).then(function (res) {
-      if (!res.ok) {
-        return res.json().catch(function () { return {}; }).then(function (errData) {
-          var msg = (errData && errData.message) || ("HTTP " + res.status + " requesting upload URL");
-          throw new Error(msg);
-        });
-      }
-      return res.json();
+    return restRequest("post", "/channels/" + channelId + "/attachments", {
+      files: [
+        {
+          id: idStr,
+          filename: fileName,
+          file_size: fileSize
+        }
+      ]
     }).then(function (data) {
       var uploadItem = data && data.attachments && data.attachments[0];
       if (!uploadItem || !uploadItem.upload_url || !uploadItem.upload_filename) {
@@ -375,7 +378,7 @@
     });
   }
 
-  function sendQuoteMessage(channelId, uploaded, replyMessageId, token) {
+  function sendQuoteMessage(channelId, uploaded, replyMessageId) {
     var payload = {
       content: "",
       attachments: [
@@ -395,22 +398,7 @@
     }
 
     function doSend(p) {
-      return fetch("https://discord.com/api/v9/channels/" + channelId + "/messages", {
-        method: "POST",
-        headers: {
-          "Authorization": token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(p)
-      }).then(function (res) {
-        if (!res.ok) {
-          return res.json().catch(function () { return {}; }).then(function (data) {
-            var errMsg = (data && (data.message || (data.content && data.content[0]))) || ("Discord HTTP " + res.status);
-            throw new Error(errMsg);
-          });
-        }
-        return res.json().catch(function () { return {}; });
-      });
+      return restRequest("post", "/channels/" + channelId + "/messages", p);
     }
 
     return doSend(payload).catch(function (err) {
@@ -424,7 +412,15 @@
 
   function quoteMessage(channelId, msg, options) {
     options = options || {};
-    var token = getAuthToken();
+
+    var now = Date.now();
+    if (now - lastQuoteTime < 5000) {
+      var waitSec = Math.ceil((5000 - (now - lastQuoteTime)) / 1000);
+      toast("⏳ Please wait " + waitSec + "s before generating another quote!", true);
+      return Promise.resolve();
+    }
+    lastQuoteTime = now;
+
     var guildId = getActiveGuildId(channelId);
 
     var author = (msg && msg.author) || (options.user) || (UserStore && UserStore.getCurrentUser()) || {};
@@ -448,21 +444,13 @@
       color: color,
       timestamp: timestamp
     }).then(function (genResult) {
-      if (token) {
-        return uploadBlobToDiscord(channelId, genResult.blob, "quote.png", token).then(function (uploaded) {
-          return sendQuoteMessage(channelId, uploaded, replyId, token);
-        });
-      }
-
-      if (Messages && typeof Messages.sendMessage === "function") {
-        return Messages.sendMessage(channelId, { content: genResult.directUrl });
-      }
-      throw new Error("No auth token available to send attachment");
+      return uploadBlobToDiscord(channelId, genResult.blob, "quote.png").then(function (uploaded) {
+        return sendQuoteMessage(channelId, uploaded, replyId);
+      });
     }).then(function () {
       toast("Quote sent!");
     }).catch(function (err) {
       console.error("[MessageQuote]", err);
-      toast("Quote failed: " + err.message, true);
     });
   }
 
@@ -767,6 +755,7 @@
 
   return {
     onLoad: function () {
+      showFirstRunNotice();
       patchActionSheet();
       registerSlashCommands();
     },

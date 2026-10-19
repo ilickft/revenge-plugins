@@ -1,15 +1,59 @@
 (function () {
   "use strict";
 
-  var findByProps     = vendetta.metro.findByProps;
-  var findByStoreName = vendetta.metro.findByStoreName;
-  var showToast       = vendetta.ui.toasts.showToast;
+  var findByProps      = vendetta.metro.findByProps;
+  var findByStoreName  = vendetta.metro.findByStoreName;
+  var showToast        = vendetta.ui.toasts.showToast;
   var getAssetIDByName = vendetta.ui.assets.getAssetIDByName;
+  var storage          = vendetta.plugin.storage;
 
-  var UserStore        = findByStoreName("UserStore");
-  var MessageStore     = findByProps("getMessage", "getMessages");
+  var UserStore         = findByStoreName("UserStore");
+  var MessageStore      = findByProps("getMessage", "getMessages");
   var PendingReplyStore = findByProps("getPendingReply");
-  var TokenModule      = findByProps("getToken");
+  var RestAPI           = findByProps("getAPIBaseURL", "get") || findByProps("get", "post", "put", "patch");
+
+  var lastPetpetTime = 0;
+
+  function restRequest(method, endpoint, body) {
+    if (!RestAPI) return Promise.reject(new Error("RestAPI not found"));
+    var path = endpoint.replace(/^https?:\/\/discord(?:app)?\.com\/api(?:\/v\d+)?/, "");
+    if (!path.startsWith("/")) path = "/" + path;
+    var m = method.toLowerCase();
+    var fn = RestAPI[m];
+    if (typeof fn !== "function") return Promise.reject(new Error("RestAPI method " + method + " not supported"));
+    var opts = { url: path };
+    if (body !== undefined) opts.body = body;
+    return fn.call(RestAPI, opts).then(function (res) {
+      return (res && res.body !== undefined) ? res.body : res;
+    });
+  }
+
+  function showFirstRunNotice() {
+    if (storage.firstRunNoticeSeen) return;
+    storage.firstRunNoticeSeen = true;
+    var title = "🐾 Pet-Pet Notice";
+    var msg = "The /petpet command generates animations using external image generation and posts the result to the current channel using Discord's native client API.\n\n• Your token is never touched or read.\n• A 5-second cooldown is enforced to prevent spam.";
+    var alerts = vendetta.ui && vendetta.ui.alerts;
+    if (alerts && typeof alerts.showConfirmationAlert === "function") {
+      try {
+        alerts.showConfirmationAlert({
+          title: title,
+          content: msg,
+          confirmText: "Got it",
+          cancelText: "Close",
+          onConfirm: function () {}
+        });
+        return;
+      } catch (e) {}
+    }
+    var RN = vendetta.metro.common && vendetta.metro.common.ReactNative;
+    var Alert = (RN && RN.Alert) || findByProps("alert");
+    if (Alert && typeof Alert.alert === "function") {
+      try {
+        Alert.alert(title, msg, [{ text: "Got it" }]);
+      } catch (e) {}
+    }
+  }
 
   function toast(msg, isError) {
     try {
@@ -75,22 +119,7 @@
       var gifUrl = data.message;
       if (!gifUrl) throw new Error("No GIF URL in response");
 
-      var token = TokenModule && TokenModule.getToken && TokenModule.getToken();
-      if (!token) throw new Error("No auth token");
-
-      var sendRes = await fetch(
-        "https://discord.com/api/v9/channels/" + channelId + "/messages",
-        {
-          method:  "POST",
-          headers: {
-            "Authorization": token,
-            "Content-Type":  "application/json",
-          },
-          body: JSON.stringify({ content: gifUrl }),
-        }
-      );
-      if (!sendRes.ok) throw new Error("Discord " + sendRes.status);
-
+      await restRequest("post", "/channels/" + channelId + "/messages", { content: gifUrl });
     } catch (e) {
       console.error("[petpet]", e);
       toast("Pet-pet failed: " + e.message, true);
@@ -114,6 +143,7 @@
 
   return {
     onLoad: function () {
+      showFirstRunNotice();
       removePetpetCommand();
 
       if (vendetta.commands && typeof vendetta.commands.registerCommand === "function") {
@@ -139,15 +169,20 @@
             var channelId = ctx && ctx.channel && ctx.channel.id;
             if (!channelId) return null;
 
+            var now = Date.now();
+            if (now - lastPetpetTime < 5000) {
+              var waitSec = Math.ceil((5000 - (now - lastPetpetTime)) / 1000);
+              toast("⏳ Please wait " + waitSec + "s before using pet-pet again!", true);
+              return null;
+            }
+
             var targetId =
-
               optionValue(args, "user") ||
-
               resolvePendingReplyAuthorId(channelId) ||
-
               (UserStore && UserStore.getCurrentUser() && UserStore.getCurrentUser().id);
 
             if (targetId) {
+              lastPetpetTime = now;
               petpet(channelId, targetId);
             } else {
               toast("Couldn't figure out who to pet!", true);

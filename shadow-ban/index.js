@@ -17,7 +17,7 @@
   const ChannelMessages      = findByProps("_channelMessages");
   const MediaEngineStore     = findByStoreName("MediaEngineStore") || findByProps("getLocalVolume", "isLocalMute");
   const ActionSheet          = findByProps("openLazy", "hideActionSheet");
-  const TokenModule          = findByProps("getToken");
+  const RestAPI              = findByProps("getAPIBaseURL", "get") || findByProps("get", "post", "put", "patch");
   const MemberSearch         = findByProps("queryMembers") || findByProps("searchMembers");
 
   const Forms            = (vendetta.ui && vendetta.ui.components && vendetta.ui.components.Forms) || findByProps("FormRow", "FormSection") || {};
@@ -32,6 +32,9 @@
   if (!Array.isArray(storage.bannedUsers)) {
     storage.bannedUsers = [];
   }
+  if (!storage.userCache || typeof storage.userCache !== "object") {
+    storage.userCache = {};
+  }
   if (storage.blockMessages === undefined) storage.blockMessages = true;
   if (storage.hideVoice === undefined) storage.hideVoice = true;
   if (storage.hideDMs === undefined) storage.hideDMs = true;
@@ -40,6 +43,7 @@
   if (storage.enableContextMenu === undefined) storage.enableContextMenu = true;
 
   const bannedIdSet = new Set();
+  const userMemoryCache = new Map();
 
   function syncBannedSet() {
     bannedIdSet.clear();
@@ -90,28 +94,45 @@
     return match ? match[0] : (str.length >= 17 ? str : null);
   }
 
-  function getAuthToken() {
-    try {
-      if (TokenModule && typeof TokenModule.getToken === "function") {
-        const t = TokenModule.getToken();
-        if (t) return t;
-      }
-    } catch (e) {}
-    try {
-      const auth = findByProps("getToken", "getFingerprint");
-      if (auth && typeof auth.getToken === "function") {
-        const t2 = auth.getToken();
-        if (t2) return t2;
-      }
-    } catch (e) {}
-    try {
-      const authStore = findByStoreName("AuthenticationStore");
-      if (authStore && typeof authStore.getToken === "function") {
-        const t3 = authStore.getToken();
-        if (t3) return t3;
-      }
-    } catch (e) {}
-    return null;
+  function restRequest(method, endpoint, body) {
+    if (!RestAPI) return Promise.reject(new Error("RestAPI not found"));
+    let path = endpoint.replace(/^https?:\/\/discord(?:app)?\.com\/api(?:\/v\d+)?/, "");
+    if (!path.startsWith("/")) path = "/" + path;
+    const m = method.toLowerCase();
+    const fn = RestAPI[m];
+    if (typeof fn !== "function") return Promise.reject(new Error("RestAPI method " + method + " not supported"));
+    const opts = { url: path };
+    if (body !== undefined) opts.body = body;
+    return fn.call(RestAPI, opts).then((res) => {
+      return (res && res.body !== undefined) ? res.body : res;
+    });
+  }
+
+  function showFirstRunNotice() {
+    if (storage.firstRunNoticeSeen) return;
+    storage.firstRunNoticeSeen = true;
+    const title = "🚫 Shadow Ban Notice";
+    const msg = "Shadow-banning operates entirely on your local client (mutes voice audio locally, hides messages).\n\n• User profile lookups are cached locally and query Discord's native client API.\n• Your auth token is never touched or read.";
+    const alerts = vendetta.ui && vendetta.ui.alerts;
+    if (alerts && typeof alerts.showConfirmationAlert === "function") {
+      try {
+        alerts.showConfirmationAlert({
+          title: title,
+          content: msg,
+          confirmText: "Got it",
+          cancelText: "Close",
+          onConfirm: () => {}
+        });
+        return;
+      } catch (e) {}
+    }
+    const RN = vendetta.metro.common && vendetta.metro.common.ReactNative;
+    const Alert = (RN && RN.Alert) || findByProps("alert");
+    if (Alert && typeof Alert.alert === "function") {
+      try {
+        Alert.alert(title, msg, [{ text: "Got it" }]);
+      } catch (e) {}
+    }
   }
 
   function getActiveChannelId() {
@@ -231,21 +252,51 @@
     return null;
   }
 
-  function tryFetchUser(targetId, onFetched) {
-    try {
-      const token = getAuthToken();
-      if (!token) return;
-      fetch(`https://discord.com/api/v9/users/${targetId}`, {
-        headers: { Authorization: token },
+  function lookupUser(targetId, onFetched) {
+    if (!targetId) return;
+    const idStr = String(targetId);
+
+    // 1. Check UserStore
+    const inStore = UserStore && typeof UserStore.getUser === "function" && UserStore.getUser(idStr);
+    if (inStore && inStore.username) {
+      userMemoryCache.set(idStr, inStore);
+      if (typeof onFetched === "function") onFetched(inStore);
+      return;
+    }
+
+    // 2. Check in-memory cache
+    if (userMemoryCache.has(idStr)) {
+      const mem = userMemoryCache.get(idStr);
+      if (typeof onFetched === "function") onFetched(mem);
+      return;
+    }
+
+    // 3. Check persistent storage cache
+    if (storage.userCache && storage.userCache[idStr]) {
+      const cached = storage.userCache[idStr];
+      userMemoryCache.set(idStr, cached);
+      if (typeof onFetched === "function") onFetched(cached);
+      return;
+    }
+
+    // 4. Native RestAPI GET /users/:id (no auth token touched)
+    restRequest("get", `/users/${idStr}`)
+      .then((data) => {
+        if (data && data.id) {
+          const cachedObj = {
+            id: String(data.id),
+            username: data.username,
+            global_name: data.global_name || data.globalName,
+            globalName: data.global_name || data.globalName,
+            avatar: data.avatar
+          };
+          userMemoryCache.set(idStr, cachedObj);
+          if (!storage.userCache) storage.userCache = {};
+          storage.userCache[idStr] = cachedObj;
+          if (typeof onFetched === "function") onFetched(cachedObj);
+        }
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.id && typeof onFetched === "function") {
-            onFetched(data);
-          }
-        })
-        .catch(() => {});
-    } catch (e) {}
+      .catch(() => {});
   }
 
   function getMediaEngineModules() {
@@ -462,7 +513,8 @@
       return false;
     }
 
-    const u = userObj || (UserStore && UserStore.getUser(targetStr)) || null;
+    const cached = userMemoryCache.get(targetStr) || (storage.userCache && storage.userCache[targetStr]);
+    const u = userObj || (UserStore && UserStore.getUser(targetStr)) || cached || null;
     const username = (u && (u.globalName || u.global_name || u.username)) || `User (${targetStr.slice(-4)})`;
     const avatar = getAvatarUrl(u || { id: targetStr });
 
@@ -483,11 +535,11 @@
 
     toast(`Shadow banned ${username}`);
 
-    if (!u) {
-      tryFetchUser(targetStr, (fetched) => {
+    if (!u || !u.username || u.username === targetStr) {
+      lookupUser(targetStr, (fetched) => {
         if (fetched && fetched.id) {
           entry.username = fetched.username || entry.username;
-          entry.globalName = fetched.global_name || entry.globalName;
+          entry.globalName = fetched.global_name || fetched.globalName || entry.globalName;
           entry.avatar = getAvatarUrl(fetched);
           syncBannedSet();
         }
@@ -1324,6 +1376,7 @@
 
   return {
     onLoad: function () {
+      showFirstRunNotice();
       syncBannedSet();
       patchDispatcher();
       patchStores();
