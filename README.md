@@ -138,6 +138,15 @@ https://ilickft.github.io/revenge-plugins/achievements/
 
 ---
 
+### random-game-status
+Sets a random game from your customizable list as your Playing status. Each session lasts a random 21-53 minutes and resumes where it left off when reopening Discord.
+
+```
+https://ilickft.github.io/revenge-plugins/random-game-status/
+```
+
+---
+
 ### clean-context-menu (Broken)
 > **Status: Currently Broken** on recent Discord versions.
 

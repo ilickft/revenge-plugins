@@ -1,0 +1,14 @@
+{
+  "name": "Random Game Status",
+  "description": "Shows a random game from your list as your Playing status. Each game lasts a random 21-53 min and the timer resumes where it left off.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "GameControllerIcon"
+  },
+  "hash": "040a75f22dea1e26d065bfa28843796ac138deb4abd105b21357baf78f322985"
+}
