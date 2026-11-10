@@ -21,6 +21,10 @@
 
   var deletedMessages = new Map();
 
+  var failedMessages = new Set();
+
+  var userDismissed = new Set();
+
   var messageCache = new Map();
 
   function cacheMessage(msg) {
@@ -170,22 +174,30 @@
   function extractCleanOriginal(text) {
     if (typeof text !== "string") return "";
     var clean = unDim(text);
-    var prefix = "*Original Message*\n";
+    // Strip old "Original Message / Edited Message" label blocks
     var splitMarker = "\n*Edited Message*\n";
-    if (clean.startsWith(prefix) && clean.indexOf(splitMarker) !== -1) {
-      return clean.substring(prefix.length, clean.indexOf(splitMarker));
+    var prefixA = "*Original Message*\n";
+    if (clean.startsWith(prefixA) && clean.indexOf(splitMarker) !== -1) {
+      return clean.substring(prefixA.length, clean.indexOf(splitMarker));
     }
+    // New labelless format: original is everything before the separator
+    var sep = "\n\u200b\n"; // zero-width space separator line
+    var idx = clean.indexOf(sep);
+    if (idx !== -1) return clean.substring(0, idx);
     return clean;
   }
 
   function extractCleanEdited(text) {
     if (typeof text !== "string") return text;
     var clean = unDim(text);
+    // Strip old label format
     var splitMarker = "\n*Edited Message*\n";
     var idx = clean.lastIndexOf(splitMarker);
-    if (idx !== -1) {
-      return clean.substring(idx + splitMarker.length);
-    }
+    if (idx !== -1) return clean.substring(idx + splitMarker.length);
+    // New labelless format
+    var sep = "\n\u200b\n";
+    var idx2 = clean.indexOf(sep);
+    if (idx2 !== -1) return clean.substring(idx2 + sep.length);
     return clean;
   }
 
@@ -214,7 +226,20 @@
         var type = event.type;
 
         if (type === "MESSAGE_CREATE" || type === "LOCAL_MESSAGE_CREATE") {
-          if (event.message) cacheMessage(event.message);
+          if (event.message) {
+            cacheMessage(event.message);
+            // Track messages that failed to send so we don't ghost them on delete
+            var msgState = event.message.state;
+            if (msgState === "FAILED" || msgState === "SEND_FAILED" || msgState === "UNSENT") {
+              if (event.message.id) failedMessages.add(event.message.id);
+            }
+          }
+        }
+
+        // Also catch MESSAGE_SEND_FAILED events directly
+        if (type === "MESSAGE_SEND_FAILED" || type === "MESSAGE_FAILED") {
+          var failId = event.messageId || event.id || (event.message && event.message.id);
+          if (failId) failedMessages.add(failId);
         }
 
         if (type === "LOAD_MESSAGES_SUCCESS" && Array.isArray(event.messages)) {
@@ -257,10 +282,10 @@
           if (baseOriginal && newEdited && baseOriginal !== newEdited) {
             editedIds.add(updateId);
 
+            // Format: dimmed original on top, blank separator, full-opacity edited below
             var combined =
-              "-# *Original Message*\n" +
               makeDimmed(baseOriginal) +
-              "\n*Edited Message*\n" +
+              "\n\u200b\n" +
               newEdited;
 
             var guildId = (ChannelStore && ChannelStore.getChannel && ChannelStore.getChannel(updateChanId) && ChannelStore.getChannel(updateChanId).guild_id) || original.guild_id || updateMsg.guild_id || null;
@@ -305,6 +330,13 @@
 
           if (!id) return args;
 
+          // If the user manually dismissed (long-press delete on a ghosted message), let it go
+          if (userDismissed.has(id)) {
+            userDismissed.delete(id);
+            deletedMessages.delete(id);
+            return args; // let real delete happen
+          }
+
           if (deletedMessages.has(id)) {
             var entry = deletedMessages.get(id);
             if (entry && entry.stage === 1) {
@@ -313,11 +345,19 @@
               return args;
             }
             if (entry && entry.stage === 2) {
-
-              args[0] = entry.payload;
-              return args;
+              // Second delete on an already-ghosted message = user pressed delete.
+              // Mark it for dismissal so the next event passes through.
+              userDismissed.add(id);
+              deletedMessages.delete(id);
+              return args; // let this delete go through — message disappears
             }
             return args;
+          }
+
+          // Preserve failed-to-send messages (they appear as local messages that "delete" on reconnect)
+          if (failedMessages.has(id)) {
+            failedMessages.delete(id);
+            return args; // don't ghost failed messages — Discord already shows the retry UI
           }
 
           var originalMessage = getOriginalMessage(channelId, id);
@@ -332,10 +372,10 @@
             if (baseOrig) {
               var cleanEd = extractCleanEdited(rawContent);
               if (cleanEd && cleanEd !== baseOrig) {
+                // Deleted+edited: show both dimmed (no labels)
                 contentToSend =
-                  "-# *Original Message*\n" +
                   makeDimmed(baseOrig) +
-                  "\n-# *Edited Message*\n" +
+                  "\n\u200b\n" +
                   makeDimmed(cleanEd);
               } else {
                 contentToSend = makeDimmed(baseOrig);
@@ -477,6 +517,8 @@
       firstOriginalText.clear();
       editedIds.clear();
       deletedMessages.clear();
+      failedMessages.clear();
+      userDismissed.clear();
       messageCache.clear();
       for (var i = 0; i < patches.length; i++) {
         try { patches[i](); } catch (e) {}
