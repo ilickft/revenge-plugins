@@ -1,6 +1,6 @@
 {
   "name": "Emoji Anywhere",
-  "description": "Use emojis from any server — sends them as small GIFs that look like emojis, while keeping server emojis normal.",
+  "description": "Use emojis from any server \u2014 sends them as small GIFs that look like emojis, while keeping server emojis normal.",
   "authors": [
     {
       "name": "Kario"
@@ -10,5 +10,5 @@
   "vendetta": {
     "icon": "StickerIcon"
   },
-  "hash": "35490c4c39997c8a3db4c65613d009e9426567648e874f17abc8fb9d0ec3c70a"
+  "hash": "41c78345854d3c41ac2d88e64b765007f3eba481402ef7ad160e21132789d37c"
 }

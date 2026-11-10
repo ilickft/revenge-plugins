@@ -201,72 +201,6 @@
     return clean;
   }
 
-  // Helper: does this string look like our combined edit format?
-  function hasCombinedFormat(text) {
-    if (typeof text !== "string") return false;
-    return text.indexOf("\u200b") !== -1 || text.indexOf("*Edited Message*") !== -1;
-  }
-
-  try {
-    if (MessageActions && typeof MessageActions.startEditMessage === "function") {
-      patches.push(
-        before("startEditMessage", MessageActions, function (args) {
-          try {
-            // args: (channelId, messageId, content?) — content index varies by Discord version
-            var msgId = args && (args[1] || args[0]);
-
-            // Set the edit-pending flag so getMessage's after-patch strips format
-            // for this specific message during the synchronous call chain
-            editPending = true;
-            editPendingId = typeof msgId === "string" ? msgId : null;
-            setTimeout(function () { editPending = false; editPendingId = null; }, 0);
-
-            // Also try to clean content if it's passed as an arg directly
-            for (var i = 0; i < args.length; i++) {
-              if (typeof args[i] === "string" && hasCombinedFormat(args[i])) {
-                args[i] = extractCleanEdited(args[i]);
-                break;
-              }
-            }
-          } catch (e) {}
-        })
-      );
-    }
-  } catch (e) {}
-
-  // Also patch getMessage so that when Discord reads the content to populate the
-  // edit box, it gets the clean latest-edit text, not the combined format.
-  // We use a narrow flag: set it ON in startEditMessage's before, read it in getMessage's after.
-  var editPending = false;
-  var editPendingId = null;
-
-  try {
-    if (MessageStore && typeof MessageStore.getMessage === "function") {
-      var after = vendetta.patcher.after;
-      if (typeof after === "function") {
-        patches.push(
-          after("getMessage", MessageStore, function (args, result) {
-            try {
-              if (
-                editPending &&
-                result &&
-                typeof result.content === "string" &&
-                result.id === editPendingId &&
-                hasCombinedFormat(result.content)
-              ) {
-                // Return a shallow clone with cleaned content only in edit context
-                var clone = Object.assign({}, result);
-                clone.content = extractCleanEdited(result.content);
-                return clone;
-              }
-            } catch (e) {}
-            return result;
-          })
-        );
-      }
-    }
-  } catch (e) {}
-
   patches.push(
     before("dispatch", FluxDispatcher, function (args) {
       try {
@@ -570,8 +504,6 @@
       failedMessages.clear();
       userDismissed.clear();
       messageCache.clear();
-      editPending = false;
-      editPendingId = null;
       for (var i = 0; i < patches.length; i++) {
         try { patches[i](); } catch (e) {}
       }

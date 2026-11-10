@@ -1,1 +1,14 @@
-{"name":"No Embeds","description":"Automatically suppresses link embeds on every message you send.","authors":[{"name":"Kario"}],"main":"index.js","vendetta":{"icon":"LinkIcon"},"hash":"f8e09b37d8ff3a228204997e6054f80e13f5b658b62e36c4a956b10106136359"}
+{
+  "name": "No Embeds",
+  "description": "Automatically suppresses link embeds on every message you send.",
+  "authors": [
+    {
+      "name": "Kario"
+    }
+  ],
+  "main": "index.js",
+  "vendetta": {
+    "icon": "LinkIcon"
+  },
+  "hash": "353e60b43df63561e1655bb3fef5107e6807996efc41a3e8decce3a518dfe71e"
+}
